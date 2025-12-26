@@ -11,7 +11,7 @@ interface Props {
 
 const { 
   title, 
-  description = 'RAPS - A comprehensive command-line interface for Autodesk Platform Services, written in Rust.',
+  description = '🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI. A comprehensive command-line interface for APS, written in Rust.',
   image = '/og-image.png',
   article = false,
 } = Astro.props;
@@ -57,7 +57,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "RAPS",
+        "name": "🌼 RAPS",
+        "alternateName": "rapeseed",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Windows, macOS, Linux",
         "author": {
@@ -65,9 +66,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           "name": "Dmytro Yemelianov",
           "url": "https://www.linkedin.com/in/dmytro-yemelianov/"
         },
-        "description": "A comprehensive command-line interface for Autodesk Platform Services (APS), written in Rust.",
+        "description": "🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI. A comprehensive command-line interface for APS, written in Rust.",
         "license": "https://opensource.org/licenses/Apache-2.0",
-        "url": "https://raps.dev",
+        "url": "https://rapscli.xyz",
         "downloadUrl": "https://github.com/dmytro-yemelianov/raps/releases"
       }
     </script>

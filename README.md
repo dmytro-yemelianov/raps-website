@@ -1,8 +1,8 @@
-# RAPS Website
+# 🌼 RAPS Website
 
-The official website and blog for [RAPS](https://github.com/dmytro-yemelianov/raps) - Rust APS CLI.
+The official website and blog for [RAPS](https://github.com/dmytro-yemelianov/raps) — **R**ust **A**utodesk **P**latform **S**ervices CLI (rapeseed 🌼).
 
-🌐 **Live site:** [raps.dev](https://raps.dev) (or your deployment URL)
+🌐 **Live site:** [rapscli.xyz](https://rapscli.xyz)
 
 ## Features
 
@@ -117,7 +117,7 @@ The site is configured for GitHub Pages deployment via GitHub Actions.
 1. Add your domain in GitHub Pages settings
 2. Update `site` in `astro.config.mjs`:
    ```js
-   site: 'https://raps.dev'
+   site: 'https://rapscli.xyz'
    ```
 3. Add DNS records:
    - A record: `185.199.108.153` (GitHub Pages IPs)

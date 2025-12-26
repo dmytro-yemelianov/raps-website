@@ -15,9 +15,7 @@ const currentPath = Astro.url.pathname;
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-3 group">
-        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg flex items-center justify-center">
-          <span class="text-white font-bold text-sm">R</span>
-        </div>
+        <span class="text-2xl">🌼</span>
         <span class="font-semibold text-lg text-white group-hover:text-primary-400 transition-colors">
           RAPS
         </span>
@@ -27,7 +25,7 @@ const currentPath = Astro.url.pathname;
       <nav class="hidden md:flex items-center gap-1">
         {navItems.map((item) => (
           <a
-            href={item.external ? `https://dmytro-yemelianov.github.io/raps` : item.href}
+            href={item.external ? `https://rapscli.xyz/docs` : item.href}
             target={item.external ? '_blank' : undefined}
             rel={item.external ? 'noopener noreferrer' : undefined}
             class:list={[
