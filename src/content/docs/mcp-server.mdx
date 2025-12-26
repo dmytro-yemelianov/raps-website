@@ -1,0 +1,196 @@
+---
+title: "MCP Server"
+description: "AI assistant integration via Model Context Protocol"
+section: "commands"
+order: 10
+icon: "🤖"
+---
+
+# MCP Server
+
+The `raps serve` command starts a Model Context Protocol (MCP) server, enabling AI assistants to interact with Autodesk Platform Services through natural language.
+
+> **New in v3.0.0** — The MCP server is a major feature addition.
+
+## What is MCP?
+
+The [Model Context Protocol](https://modelcontextprotocol.io/) is an open standard that allows AI assistants to use external tools. With RAPS MCP server, you can ask your AI assistant to:
+
+- Create and manage buckets
+- Upload files and start translations
+- Browse BIM 360/ACC projects
+- Check translation status
+- And more...
+
+## Quick Start
+
+```bash
+# Start the MCP server
+raps serve
+```
+
+The server runs in stdio mode, listening for MCP requests from AI assistants.
+
+## Configuration
+
+### Claude Desktop
+
+Add to your Claude configuration file:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`  
+**Linux:** `~/.config/claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"],
+      "env": {
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+### Cursor IDE
+
+Add to `.cursor/mcp.json` in your project:
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+> **Note:** Cursor uses environment variables from your shell, so ensure `APS_CLIENT_ID` and `APS_CLIENT_SECRET` are set.
+
+## Available Tools
+
+The RAPS MCP server exposes 14 tools:
+
+### Authentication
+
+| Tool | Description |
+|------|-------------|
+| `auth_test` | Test 2-legged OAuth credentials |
+| `auth_status` | Check authentication status |
+
+### OSS Buckets
+
+| Tool | Description |
+|------|-------------|
+| `bucket_list` | List all accessible buckets |
+| `bucket_create` | Create a new bucket |
+| `bucket_get` | Get bucket details |
+| `bucket_delete` | Delete an empty bucket |
+
+### OSS Objects
+
+| Tool | Description |
+|------|-------------|
+| `object_list` | List objects in a bucket |
+| `object_delete` | Delete an object |
+| `object_signed_url` | Generate pre-signed download URL |
+| `object_urn` | Get Base64-encoded URN |
+
+### Model Derivative
+
+| Tool | Description |
+|------|-------------|
+| `translate_start` | Start a translation job |
+| `translate_status` | Check translation status |
+
+### Data Management
+
+| Tool | Description |
+|------|-------------|
+| `hub_list` | List BIM 360/ACC hubs |
+| `project_list` | List projects in a hub |
+
+## Example Conversations
+
+### Creating a bucket
+
+> **You:** Create a new persistent bucket in the US region called "my-project-files"
+
+> **AI:** I'll create that bucket for you.
+> 
+> ✓ Created bucket 'my-project-files' with persistent retention in US region.
+
+### Checking buckets
+
+> **You:** What buckets do I have access to?
+
+> **AI:** Let me check your accessible buckets.
+> 
+> You have 3 buckets:
+> - my-project-files (persistent, US)
+> - temp-uploads (transient, US)
+> - eu-data (persistent, EMEA)
+
+### Translation workflow
+
+> **You:** Start translating the file "building.rvt" in bucket "my-project-files" to SVF2 format
+
+> **AI:** I'll start the translation. First, let me get the URN for that file.
+> 
+> ✓ Translation started. The file is being converted to SVF2 format.
+> You can check the status by asking me about it.
+
+## Architecture
+
+The MCP server reuses all existing RAPS API clients:
+
+```
+┌─────────────────┐     ┌──────────────────┐
+│   AI Assistant  │────▶│  RAPS MCP Server │
+│  (Claude, etc.) │◀────│   raps serve     │
+└─────────────────┘     └────────┬─────────┘
+                                 │
+                    ┌────────────┼────────────┐
+                    │            │            │
+              ┌─────▼─────┐ ┌────▼────┐ ┌─────▼─────┐
+              │ AuthClient│ │OssClient│ │DerivClient│
+              └─────┬─────┘ └────┬────┘ └─────┬─────┘
+                    │            │            │
+                    └────────────┼────────────┘
+                                 │
+                          ┌──────▼──────┐
+                          │   APS APIs  │
+                          └─────────────┘
+```
+
+## Limitations
+
+- **No file uploads:** MCP currently doesn't support binary file transfer. Use CLI for uploads.
+- **2-legged auth only:** MCP tools use 2-legged OAuth. For 3-legged operations, use CLI.
+- **Stdio transport:** Server must be started by the AI client, not as a daemon.
+
+## Debugging
+
+Enable verbose logging:
+
+```bash
+RUST_LOG=debug raps serve
+```
+
+Check server connectivity:
+
+```bash
+echo '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}' | raps serve
+```
+
+## Next Steps
+
+- [Examples](/docs/examples) — Common workflows
+- [Pipelines](/docs/pipelines) — Batch automation
+

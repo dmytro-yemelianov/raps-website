@@ -1,0 +1,221 @@
+---
+title: "Examples"
+description: "Common workflows and use cases for RAPS CLI"
+section: "guides"
+order: 1
+icon: "💡"
+---
+
+# Examples
+
+Common workflows and use cases for RAPS CLI.
+
+## Upload and Translate a Model
+
+The most common RAPS workflow: upload a CAD file and translate it for viewing.
+
+```bash
+# 1. Create a bucket (or use existing)
+raps bucket create --key my-project --policy persistent --region US
+
+# 2. Upload the model
+raps object upload my-project building.rvt
+
+# 3. Get the URN
+URN=$(raps object urn my-project building.rvt --output plain)
+
+# 4. Start translation to SVF2
+raps translate start "$URN" --format svf2 --wait
+
+# 5. Check the manifest
+raps translate manifest "$URN"
+```
+
+## Batch Upload Multiple Files
+
+Upload an entire directory of files with parallel processing.
+
+```bash
+# Upload all DWG files
+raps object upload my-bucket ./drawings/*.dwg --batch --parallel --concurrency 10
+
+# Upload with custom keys (preserving folder structure)
+for file in ./models/**/*.rvt; do
+  relative="${file#./models/}"
+  raps object upload my-bucket "$file" --key "$relative"
+done
+```
+
+## Browse BIM 360/ACC Projects
+
+Navigate through your BIM 360 or ACC project hierarchy.
+
+```bash
+# Login with 3-legged OAuth
+raps auth login
+
+# List all hubs
+raps hub list
+
+# Save hub ID for later
+HUB_ID="b.12345678-1234-1234-1234-123456789abc"
+
+# List projects
+raps project list "$HUB_ID"
+
+# Save project ID
+PROJECT_ID="b.proj-123"
+
+# List top-level folders
+raps folder list "$PROJECT_ID" --top
+
+# Browse specific folder
+FOLDER_ID="urn:adsk.wipprod:fs.folder:abc123"
+raps folder list "$PROJECT_ID" "$FOLDER_ID"
+```
+
+## Export Data to JSON
+
+Export data for processing with other tools.
+
+```bash
+# Export bucket list
+raps bucket list --output json > buckets.json
+
+# Process with jq
+raps bucket list --output json | jq '.[] | select(.policy == "persistent") | .key'
+
+# Export project structure
+raps hub list --output json > hubs.json
+for hub in $(jq -r '.[].id' hubs.json); do
+  raps project list "$hub" --output json >> projects.json
+done
+```
+
+## CI/CD Pipeline Example
+
+A complete CI/CD workflow for model validation and translation.
+
+```yaml
+# .github/workflows/model-pipeline.yml
+name: Model Pipeline
+
+on:
+  push:
+    paths:
+      - 'models/**/*.rvt'
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install RAPS
+        run: cargo install raps
+        
+      - name: Create bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="ci-${{ github.run_id }}"
+          raps bucket create --key "$BUCKET" --policy transient --region US
+          echo "BUCKET=$BUCKET" >> $GITHUB_ENV
+          
+      - name: Upload and translate models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in models/**/*.rvt; do
+            name=$(basename "$file")
+            raps object upload "$BUCKET" "$file"
+            URN=$(raps object urn "$BUCKET" "$name" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+          done
+```
+
+## Generate Signed URLs for Sharing
+
+Create temporary download links for sharing files.
+
+```bash
+# Generate a 60-minute URL
+raps object signed-url my-bucket model.rvt --minutes 60
+
+# Generate URLs for all files in a bucket
+for obj in $(raps object list my-bucket --output json | jq -r '.[].key'); do
+  echo "$obj:"
+  raps object signed-url my-bucket "$obj" --minutes 120
+done
+```
+
+## Webhook Setup
+
+Set up webhooks to receive notifications about events.
+
+```bash
+# Create a webhook for translation events
+raps webhook create \
+  --event "extraction.finished" \
+  --callback "https://myapp.com/webhooks/translation" \
+  --scope "data:read"
+
+# List active webhooks
+raps webhook list
+
+# Delete a webhook
+raps webhook delete webhook-id-here
+```
+
+## Design Automation
+
+Run Design Automation work items for CAD processing.
+
+```bash
+# List available engines
+raps da engine list
+
+# Create an activity
+raps da activity create \
+  --id "ExtractData" \
+  --engine "Autodesk.Revit+2024" \
+  --command "$(Get-Content ./appbundle/command.json)"
+
+# Submit a work item
+raps da workitem create \
+  --activity "my-nickname.ExtractData+prod" \
+  --input "urn:adsk..." \
+  --output "https://my-bucket.s3.amazonaws.com/output"
+
+# Monitor work item
+raps da workitem status work-item-id --wait
+```
+
+## Reality Capture
+
+Create photogrammetry models from photos.
+
+```bash
+# Create a photoscene
+raps rc photoscene create --name "Site Survey" --type "object"
+
+# Upload photos
+raps rc photoscene upload photoscene-id ./photos/*.jpg
+
+# Start processing
+raps rc photoscene process photoscene-id
+
+# Check progress
+raps rc photoscene status photoscene-id --wait
+
+# Download results
+raps rc photoscene download photoscene-id --output ./output/
+```
+
+## Next Steps
+
+- [Pipelines](/docs/pipelines) — Automate complex workflows
+- [MCP Server](/docs/mcp-server) — AI assistant integration
+

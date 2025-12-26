@@ -1,6 +1,7 @@
 ---
 const navItems = [
   { href: '/', label: 'Home' },
+  { href: '/docs', label: 'Docs' },
   { href: '/quickstart', label: 'Quick Start' },
   { href: '/blog', label: 'Blog' },
   { href: '/changelog', label: 'Changelog' },
@@ -8,6 +9,13 @@ const navItems = [
 ];
 
 const currentPath = Astro.url.pathname;
+
+// Helper to check if current path matches nav item
+const isActive = (href: string) => {
+  if (href === '/') return currentPath === '/';
+  if (href === '/docs') return currentPath.startsWith('/docs');
+  return currentPath === href || currentPath === href + '/';
+};
 ---
 
 <header class="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
@@ -28,10 +36,11 @@ const currentPath = Astro.url.pathname;
             href={item.href}
             class:list={[
               'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-              currentPath === item.href
+              isActive(item.href)
                 ? 'bg-slate-800 text-white'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
-              item.label === 'Quick Start' && currentPath !== item.href && 'text-rapeseed-400 hover:text-rapeseed-300',
+              item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400 hover:text-rapeseed-300',
+              item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400 hover:text-emerald-300',
             ]}
           >
             {item.label}
@@ -82,10 +91,11 @@ const currentPath = Astro.url.pathname;
           href={item.href}
           class:list={[
             'block px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-            currentPath === item.href
+            isActive(item.href)
               ? 'bg-slate-800 text-white'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
-            item.label === 'Quick Start' && currentPath !== item.href && 'text-rapeseed-400',
+            item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400',
+            item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400',
           ]}
         >
           {item.label}

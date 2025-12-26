@@ -1,0 +1,72 @@
+---
+title: "Introduction"
+description: "Welcome to RAPS CLI - A comprehensive command-line interface for Autodesk Platform Services"
+section: "getting-started"
+order: 1
+icon: "📖"
+---
+
+# Welcome to RAPS
+
+**RAPS** (Rust APS CLI) is a powerful command-line tool for interacting with Autodesk Platform Services (APS). It provides easy access to all major APS APIs including authentication, object storage, model translation, data management, webhooks, design automation, and more.
+
+## Why RAPS?
+
+- **🦀 Written in Rust** — Fast, reliable, and memory-safe
+- **⚡ Built for CI/CD** — Standardized exit codes, JSON/YAML output, non-interactive mode
+- **🔐 Secure** — OS keychain integration, automatic token refresh
+- **🤖 AI-Ready** — MCP server for AI assistant integration (v3.0.0+)
+- **📦 Single Binary** — No dependencies, easy installation
+
+## Core Features
+
+### 🔐 Authentication
+- 2-legged OAuth (Client Credentials) for server-to-server operations
+- 3-legged OAuth (Authorization Code) with browser login
+- Secure token storage with automatic refresh
+
+### 📦 Object Storage Service (OSS)
+- Create, list, and delete buckets (multi-region support)
+- Upload, download, and manage objects
+- Resumable multipart uploads for large files
+- Batch uploads with parallel processing
+
+### 🔄 Model Derivative
+- Translate CAD files to various formats (SVF2, OBJ, STL, STEP, etc.)
+- Check translation status with polling
+- Download derivatives
+
+### 🏗️ Data Management
+- Browse hubs, projects, folders, and items
+- Create folders and manage versions
+- Full BIM 360/ACC integration
+
+### 🤖 MCP Server (v3.0.0+)
+- AI Assistant Integration via Model Context Protocol
+- 14+ tools for natural language APS operations
+- Works with Claude, Cursor, and other MCP clients
+
+## Quick Start
+
+```bash
+# Install RAPS
+cargo install raps
+
+# Configure credentials
+export APS_CLIENT_ID="your_client_id"
+export APS_CLIENT_SECRET="your_client_secret"
+
+# Test authentication
+raps auth test
+
+# Start using commands!
+raps bucket list
+```
+
+## Next Steps
+
+1. **[Installation](/docs/installation)** — Get RAPS installed on your system
+2. **[Configuration](/docs/configuration)** — Set up your APS credentials
+3. **[Authentication](/docs/auth)** — Understand authentication options
+4. **[Your First Workflow](/docs/examples)** — Upload and translate a model
+

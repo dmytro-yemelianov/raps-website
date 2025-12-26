@@ -1,0 +1,73 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map(doc => ({
+    params: { slug: doc.slug },
+    props: { doc },
+  }));
+}
+
+interface Props {
+  doc: CollectionEntry<'docs'>;
+}
+
+const { doc } = Astro.props;
+const { Content } = await doc.render();
+
+// Get all docs for navigation
+const allDocs = await getCollection('docs');
+const currentIndex = allDocs.findIndex(d => d.slug === doc.slug);
+
+// Find prev/next in same section
+const sectionDocs = allDocs
+  .filter(d => d.data.section === doc.data.section)
+  .sort((a, b) => a.data.order - b.data.order);
+const sectionIndex = sectionDocs.findIndex(d => d.slug === doc.slug);
+const prevDoc = sectionIndex > 0 ? sectionDocs[sectionIndex - 1] : null;
+const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex + 1] : null;
+---
+
+<DocsLayout 
+  title={doc.data.title} 
+  description={doc.data.description}
+  currentSlug={doc.slug}
+>
+  <article class="docs-content">
+    <Content />
+  </article>
+  
+  <!-- Navigation -->
+  <nav class="mt-16 pt-8 border-t border-slate-800">
+    <div class="flex justify-between gap-4">
+      {prevDoc ? (
+        <a 
+          href={`/docs/${prevDoc.slug}`}
+          class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
+        >
+          <div class="text-sm text-slate-500 mb-1">← Previous</div>
+          <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
+            {prevDoc.data.icon && <span class="mr-2">{prevDoc.data.icon}</span>}
+            {prevDoc.data.title}
+          </div>
+        </a>
+      ) : <div class="flex-1"></div>}
+      
+      {nextDoc ? (
+        <a 
+          href={`/docs/${nextDoc.slug}`}
+          class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
+        >
+          <div class="text-sm text-slate-500 mb-1">Next →</div>
+          <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
+            {nextDoc.data.title}
+            {nextDoc.data.icon && <span class="ml-2">{nextDoc.data.icon}</span>}
+          </div>
+        </a>
+      ) : <div class="flex-1"></div>}
+    </div>
+  </nav>
+</DocsLayout>
+

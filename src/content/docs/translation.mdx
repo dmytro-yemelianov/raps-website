@@ -1,0 +1,219 @@
+---
+title: "Translation"
+description: "Translate CAD files to viewable and downloadable formats"
+section: "commands"
+order: 4
+icon: "🔄"
+---
+
+# Translation Commands
+
+Translate CAD files to various formats using the Model Derivative API.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps translate start` | Start a translation job |
+| `raps translate status` | Check translation status |
+| `raps translate manifest` | View translation manifest |
+| `raps translate download` | Download derivatives |
+| `raps translate delete` | Delete a manifest |
+
+## Supported Formats
+
+### Input Formats
+
+RAPS supports all APS-compatible input formats:
+- **Autodesk**: RVT, DWG, DWF, NWD, NWC, DGN
+- **Industry**: IFC, STEP, IGES, SAT
+- **3D**: OBJ, STL, 3DS, FBX, GLTF
+- **And more...**
+
+### Output Formats
+
+| Format | Description |
+|--------|-------------|
+| `svf2` | Streaming format for Viewer (recommended) |
+| `svf` | Legacy streaming format |
+| `thumbnail` | PNG thumbnail images |
+| `obj` | Wavefront OBJ mesh |
+| `stl` | STL mesh format |
+| `step` | STEP CAD format |
+| `iges` | IGES CAD format |
+| `ifc` | IFC BIM format |
+
+## raps translate start
+
+Start a translation job for an uploaded file.
+
+```bash
+raps translate start <urn> --format <format> [options]
+```
+
+**Options:**
+- `--format, -f`: Output format (required)
+- `--wait, -w`: Wait for completion
+- `--root-filename`: Root file for ZIP archives
+- `--force`: Force re-translation
+
+**Basic translation:**
+
+```bash
+$ raps translate start dXJuOmFkc2sub2JqZWN0cy... --format svf2
+✓ Translation started
+  URN: dXJuOmFkc2sub2JqZWN0cy...
+  Status: pending
+```
+
+**Wait for completion:**
+
+```bash
+$ raps translate start $URN --format svf2 --wait
+Translation in progress...
+  ████████████████████████████████████████ 100%
+✓ Translation complete (47s)
+```
+
+**Multiple formats:**
+
+```bash
+raps translate start $URN --format svf2
+raps translate start $URN --format obj
+raps translate start $URN --format thumbnail
+```
+
+## raps translate status
+
+Check the status of a translation job.
+
+```bash
+$ raps translate status $URN
+Translation Status:
+  URN: dXJuOmFkc2sub2JqZWN0cy...
+  Status: success
+  Progress: 100%
+  
+  Derivatives:
+    • svf2 (3D views, 2D sheets)
+    • thumbnail (256x256)
+```
+
+**Wait for completion:**
+
+```bash
+$ raps translate status $URN --wait
+Waiting for translation...
+████████████████████████████████████████ 100%
+✓ Translation complete!
+```
+
+**JSON output for scripting:**
+
+```bash
+raps translate status $URN --output json | jq '.status'
+```
+
+## raps translate manifest
+
+View the full translation manifest with all derivatives.
+
+```bash
+$ raps translate manifest $URN
+Manifest for: dXJuOmFkc2sub2JqZWN0cy...
+Status: success
+
+Derivatives:
+┌─────────────┬────────────────────────┬────────────┐
+│ Type        │ Role                   │ Status     │
+├─────────────┼────────────────────────┼────────────┤
+│ svf2        │ 3d                     │ success    │
+│ svf2        │ 2d                     │ success    │
+│ thumbnail   │ thumbnail              │ success    │
+└─────────────┴────────────────────────┴────────────┘
+```
+
+## raps translate download
+
+Download derivative files (OBJ, STL, STEP, etc.).
+
+```bash
+raps translate download <urn> --output <directory>
+```
+
+```bash
+$ raps translate download $URN --output ./derivatives/
+Downloading derivatives...
+  [1/3] model.obj ████████████████████ 100%
+  [2/3] model.mtl ████████████████████ 100%
+  [3/3] textures.zip ████████████████████ 100%
+✓ Downloaded to: ./derivatives/
+```
+
+## Complete Workflow
+
+### Upload and Translate
+
+```bash
+# 1. Create a bucket
+raps bucket create --key my-project --policy persistent --region US
+
+# 2. Upload a file
+raps object upload my-project building.rvt
+
+# 3. Get the URN
+URN=$(raps object urn my-project building.rvt --output plain)
+
+# 4. Start translation
+raps translate start "$URN" --format svf2 --wait
+
+# 5. Check manifest
+raps translate manifest "$URN"
+```
+
+### Batch Translation Pipeline
+
+```bash
+for file in ./models/*.dwg; do
+  name=$(basename "$file")
+  raps object upload my-bucket "$file"
+  URN=$(raps object urn my-bucket "$name" --output plain)
+  raps translate start "$URN" --format svf2
+  echo "Started translation for $name"
+done
+```
+
+## Translation Presets
+
+Use presets for common workflows:
+
+```bash
+# High-quality for presentation
+raps translate start $URN --format svf2 --preset high-quality
+
+# Fast preview
+raps translate start $URN --format svf2 --preset fast
+```
+
+## Troubleshooting
+
+### "Translation failed" error
+
+1. Check the manifest for detailed error messages:
+   ```bash
+   raps translate manifest $URN --output json
+   ```
+2. Verify the source file is valid
+3. Check file format is supported
+
+### "Derivative not found" error
+
+1. Ensure translation completed successfully
+2. Check the manifest for available derivatives
+3. Wait for translation to complete using `--wait`
+
+## Next Steps
+
+- [Data Management](/docs/data-management) — Work with BIM 360/ACC projects
+- [Design Automation](/docs/design-automation) — Automate CAD processing
+
