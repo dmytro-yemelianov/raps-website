@@ -1,0 +1,218 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Changelog data - in production, this could be fetched from GitHub releases API
+const releases = [
+  {
+    version: '2.0.0',
+    date: '2025-12-25',
+    highlights: ['ACC Checklists support', 'Plugin system', 'Pipeline automation improvements'],
+    type: 'major',
+    changes: {
+      added: [
+        'ACC Checklists module with full CRUD operations',
+        'Plugin system for external extensions',
+        'Command aliases for frequent operations',
+        'Test data generation (`raps generate`)',
+        'Demo scenarios (`raps demo`)',
+      ],
+      changed: [
+        'Improved pipeline execution with better error reporting',
+        'Enhanced authentication flow with device-code support',
+        'Updated to latest APS API versions',
+      ],
+      fixed: [
+        'Token refresh race condition in concurrent operations',
+        'Large file upload progress reporting accuracy',
+        'JSON output formatting for nested objects',
+      ],
+    },
+  },
+  {
+    version: '1.0.0',
+    date: '2025-10-15',
+    highlights: ['First stable release', 'Complete APS API coverage', 'CI/CD ready'],
+    type: 'major',
+    changes: {
+      added: [
+        'Authentication (2-legged, 3-legged, device-code, token)',
+        'Object Storage Service (buckets, objects, signed URLs)',
+        'Model Derivative (translation, manifests, derivatives)',
+        'Data Management (hubs, projects, folders, items)',
+        'Webhooks (create, list, delete, test)',
+        'Design Automation (engines, activities, work items)',
+        'ACC Issues (CRUD, comments, attachments)',
+        'ACC RFIs (CRUD, status management)',
+        'ACC Assets (CRUD, categories)',
+        'ACC Submittals (CRUD)',
+        'Reality Capture (photoscenes, processing)',
+        'Pipeline automation (YAML/JSON definitions)',
+        'Multiple output formats (JSON, YAML, CSV, table)',
+        'Shell completions (bash, zsh, fish, PowerShell, elvish)',
+      ],
+    },
+  },
+  {
+    version: '0.4.0',
+    date: '2025-08-01',
+    highlights: ['Profile management', 'Batch uploads', 'Translation presets'],
+    type: 'minor',
+    changes: {
+      added: [
+        'Configuration profiles for multi-environment workflows',
+        'Batch upload with parallel processing',
+        'Translation presets for common configurations',
+        'Token inspection command',
+      ],
+      changed: [
+        'Improved error messages with actionable suggestions',
+        'Better progress bars for long operations',
+      ],
+    },
+  },
+];
+---
+
+<BaseLayout 
+  title="Changelog" 
+  description="RAPS release history and version changelog."
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <!-- Header -->
+      <div class="mb-12">
+        <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">
+          Changelog
+        </h1>
+        <p class="text-lg text-slate-400">
+          Release history and version changes for RAPS.
+        </p>
+        <a
+          href="https://github.com/dmytro-yemelianov/raps/releases"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 mt-4 text-primary-400 hover:text-primary-300 transition-colors"
+        >
+          View all releases on GitHub →
+        </a>
+      </div>
+      
+      <!-- Releases -->
+      <div class="space-y-12">
+        {releases.map((release, index) => (
+          <article class="relative">
+            {/* Timeline connector */}
+            {index < releases.length - 1 && (
+              <div class="absolute left-[11px] top-10 bottom-0 w-0.5 bg-slate-800"></div>
+            )}
+            
+            <div class="flex gap-6">
+              {/* Timeline dot */}
+              <div class="flex-shrink-0">
+                <div class:list={[
+                  'w-6 h-6 rounded-full border-4 border-slate-900',
+                  release.type === 'major' ? 'bg-primary-500' : 'bg-slate-600',
+                ]}></div>
+              </div>
+              
+              {/* Content */}
+              <div class="flex-1 pb-8">
+                {/* Header */}
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                  <h2 class="text-2xl font-bold text-white">
+                    v{release.version}
+                  </h2>
+                  <span class:list={[
+                    'px-2 py-0.5 text-xs font-medium rounded',
+                    release.type === 'major' 
+                      ? 'bg-primary-500/10 text-primary-400' 
+                      : 'bg-slate-700 text-slate-300',
+                  ]}>
+                    {release.type}
+                  </span>
+                  <time class="text-sm text-slate-500">
+                    {new Date(release.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </time>
+                </div>
+                
+                {/* Highlights */}
+                <div class="flex flex-wrap gap-2 mb-6">
+                  {release.highlights.map((highlight) => (
+                    <span class="px-3 py-1 text-sm bg-slate-800 text-slate-300 rounded-full">
+                      {highlight}
+                    </span>
+                  ))}
+                </div>
+                
+                {/* Changes */}
+                <div class="space-y-4">
+                  {release.changes.added && release.changes.added.length > 0 && (
+                    <div>
+                      <h3 class="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                        Added
+                      </h3>
+                      <ul class="space-y-1">
+                        {release.changes.added.map((item) => (
+                          <li class="text-sm text-slate-400 pl-4">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {release.changes.changed && release.changes.changed.length > 0 && (
+                    <div>
+                      <h3 class="text-sm font-semibold text-yellow-400 mb-2 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full"></span>
+                        Changed
+                      </h3>
+                      <ul class="space-y-1">
+                        {release.changes.changed.map((item) => (
+                          <li class="text-sm text-slate-400 pl-4">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {release.changes.fixed && release.changes.fixed.length > 0 && (
+                    <div>
+                      <h3 class="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                        Fixed
+                      </h3>
+                      <ul class="space-y-1">
+                        {release.changes.fixed.map((item) => (
+                          <li class="text-sm text-slate-400 pl-4">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Download link */}
+                <a
+                  href={`https://github.com/dmytro-yemelianov/raps/releases/tag/v${release.version}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 mt-6 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                >
+                  Download v{release.version} →
+                </a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
