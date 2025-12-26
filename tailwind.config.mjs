@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // RAPS brand colors - professional blue/orange inspired by Autodesk
+        // RAPS brand colors - inspired by rapeseed flowers (yellow) + tech blue
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -30,13 +30,29 @@ export default {
           800: '#9a3412',
           900: '#7c2d12',
         },
+        // Rapeseed yellow - the 🌼 brand color
+        rapeseed: {
+          50: '#fefce8',
+          100: '#fef9c3',
+          200: '#fef08a',
+          300: '#fde047',
+          400: '#facc15',
+          500: '#eab308',
+          600: '#ca8a04',
+          700: '#a16207',
+          800: '#854d0e',
+          900: '#713f12',
+          950: '#422006',
+        },
         rust: {
           500: '#dea584',
           600: '#ce7b40',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        // Distinctive typography - Satoshi for headlines, General Sans for body
+        sans: ['General Sans', 'system-ui', 'sans-serif'],
+        display: ['Satoshi', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       typography: {

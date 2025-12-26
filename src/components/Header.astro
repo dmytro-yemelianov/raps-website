@@ -1,8 +1,8 @@
 ---
 const navItems = [
   { href: '/', label: 'Home' },
+  { href: '/quickstart', label: 'Quick Start' },
   { href: '/blog', label: 'Blog' },
-  { href: '/docs', label: 'Docs', external: true },
   { href: '/changelog', label: 'Changelog' },
   { href: '/about', label: 'About' },
 ];
@@ -15,8 +15,8 @@ const currentPath = Astro.url.pathname;
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-3 group">
-        <span class="text-2xl">🌼</span>
-        <span class="font-semibold text-lg text-white group-hover:text-primary-400 transition-colors">
+        <span class="text-2xl group-hover:scale-110 transition-transform">🌼</span>
+        <span class="font-display font-bold text-lg text-white group-hover:text-rapeseed-400 transition-colors">
           RAPS
         </span>
       </a>
@@ -25,22 +25,16 @@ const currentPath = Astro.url.pathname;
       <nav class="hidden md:flex items-center gap-1">
         {navItems.map((item) => (
           <a
-            href={item.external ? `https://rapscli.xyz/docs` : item.href}
-            target={item.external ? '_blank' : undefined}
-            rel={item.external ? 'noopener noreferrer' : undefined}
+            href={item.href}
             class:list={[
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all',
               currentPath === item.href
                 ? 'bg-slate-800 text-white'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
+              item.label === 'Quick Start' && currentPath !== item.href && 'text-rapeseed-400 hover:text-rapeseed-300',
             ]}
           >
             {item.label}
-            {item.external && (
-              <svg class="inline-block w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            )}
           </a>
         ))}
       </nav>
@@ -85,12 +79,13 @@ const currentPath = Astro.url.pathname;
     <nav class="px-4 py-3 space-y-1">
       {navItems.map((item) => (
         <a
-          href={item.external ? `https://dmytro-yemelianov.github.io/raps` : item.href}
+          href={item.href}
           class:list={[
             'block px-4 py-2 rounded-lg text-sm font-medium transition-colors',
             currentPath === item.href
               ? 'bg-slate-800 text-white'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
+            item.label === 'Quick Start' && currentPath !== item.href && 'text-rapeseed-400',
           ]}
         >
           {item.label}

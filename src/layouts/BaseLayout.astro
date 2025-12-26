@@ -12,7 +12,7 @@ interface Props {
 const { 
   title, 
   description = '🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI. A comprehensive command-line interface for APS, written in Rust.',
-  image = '/og-image.png',
+  image = '/og-image.svg',
   article = false,
 } = Astro.props;
 
@@ -47,10 +47,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={new URL(image, Astro.site)} />
     
-    <!-- Fonts -->
+    <!-- Fonts - Distinctive typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- Satoshi for headlines, General Sans for body, JetBrains Mono for code -->
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     
     <!-- JSON-LD structured data -->
     <script type="application/ld+json">

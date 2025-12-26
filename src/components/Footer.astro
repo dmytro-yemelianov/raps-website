@@ -3,7 +3,7 @@ const currentYear = new Date().getFullYear();
 
 const footerLinks = {
   product: [
-    { href: '/docs', label: 'Documentation' },
+    { href: '/quickstart', label: 'Quick Start' },
     { href: 'https://github.com/dmytro-yemelianov/raps/releases', label: 'Download', external: true },
     { href: '/changelog', label: 'Changelog' },
     { href: 'https://github.com/dmytro-yemelianov/raps/issues', label: 'Report Issue', external: true },
@@ -26,9 +26,9 @@ const footerLinks = {
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
       <!-- Brand -->
       <div class="col-span-2 md:col-span-1">
-        <a href="/" class="flex items-center gap-3 mb-4">
-          <span class="text-2xl">🌼</span>
-          <span class="font-semibold text-lg text-white">RAPS</span>
+        <a href="/" class="flex items-center gap-3 mb-4 group">
+          <span class="text-2xl group-hover:scale-110 transition-transform">🌼</span>
+          <span class="font-display font-bold text-lg text-white group-hover:text-rapeseed-400 transition-colors">RAPS</span>
         </a>
         <p class="text-sm text-slate-400 mb-4">
           🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI.
@@ -62,7 +62,7 @@ const footerLinks = {
       
       <!-- Product Links -->
       <div>
-        <h3 class="text-sm font-semibold text-white mb-3">Product</h3>
+        <h3 class="text-sm font-display font-semibold text-white mb-3">Product</h3>
         <ul class="space-y-2">
           {footerLinks.product.map((link) => (
             <li>
@@ -81,7 +81,7 @@ const footerLinks = {
       
       <!-- Resources Links -->
       <div>
-        <h3 class="text-sm font-semibold text-white mb-3">Resources</h3>
+        <h3 class="text-sm font-display font-semibold text-white mb-3">Resources</h3>
         <ul class="space-y-2">
           {footerLinks.resources.map((link) => (
             <li>
@@ -100,7 +100,7 @@ const footerLinks = {
       
       <!-- Connect Links -->
       <div>
-        <h3 class="text-sm font-semibold text-white mb-3">Connect</h3>
+        <h3 class="text-sm font-display font-semibold text-white mb-3">Connect</h3>
         <ul class="space-y-2">
           {footerLinks.connect.map((link) => (
             <li>
