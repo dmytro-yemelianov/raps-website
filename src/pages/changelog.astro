@@ -4,6 +4,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '3.0.0',
+    date: '2025-12-27',
+    highlights: ['MCP Server', 'AI Assistant Integration', '14 MCP Tools'],
+    type: 'major',
+    changes: {
+      added: [
+        'MCP (Model Context Protocol) server for AI assistant integration',
+        'Support for Claude Desktop, Cursor IDE, and other MCP clients',
+        '14 MCP tools: auth_test, auth_status, bucket_list, bucket_create, bucket_get, bucket_delete, object_list, object_delete, object_signed_url, object_urn, translate_start, translate_status, hub_list, project_list',
+        'Natural language APS operations via AI assistants',
+        'New `raps serve` command to start the MCP server',
+      ],
+      changed: [
+        'Added Serialize derive to API response types for MCP JSON serialization',
+        'Updated documentation with MCP server setup guides',
+      ],
+    },
+  },
+  {
     version: '2.1.0',
     date: '2025-12-26',
     highlights: ['Stability improvements', 'Bug fixes', 'Documentation updates'],

@@ -5,6 +5,12 @@ import DownloadButton from '../components/DownloadButton.astro';
 
 const features = [
   {
+    icon: '🤖',
+    title: 'MCP Server',
+    description: 'AI assistant integration for Claude, Cursor. Natural language APS operations.',
+    gradient: 'from-rapeseed-500/20 to-amber-500/20',
+  },
+  {
     icon: '🔐',
     title: 'Authentication',
     description: '2-legged, 3-legged OAuth, device-code, and token-based auth for any scenario.',
@@ -34,22 +40,22 @@ const features = [
     description: 'Manage engines, activities, and work items for batch processing.',
     gradient: 'from-rose-500/20 to-pink-500/20',
   },
-  {
-    icon: '📋',
-    title: 'ACC Modules',
-    description: 'Issues, RFIs, Assets, Submittals, Checklists — all from CLI.',
-    gradient: 'from-indigo-500/20 to-blue-500/20',
-  },
 ];
 
 const stats = [
   { value: '15+', label: 'APS APIs Covered' },
-  { value: '100+', label: 'Commands' },
-  { value: '6', label: 'Output Formats' },
+  { value: '100+', label: 'CLI Commands' },
+  { value: '14', label: 'MCP Tools' },
   { value: '5', label: 'Platforms' },
 ];
 
 const whyRaps = [
+  {
+    icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>`,
+    color: 'text-rapeseed-400 bg-rapeseed-500/10',
+    title: 'AI Assistant Ready',
+    description: 'MCP server for Claude, Cursor, and other AI assistants. Natural language APS operations.',
+  },
   {
     icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
     color: 'text-primary-400 bg-primary-500/10',
@@ -64,15 +70,9 @@ const whyRaps = [
   },
   {
     icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>`,
-    color: 'text-rapeseed-400 bg-rapeseed-500/10',
+    color: 'text-green-400 bg-green-500/10',
     title: 'Comprehensive Coverage',
     description: '15+ APS APIs. OSS, Model Derivative, Data Management, Design Automation, ACC Issues, RFIs, and more.',
-  },
-  {
-    icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>`,
-    color: 'text-green-400 bg-green-500/10',
-    title: 'Pipeline Automation',
-    description: 'YAML/JSON pipeline definitions, variable substitution, conditional execution, dry-run mode.',
   },
 ];
 ---
@@ -108,7 +108,7 @@ const whyRaps = [
           class="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-full text-sm text-slate-300 hover:border-rapeseed-500/50 hover:bg-slate-800 transition-all mb-8 backdrop-blur-sm"
         >
           <span class="w-2 h-2 bg-rapeseed-400 rounded-full animate-pulse"></span>
-          v2.1.0 Released — Latest improvements →
+          v3.0.0 Released — MCP Server for AI Assistants →
         </a>
         
         <!-- Headline with rapeseed accent -->
