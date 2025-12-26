@@ -46,7 +46,21 @@ const steps = [
           '# GitHub Container Registry',
           'docker pull ghcr.io/dmytro-yemelianov/raps',
         ],
-        note: 'Best for CI/CD pipelines',
+        note: 'Best for containerized environments',
+      },
+      {
+        id: 'action',
+        label: 'GitHub Action',
+        icon: '⚡',
+        commands: [
+          '# In your .github/workflows/*.yml',
+          '- uses: dmytro-yemelianov/raps-action@v1',
+          '  with:',
+          '    command: "auth test"',
+          '    client-id: ${{ secrets.APS_CLIENT_ID }}',
+          '    client-secret: ${{ secrets.APS_CLIENT_SECRET }}',
+        ],
+        note: 'Best for GitHub Actions CI/CD',
       },
       {
         id: 'windows',

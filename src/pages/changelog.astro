@@ -4,6 +4,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '2.1.0',
+    date: '2025-12-26',
+    highlights: ['Stability improvements', 'Bug fixes', 'Documentation updates'],
+    type: 'minor',
+    changes: {
+      added: [
+        'Improved error messages for common authentication issues',
+        'Better progress indicators for long-running operations',
+      ],
+      changed: [
+        'Updated dependencies to latest versions',
+        'Improved documentation and examples',
+      ],
+      fixed: [
+        'Fixed edge case in token refresh during concurrent requests',
+        'Resolved issue with special characters in file paths',
+      ],
+    },
+  },
+  {
     version: '2.0.0',
     date: '2025-12-25',
     highlights: ['ACC Checklists support', 'Plugin system', 'Pipeline automation improvements'],
