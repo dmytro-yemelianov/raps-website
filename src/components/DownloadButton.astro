@@ -43,8 +43,8 @@ const platforms = {
   <!-- Primary Download Button -->
   <div class="relative">
     <button
-      id="download-primary"
       class:list={[
+        "download-primary-btn",
         "w-full sm:w-auto bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400",
         "text-white font-semibold rounded-lg transition-all",
         "flex items-center justify-center gap-3 shadow-lg shadow-primary-500/25",
@@ -54,16 +54,15 @@ const platforms = {
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
       </svg>
-      <span id="download-text">Download RAPS</span>
-      <svg id="download-chevron" class="w-4 h-4 ml-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <span class="download-text">Download RAPS</span>
+      <svg class="download-chevron w-4 h-4 ml-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
 
     <!-- Dropdown Menu -->
     <div 
-      id="download-dropdown"
-      class="hidden absolute top-full left-0 right-0 sm:right-auto mt-2 w-full sm:w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-50"
+      class="download-dropdown hidden absolute top-full left-0 right-0 sm:right-auto mt-2 w-full sm:w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-50"
     >
       <div class="p-2">
         <div class="text-xs text-slate-500 uppercase tracking-wider px-3 py-2">Download Binary</div>
@@ -217,14 +216,7 @@ const platforms = {
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const button = document.getElementById('download-primary');
-    const dropdown = document.getElementById('download-dropdown');
-    const chevron = document.getElementById('download-chevron');
-    const downloadText = document.getElementById('download-text');
-    
-    if (!button || !dropdown) return;
-
-    // Detect platform
+    // Detect platform once
     const detectPlatform = () => {
       const ua = navigator.userAgent.toLowerCase();
       const platform = navigator.platform.toLowerCase();
@@ -236,68 +228,78 @@ const platforms = {
     };
 
     const detectedPlatform = detectPlatform();
-    
-    // Update button text and highlight recommended
-    if (detectedPlatform && downloadText) {
-      const platformNames: Record<string, string> = {
-        windows: 'Windows',
-        macos: 'macOS', 
-        linux: 'Linux'
-      };
-      downloadText.textContent = `Download for ${platformNames[detectedPlatform]}`;
-      
-      // Highlight recommended option
-      const recommendedOption = dropdown.querySelector(`[data-platform="${detectedPlatform}"]`);
-      if (recommendedOption) {
-        const badge = recommendedOption.querySelector('.recommended-badge');
-        badge?.classList.remove('hidden');
-      }
-    }
-
-    // Toggle dropdown
-    let isOpen = false;
-    
-    const toggleDropdown = (open?: boolean) => {
-      isOpen = open !== undefined ? open : !isOpen;
-      dropdown.classList.toggle('hidden', !isOpen);
-      chevron?.classList.toggle('rotate-180', isOpen);
+    const platformNames: Record<string, string> = {
+      windows: 'Windows',
+      macos: 'macOS', 
+      linux: 'Linux'
     };
 
-    button.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleDropdown();
-    });
+    // Initialize each download button wrapper independently
+    document.querySelectorAll('.download-button-wrapper').forEach(wrapper => {
+      const button = wrapper.querySelector('.download-primary-btn');
+      const dropdown = wrapper.querySelector('.download-dropdown');
+      const chevron = wrapper.querySelector('.download-chevron');
+      const downloadText = wrapper.querySelector('.download-text');
+      
+      if (!button || !dropdown) return;
 
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!dropdown.contains(e.target as Node) && !button.contains(e.target as Node)) {
-        toggleDropdown(false);
+      // Update button text and highlight recommended
+      if (detectedPlatform && downloadText) {
+        downloadText.textContent = `Download for ${platformNames[detectedPlatform]}`;
+        
+        // Highlight recommended option
+        const recommendedOption = dropdown.querySelector(`[data-platform="${detectedPlatform}"]`);
+        if (recommendedOption) {
+          const badge = recommendedOption.querySelector('.recommended-badge');
+          badge?.classList.remove('hidden');
+        }
       }
-    });
 
-    // Close on escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') toggleDropdown(false);
-    });
+      // Toggle dropdown
+      let isOpen = false;
+      
+      const toggleDropdown = (open?: boolean) => {
+        isOpen = open !== undefined ? open : !isOpen;
+        dropdown.classList.toggle('hidden', !isOpen);
+        chevron?.classList.toggle('rotate-180', isOpen);
+      };
 
-    // Copy command buttons
-    document.querySelectorAll('[data-copy]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const command = btn.getAttribute('data-copy');
-        if (!command) return;
-        
-        await navigator.clipboard.writeText(command);
-        
-        const copyIcon = btn.querySelector('.copy-icon');
-        const checkIcon = btn.querySelector('.check-icon');
-        
-        copyIcon?.classList.add('hidden');
-        checkIcon?.classList.remove('hidden');
-        
-        setTimeout(() => {
-          copyIcon?.classList.remove('hidden');
-          checkIcon?.classList.add('hidden');
-        }, 2000);
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDropdown();
+      });
+
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target as Node) && !button.contains(e.target as Node)) {
+          toggleDropdown(false);
+        }
+      });
+
+      // Close on escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggleDropdown(false);
+      });
+
+      // Copy command buttons within this wrapper
+      wrapper.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const command = btn.getAttribute('data-copy');
+          if (!command) return;
+          
+          await navigator.clipboard.writeText(command);
+          
+          const copyIcon = btn.querySelector('.copy-icon');
+          const checkIcon = btn.querySelector('.check-icon');
+          
+          copyIcon?.classList.add('hidden');
+          checkIcon?.classList.remove('hidden');
+          
+          setTimeout(() => {
+            copyIcon?.classList.remove('hidden');
+            checkIcon?.classList.add('hidden');
+          }, 2000);
+        });
       });
     });
   });
