@@ -4,8 +4,7 @@ import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
-  site: 'https://dmytro-yemelianov.github.io',
-  base: '/raps-website',
+  site: 'https://rapscli.xyz',
   integrations: [
     mdx(),
     sitemap(),
