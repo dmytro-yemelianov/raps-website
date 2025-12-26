@@ -161,31 +161,27 @@ const steps = [
       <div class="space-y-4">
         <div>
           <h4 class="text-sm font-semibold text-white mb-2">Claude Desktop</h4>
-          <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
-            <div class="text-slate-500">// claude_desktop_config.json</div>
-            <div>{</div>
-            <div>  <span class="text-amber-400">"mcpServers"</span>: {</div>
-            <div>    <span class="text-amber-400">"raps"</span>: {</div>
-            <div>      <span class="text-amber-400">"command"</span>: <span class="text-green-400">"raps"</span>,</div>
-            <div>      <span class="text-amber-400">"args"</span>: [<span class="text-green-400">"serve"</span>]</div>
-            <div>    }</div>
-            <div>  }</div>
-            <div>}</div>
-          </div>
+          <pre class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm overflow-x-auto"><code><span class="text-slate-500">// claude_desktop_config.json</span>
+{
+  <span class="text-amber-400">"mcpServers"</span>: {
+    <span class="text-amber-400">"raps"</span>: {
+      <span class="text-amber-400">"command"</span>: <span class="text-green-400">"raps"</span>,
+      <span class="text-amber-400">"args"</span>: [<span class="text-green-400">"serve"</span>]
+    }
+  }
+}</code></pre>
         </div>
         <div>
           <h4 class="text-sm font-semibold text-white mb-2">Cursor IDE</h4>
-          <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
-            <div class="text-slate-500">// .cursor/mcp.json</div>
-            <div>{</div>
-            <div>  <span class="text-amber-400">"mcpServers"</span>: {</div>
-            <div>    <span class="text-amber-400">"raps"</span>: {</div>
-            <div>      <span class="text-amber-400">"command"</span>: <span class="text-green-400">"raps"</span>,</div>
-            <div>      <span class="text-amber-400">"args"</span>: [<span class="text-green-400">"serve"</span>]</div>
-            <div>    }</div>
-            <div>  }</div>
-            <div>}</div>
-          </div>
+          <pre class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm overflow-x-auto"><code><span class="text-slate-500">// .cursor/mcp.json</span>
+{
+  <span class="text-amber-400">"mcpServers"</span>: {
+    <span class="text-amber-400">"raps"</span>: {
+      <span class="text-amber-400">"command"</span>: <span class="text-green-400">"raps"</span>,
+      <span class="text-amber-400">"args"</span>: [<span class="text-green-400">"serve"</span>]
+    }
+  }
+}</code></pre>
         </div>
         <p class="text-sm text-slate-500 mt-4">After configuration, ask your AI assistant: "Show me all my APS buckets" 🤖</p>
       </div>
