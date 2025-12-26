@@ -10,8 +10,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
       <!-- Header -->
       <div class="mb-16">
-        <h1 class="text-4xl sm:text-5xl font-bold text-white mb-6">
-          About RAPS
+        <h1 class="text-4xl sm:text-5xl font-display font-black text-white mb-6">
+          About <span class="text-rapeseed-400">RAPS</span>
         </h1>
         <p class="text-xl text-slate-400">
           Bringing modern DevOps practices to Autodesk Platform Services.
@@ -20,7 +20,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       
       <!-- The Story -->
       <div class="prose prose-invert prose-slate max-w-none mb-16">
-        <h2 class="text-2xl font-bold text-white mb-4">The Story</h2>
+        <h2 class="text-2xl font-display font-bold text-white mb-4">The Story</h2>
         <p class="text-slate-300 leading-relaxed mb-4">
           After 15 years of working with Autodesk platforms, one pattern became painfully clear: 
           the AEC industry has embraced sophisticated design technology but still operates these 
@@ -40,8 +40,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
       
       <!-- Why Rust -->
-      <div class="mb-16 p-8 bg-slate-900/50 border border-slate-800 rounded-xl">
-        <h2 class="text-2xl font-bold text-white mb-4">Why Rust?</h2>
+      <div class="mb-16 p-8 bg-gradient-to-br from-rust-500/10 to-slate-900/50 border border-slate-800 rounded-xl">
+        <h2 class="text-2xl font-display font-bold text-white mb-4">Why <span class="text-rust-500">Rust</span>?</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-semibold text-white mb-2">Performance</h3>
@@ -76,7 +76,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       
       <!-- About the Author -->
       <div class="mb-16">
-        <h2 class="text-2xl font-bold text-white mb-8">About the Author</h2>
+        <h2 class="text-2xl font-display font-bold text-white mb-8">About the Author</h2>
         <div class="flex flex-col md:flex-row gap-8 items-start">
           <div class="flex-shrink-0">
             <div class="w-32 h-32 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center">
@@ -128,7 +128,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       
       <!-- Recognition -->
       <div class="mb-16">
-        <h2 class="text-2xl font-bold text-white mb-6">Recognition & Credentials</h2>
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Recognition & Credentials</h2>
         <div class="grid sm:grid-cols-2 gap-4">
           <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl">
             <div class="text-2xl mb-3">🏆</div>
@@ -162,8 +162,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
       
       <!-- Contact -->
-      <div class="p-8 bg-gradient-to-r from-primary-950 to-slate-900 rounded-xl border border-primary-900/50">
-        <h2 class="text-2xl font-bold text-white mb-4">Get in Touch</h2>
+      <div class="p-8 bg-gradient-to-r from-rapeseed-950/50 via-primary-950 to-slate-900 rounded-xl border border-rapeseed-900/50">
+        <h2 class="text-2xl font-display font-bold text-white mb-4">Get in Touch</h2>
         <p class="text-slate-300 mb-6">
           Interested in APS automation consulting, speaking engagements, or collaboration? 
           I'd love to hear from you.

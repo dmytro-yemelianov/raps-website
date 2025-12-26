@@ -1,0 +1,7 @@
+# RAPS Website - rapscli.xyz
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://rapscli.xyz/sitemap-index.xml
+
