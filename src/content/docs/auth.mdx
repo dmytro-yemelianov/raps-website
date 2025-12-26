@@ -1,0 +1,183 @@
+---
+title: "Authentication"
+description: "Authentication commands for 2-legged and 3-legged OAuth"
+section: "commands"
+order: 1
+icon: "🔐"
+---
+
+# Authentication Commands
+
+RAPS supports both 2-legged (client credentials) and 3-legged (authorization code) OAuth flows.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps auth test` | Test 2-legged OAuth credentials |
+| `raps auth login` | Login with 3-legged OAuth |
+| `raps auth logout` | Clear stored tokens |
+| `raps auth status` | Show authentication status |
+| `raps auth whoami` | Show user profile |
+| `raps auth inspect-token` | Inspect token details |
+
+## raps auth test
+
+Test 2-legged OAuth authentication using your Client ID and Client Secret.
+
+```bash
+$ raps auth test
+✓ Authentication successful!
+  Token expires in: 3599 seconds
+```
+
+**Requirements:**
+- `APS_CLIENT_ID` environment variable
+- `APS_CLIENT_SECRET` environment variable
+
+## raps auth login
+
+Login with 3-legged OAuth. Supports multiple methods.
+
+```bash
+raps auth login [--default] [--device] [--token <token>]
+```
+
+**Options:**
+- `--default`: Use default scopes without prompting
+- `--device`: Use device code flow (for headless/server environments)
+- `--token <token>`: Provide access token directly (for CI/CD)
+
+**Browser-based login (default):**
+
+```bash
+$ raps auth login
+Opening browser for authentication...
+Select scopes:
+  [x] data:read
+  [x] data:write
+  [x] data:create
+  [x] account:read
+  [x] user:read
+  [x] viewables:read
+
+✓ Login successful!
+  User: john.doe@example.com
+```
+
+**Device code flow (headless):**
+
+```bash
+$ raps auth login --device
+Device Code Authentication
+──────────────────────────────────────────────────
+  User Code: ABC-123-DEF
+  Verification URL: https://developer.api.autodesk.com/authentication/v2/device
+
+Please visit the URL above and enter the user code.
+Waiting for authorization...
+✓ Authorization successful!
+```
+
+**Token-based login (CI/CD):**
+
+```bash
+$ raps auth login --token "eyJhbGc..." --expires-in 3600
+✓ Token validated for user: user@example.com
+```
+
+## raps auth status
+
+Show current authentication status.
+
+```bash
+$ raps auth status
+Authentication Status
+────────────────────────────────────────
+  2-legged (Client Credentials): ✓ Available
+  3-legged (User Login): ✓ Logged in
+    Token: abcd...wxyz
+    Expires in: 1h 30m
+```
+
+## raps auth inspect-token
+
+Inspect the current access token for scope, expiry, and metadata.
+
+```bash
+$ raps auth inspect-token
+Token Information:
+────────────────────────────────────────────────────────────
+  Valid: ✓ Yes
+  Expires At: 2024-01-15 15:30:00 UTC
+  Expires In: 45 minutes
+
+  Scopes:
+    • data:read
+    • data:write
+    • data:create
+────────────────────────────────────────────────────────────
+```
+
+**With expiry warning:**
+
+```bash
+$ raps auth inspect-token --warn-expiry 3600
+⚠ WARNING: Token expires in less than 1 hour!
+```
+
+## Authentication Types
+
+### 2-Legged OAuth (Client Credentials)
+
+Used for server-to-server operations without user context.
+
+**Use for:**
+- Uploading files to OSS
+- Creating buckets
+- Starting translations
+- Managing webhooks
+- Design Automation
+
+### 3-Legged OAuth (Authorization Code)
+
+Used for operations requiring user context.
+
+**Use for:**
+- Accessing BIM 360/ACC hubs and projects
+- Browsing folders and items
+- Managing issues
+- User-specific data
+
+## Token Management
+
+RAPS automatically:
+- Stores tokens securely in platform-specific directories
+- Refreshes tokens when they expire
+- Uses the appropriate token type for each operation
+
+**Token Storage:**
+- **Windows**: `%APPDATA%\raps\`
+- **macOS**: `~/Library/Application Support/raps/`
+- **Linux**: `~/.local/share/raps/`
+
+## Troubleshooting
+
+### "Authentication failed" error
+
+1. Verify `APS_CLIENT_ID` and `APS_CLIENT_SECRET` are set correctly
+2. Check your APS application is active in the Developer Portal
+3. Ensure credentials haven't been rotated
+
+### "Callback URL mismatch" error
+
+Verify `APS_CALLBACK_URL` matches your APS application configuration.
+
+### "Token expired" error
+
+Try logging out and back in:
+
+```bash
+raps auth logout && raps auth login
+```
+

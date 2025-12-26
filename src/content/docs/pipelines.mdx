@@ -1,0 +1,272 @@
+---
+title: "Pipelines"
+description: "Automate complex workflows with YAML/JSON pipeline files"
+section: "guides"
+order: 2
+icon: "📋"
+---
+
+# Pipelines
+
+Execute batch operations from YAML or JSON pipeline files for complex automation workflows.
+
+## Overview
+
+Pipelines allow you to:
+- Define multi-step workflows in declarative files
+- Use variable substitution for dynamic values
+- Handle errors gracefully with continue-on-error
+- Validate before execution with dry-run mode
+
+## Basic Pipeline Structure
+
+```yaml
+# pipeline.yaml
+name: Model Processing Pipeline
+description: Upload and translate models
+
+variables:
+  bucket: my-project-bucket
+  region: US
+
+steps:
+  - name: Create Bucket
+    command: bucket create
+    args:
+      key: "{{ bucket }}"
+      policy: persistent
+      region: "{{ region }}"
+    
+  - name: Upload Model
+    command: object upload
+    args:
+      bucket: "{{ bucket }}"
+      file: "./models/building.rvt"
+    
+  - name: Start Translation
+    command: translate start
+    args:
+      urn: "{{ steps.Upload Model.output.urn }}"
+      format: svf2
+      wait: true
+```
+
+## Running Pipelines
+
+```bash
+# Execute a pipeline
+raps pipeline run pipeline.yaml
+
+# Dry-run (validate without executing)
+raps pipeline run pipeline.yaml --dry-run
+
+# Override variables
+raps pipeline run pipeline.yaml --var bucket=custom-bucket --var region=EMEA
+
+# Continue on errors
+raps pipeline run pipeline.yaml --continue-on-error
+```
+
+## Variable Substitution
+
+### Static Variables
+
+Define variables at the top of your pipeline:
+
+```yaml
+variables:
+  project_name: Downtown Office
+  bucket_prefix: company-aps
+```
+
+Use with `{{ variable_name }}`:
+
+```yaml
+steps:
+  - name: Create Bucket
+    command: bucket create
+    args:
+      key: "{{ bucket_prefix }}-{{ project_name | slugify }}"
+```
+
+### Environment Variables
+
+Access environment variables:
+
+```yaml
+steps:
+  - name: Upload
+    command: object upload
+    args:
+      bucket: "{{ env.BUCKET_NAME }}"
+      file: "{{ env.MODEL_PATH }}"
+```
+
+### Step Outputs
+
+Reference outputs from previous steps:
+
+```yaml
+steps:
+  - name: Upload Model
+    id: upload
+    command: object upload
+    args:
+      bucket: my-bucket
+      file: model.rvt
+    
+  - name: Get URN
+    command: object urn
+    args:
+      bucket: my-bucket
+      object: "{{ steps.upload.output.object_key }}"
+```
+
+## Conditional Steps
+
+Run steps based on conditions:
+
+```yaml
+steps:
+  - name: Create Bucket
+    command: bucket create
+    args:
+      key: my-bucket
+    condition: "{{ env.CREATE_BUCKET == 'true' }}"
+    
+  - name: Upload
+    command: object upload
+    args:
+      bucket: my-bucket
+      file: model.rvt
+    condition: "{{ steps['Create Bucket'].success or env.BUCKET_EXISTS == 'true' }}"
+```
+
+## Error Handling
+
+### Continue on Error
+
+```yaml
+steps:
+  - name: Delete Old Bucket
+    command: bucket delete
+    args:
+      key: old-bucket
+    continue_on_error: true
+    
+  - name: Create New Bucket
+    command: bucket create
+    args:
+      key: new-bucket
+```
+
+### Retry on Failure
+
+```yaml
+steps:
+  - name: Upload Large File
+    command: object upload
+    args:
+      bucket: my-bucket
+      file: large-model.ifc
+    retry:
+      attempts: 3
+      delay: 10  # seconds
+```
+
+## Complete Example
+
+A production-ready pipeline for model processing:
+
+```yaml
+name: Production Model Pipeline
+description: Full workflow for processing architectural models
+
+variables:
+  project_id: project-2024-001
+  bucket_name: "aps-{{ project_id }}"
+  output_formats:
+    - svf2
+    - obj
+    - thumbnail
+
+steps:
+  - name: Verify Authentication
+    command: auth test
+    
+  - name: Create Project Bucket
+    command: bucket create
+    args:
+      key: "{{ bucket_name }}"
+      policy: persistent
+      region: US
+    continue_on_error: true  # May already exist
+    
+  - name: Upload Models
+    command: object upload
+    args:
+      bucket: "{{ bucket_name }}"
+      file: "./models/*.rvt"
+      batch: true
+      parallel: true
+      concurrency: 5
+    
+  - name: Process Each Model
+    foreach: "{{ steps['Upload Models'].output.objects }}"
+    as: model
+    steps:
+      - name: Get URN
+        command: object urn
+        args:
+          bucket: "{{ bucket_name }}"
+          object: "{{ model.key }}"
+          
+      - name: Translate to Formats
+        foreach: "{{ output_formats }}"
+        as: format
+        steps:
+          - name: "Translate to {{ format }}"
+            command: translate start
+            args:
+              urn: "{{ parent.steps['Get URN'].output.urn }}"
+              format: "{{ format }}"
+              wait: true
+            retry:
+              attempts: 2
+              delay: 30
+
+  - name: Generate Report
+    command: pipeline report
+    args:
+      output: "./reports/{{ project_id }}-report.json"
+```
+
+## Pipeline Commands
+
+```bash
+# Run pipeline
+raps pipeline run pipeline.yaml
+
+# Validate syntax
+raps pipeline validate pipeline.yaml
+
+# Show execution plan
+raps pipeline plan pipeline.yaml
+
+# Resume failed pipeline
+raps pipeline resume .raps-pipeline-state.json
+```
+
+## Best Practices
+
+1. **Use descriptive step names** — Makes logs easier to read
+2. **Set continue_on_error wisely** — Only for non-critical steps
+3. **Use dry-run first** — Validate before executing
+4. **Store secrets in environment** — Never in pipeline files
+5. **Use retry for network operations** — APIs can have transient failures
+
+## Next Steps
+
+- [Examples](/docs/examples) — More workflow examples
+- [Exit Codes](/docs/exit-codes) — CI/CD integration
+

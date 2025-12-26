@@ -1,0 +1,161 @@
+---
+title: "Exit Codes"
+description: "CI/CD-friendly exit codes for automation"
+section: "reference"
+order: 1
+icon: "🔢"
+---
+
+# Exit Codes
+
+RAPS uses standardized exit codes for CI/CD integration and script automation.
+
+## Exit Code Reference
+
+| Code | Name | Description |
+|------|------|-------------|
+| 0 | Success | Command completed successfully |
+| 1 | General Error | Unspecified error |
+| 2 | Configuration Error | Missing or invalid configuration |
+| 3 | Authentication Error | Authentication failed |
+| 4 | Not Found | Resource not found |
+| 5 | Conflict | Resource conflict (e.g., bucket exists) |
+| 6 | Permission Denied | Insufficient permissions |
+| 7 | Validation Error | Invalid input or parameters |
+| 8 | Network Error | Network or connectivity issue |
+| 9 | Timeout | Operation timed out |
+| 10 | Rate Limited | API rate limit exceeded |
+| 11 | Server Error | APS API server error |
+| 12 | Translation Failed | Model translation failed |
+
+## Using Exit Codes in Scripts
+
+### Bash
+
+```bash
+#!/bin/bash
+set -e  # Exit on error
+
+raps auth test
+if [ $? -eq 0 ]; then
+  echo "Authentication successful"
+else
+  echo "Authentication failed"
+  exit 1
+fi
+
+# Or use && for chaining
+raps bucket create --key my-bucket && \
+raps object upload my-bucket model.rvt && \
+raps translate start $URN --format svf2 --wait
+```
+
+### PowerShell
+
+```powershell
+$result = raps auth test
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Authentication successful"
+} elseif ($LASTEXITCODE -eq 3) {
+    Write-Host "Authentication failed - check credentials"
+    exit 1
+} else {
+    Write-Host "Unexpected error: $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+```
+
+### CI/CD Pipelines
+
+```yaml
+# GitHub Actions
+- name: Test Authentication
+  run: raps auth test
+  continue-on-error: false
+
+- name: Upload Model
+  run: |
+    raps object upload my-bucket model.rvt
+    if [ $? -eq 5 ]; then
+      echo "::warning::File already exists, skipping"
+    fi
+```
+
+## Handling Specific Errors
+
+### Authentication Errors (Exit Code 3)
+
+```bash
+raps auth test
+if [ $? -eq 3 ]; then
+  echo "Check APS_CLIENT_ID and APS_CLIENT_SECRET"
+  echo "Ensure credentials are valid in APS Developer Portal"
+  exit 1
+fi
+```
+
+### Not Found Errors (Exit Code 4)
+
+```bash
+raps bucket details my-bucket
+if [ $? -eq 4 ]; then
+  echo "Bucket doesn't exist, creating..."
+  raps bucket create --key my-bucket --policy persistent --region US
+fi
+```
+
+### Rate Limiting (Exit Code 10)
+
+```bash
+raps bucket list
+if [ $? -eq 10 ]; then
+  echo "Rate limited, waiting 60 seconds..."
+  sleep 60
+  raps bucket list  # Retry
+fi
+```
+
+### Translation Failures (Exit Code 12)
+
+```bash
+raps translate start $URN --format svf2 --wait
+if [ $? -eq 12 ]; then
+  echo "Translation failed, checking manifest..."
+  raps translate manifest $URN --output json | jq '.messages'
+fi
+```
+
+## JSON Output for Automation
+
+Combine exit codes with JSON output for detailed error handling:
+
+```bash
+output=$(raps translate status $URN --output json 2>&1)
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+  status=$(echo "$output" | jq -r '.status')
+  if [ "$status" == "success" ]; then
+    echo "Translation complete"
+  else
+    echo "Translation in progress: $status"
+  fi
+else
+  error=$(echo "$output" | jq -r '.error // "Unknown error"')
+  echo "Error: $error (exit code: $exit_code)"
+fi
+```
+
+## Best Practices
+
+1. **Always check exit codes** in automation scripts
+2. **Use `--output json`** for machine-readable output
+3. **Implement retry logic** for network errors (code 8) and rate limiting (code 10)
+4. **Log detailed errors** using JSON output
+5. **Set appropriate timeouts** using `--timeout` flag
+
+## Next Steps
+
+- [Examples](/docs/examples) — CI/CD workflow examples
+- [Pipelines](/docs/pipelines) — Declarative automation
+

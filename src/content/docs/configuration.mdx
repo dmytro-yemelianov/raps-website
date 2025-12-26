@@ -1,0 +1,144 @@
+---
+title: "Configuration"
+description: "Configure RAPS with your APS credentials and settings"
+section: "getting-started"
+order: 3
+icon: "⚙️"
+---
+
+# Configuration
+
+RAPS supports multiple configuration methods: environment variables, profiles, and `.env` files.
+
+**Precedence:** CLI flags > Environment variables > Active profile > Defaults
+
+## Required Environment Variables
+
+### APS_CLIENT_ID
+
+Your APS application Client ID from the [APS Developer Portal](https://aps.autodesk.com/myapps).
+
+```powershell
+# Windows PowerShell
+$env:APS_CLIENT_ID = "your_client_id_here"
+```
+
+```bash
+# macOS/Linux
+export APS_CLIENT_ID="your_client_id_here"
+```
+
+### APS_CLIENT_SECRET
+
+Your APS application Client Secret.
+
+```powershell
+# Windows PowerShell
+$env:APS_CLIENT_SECRET = "your_client_secret_here"
+```
+
+```bash
+# macOS/Linux
+export APS_CLIENT_SECRET="your_client_secret_here"
+```
+
+## Optional Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `APS_CALLBACK_URL` | Callback URL for 3-legged OAuth | `http://localhost:8080/callback` |
+| `APS_DA_NICKNAME` | Design Automation nickname | - |
+| `RAPS_TIMEOUT` | Request timeout in seconds | `120` |
+| `RAPS_CONCURRENCY` | Max parallel operations | `5` |
+| `RAPS_USE_KEYCHAIN` | Store tokens in OS keychain | `false` |
+
+## Using .env File
+
+Create a `.env` file in your working directory:
+
+```env
+APS_CLIENT_ID=your_client_id_here
+APS_CLIENT_SECRET=your_client_secret_here
+APS_CALLBACK_URL=http://localhost:8080/callback
+```
+
+RAPS automatically loads from `.env` files in current and parent directories.
+
+> **Security:** Never commit `.env` files to version control. Add `.env` to `.gitignore`.
+
+## Profile Management
+
+Profiles allow managing multiple environments (dev, staging, production).
+
+```bash
+# Create a profile
+raps config profile create production
+
+# Set values
+raps config set client_id "your_production_client_id"
+raps config set client_secret "your_production_client_secret"
+
+# Switch profiles
+raps config profile use production
+
+# List all profiles
+raps config profile list
+
+# Export/import profiles
+raps config profile export production --output ./prod-profile.json
+raps config profile import ./prod-profile.json --name backup
+```
+
+### Profile Storage Locations
+
+- **Windows**: `%APPDATA%\raps\profiles.json`
+- **macOS**: `~/Library/Application Support/raps/profiles.json`
+- **Linux**: `~/.config/raps/profiles.json`
+
+## Shell Completions
+
+RAPS supports auto-completion for bash, zsh, fish, PowerShell, and elvish.
+
+### PowerShell
+
+```powershell
+# Add to your PowerShell profile ($PROFILE)
+raps completions powershell | Out-String | Invoke-Expression
+```
+
+### Bash
+
+```bash
+# Add to ~/.bashrc
+eval "$(raps completions bash)"
+```
+
+### Zsh
+
+```zsh
+# Add to ~/.zshrc
+eval "$(raps completions zsh)"
+```
+
+### Fish
+
+```fish
+raps completions fish > ~/.config/fish/completions/raps.fish
+```
+
+## Test Configuration
+
+Verify your setup:
+
+```bash
+raps auth test
+```
+
+If successful, you're ready to use RAPS!
+
+## Next Steps
+
+- [Authentication commands](/docs/auth)
+- [Bucket operations](/docs/buckets)
+- [Upload and translate models](/docs/examples)
+

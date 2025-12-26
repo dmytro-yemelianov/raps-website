@@ -1,0 +1,138 @@
+---
+title: "Data Management"
+description: "Browse and manage BIM 360 and ACC hubs, projects, and files"
+section: "commands"
+order: 5
+icon: "🏗️"
+---
+
+# Data Management Commands
+
+Browse hubs, projects, folders, and items in BIM 360 and Autodesk Construction Cloud (ACC).
+
+> **Note:** Data Management commands require 3-legged OAuth. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps hub list` | List accessible hubs |
+| `raps project list` | List projects in a hub |
+| `raps folder list` | List folder contents |
+| `raps folder create` | Create a new folder |
+| `raps item list` | List items in a folder |
+| `raps item versions` | List item versions |
+
+## raps hub list
+
+List all accessible BIM 360/ACC hubs.
+
+```bash
+$ raps hub list
+Hubs:
+┌──────────────────────────────────────────┬─────────────────────────────┬───────┐
+│ ID                                       │ Name                        │ Type  │
+├──────────────────────────────────────────┼─────────────────────────────┼───────┤
+│ b.12345678-1234-1234-1234-123456789abc   │ My Company                  │ BIM360│
+│ b.87654321-4321-4321-4321-cba987654321   │ Partner Organization        │ ACC   │
+└──────────────────────────────────────────┴─────────────────────────────┴───────┘
+```
+
+## raps project list
+
+List projects within a hub.
+
+```bash
+$ raps project list b.12345678-1234-1234-1234-123456789abc
+Projects in 'My Company':
+┌────────────────────────────────────────┬─────────────────────────────────┐
+│ ID                                     │ Name                            │
+├────────────────────────────────────────┼─────────────────────────────────┤
+│ b.proj-123                             │ Downtown Office Building        │
+│ b.proj-456                             │ Hospital Renovation             │
+│ b.proj-789                             │ University Campus               │
+└────────────────────────────────────────┴─────────────────────────────────┘
+```
+
+## raps folder list
+
+List contents of a folder.
+
+```bash
+$ raps folder list b.proj-123 urn:adsk.wipprod:fs.folder:abc123
+Folder Contents:
+┌─────────┬────────────────────────────────┬───────────────────────────────┐
+│ Type    │ Name                           │ ID                            │
+├─────────┼────────────────────────────────┼───────────────────────────────┤
+│ folder  │ Drawings                       │ urn:adsk...folder:def456      │
+│ folder  │ Models                         │ urn:adsk...folder:ghi789      │
+│ item    │ Project Schedule.xlsx          │ urn:adsk...item:jkl012        │
+└─────────┴────────────────────────────────┴───────────────────────────────┘
+```
+
+**List top-level folders:**
+
+```bash
+raps folder list b.proj-123 --top
+```
+
+## raps folder create
+
+Create a new folder.
+
+```bash
+$ raps folder create b.proj-123 urn:adsk...folder:parent --name "New Folder"
+✓ Folder created successfully!
+  Name: New Folder
+  ID: urn:adsk.wipprod:fs.folder:xyz789
+```
+
+## raps item versions
+
+List all versions of an item.
+
+```bash
+$ raps item versions urn:adsk.wipprod:dm.lineage:abc123
+Versions of 'Building Model.rvt':
+┌─────────┬─────────────────────────┬────────────────────────────────────────┐
+│ Version │ Created                 │ URN                                    │
+├─────────┼─────────────────────────┼────────────────────────────────────────┤
+│ 3       │ 2024-01-15 14:30:00     │ urn:adsk.wipprod:fs.file:version3      │
+│ 2       │ 2024-01-10 09:15:00     │ urn:adsk.wipprod:fs.file:version2      │
+│ 1       │ 2024-01-05 11:00:00     │ urn:adsk.wipprod:fs.file:version1      │
+└─────────┴─────────────────────────┴────────────────────────────────────────┘
+```
+
+## Common Workflows
+
+### Browse project structure
+
+```bash
+# 1. List hubs
+raps hub list
+
+# 2. List projects in a hub
+raps project list b.12345678-1234-1234-1234-123456789abc
+
+# 3. List top-level folders
+raps folder list b.proj-123 --top
+
+# 4. Browse specific folder
+raps folder list b.proj-123 urn:adsk.wipprod:fs.folder:abc123
+```
+
+### Export project data
+
+```bash
+# Export all hubs as JSON
+raps hub list --output json > hubs.json
+
+# Export projects
+raps project list $HUB_ID --output json > projects.json
+```
+
+## Next Steps
+
+- [Issues](/docs/issues) — Manage project issues
+- [Webhooks](/docs/webhooks) — Subscribe to project events
+

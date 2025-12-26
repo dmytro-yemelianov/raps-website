@@ -1,0 +1,189 @@
+---
+title: "Object Commands"
+description: "Upload, download, and manage objects in OSS buckets"
+section: "commands"
+order: 3
+icon: "📄"
+---
+
+# Object Commands
+
+Upload, download, and manage objects in OSS buckets.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps object upload` | Upload files to a bucket |
+| `raps object download` | Download objects |
+| `raps object list` | List objects in a bucket |
+| `raps object details` | Get object details |
+| `raps object delete` | Delete an object |
+| `raps object signed-url` | Generate signed download URL |
+| `raps object urn` | Get object URN for translation |
+
+## raps object upload
+
+Upload files to an OSS bucket with progress tracking.
+
+```bash
+raps object upload <bucket-key> <file-path> [options]
+```
+
+**Options:**
+- `--key, -k`: Custom object key (defaults to filename)
+- `--batch`: Upload multiple files
+- `--parallel`: Enable parallel uploads
+- `--concurrency`: Number of concurrent uploads (default: 5)
+
+**Single file upload:**
+
+```bash
+$ raps object upload my-bucket model.rvt
+Uploading model.rvt...
+████████████████████████████████████████ 100% (45.2 MB)
+✓ Upload complete!
+  Object Key: model.rvt
+  URN: dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6bXktYnVja2V0L21vZGVsLnJ2dA
+```
+
+**Batch upload with wildcards:**
+
+```bash
+$ raps object upload my-bucket ./models/*.dwg --batch --parallel
+Uploading 5 files with 5 concurrent uploads...
+  [1/5] floor-plan.dwg ████████████████████ 100%
+  [2/5] elevation.dwg ████████████████████ 100%
+  [3/5] section-a.dwg ████████████████████ 100%
+  [4/5] section-b.dwg ████████████████████ 100%
+  [5/5] details.dwg ████████████████████ 100%
+✓ All files uploaded successfully!
+```
+
+**Custom object key:**
+
+```bash
+raps object upload my-bucket model.rvt --key "projects/2024/building-a.rvt"
+```
+
+## raps object download
+
+Download objects from a bucket.
+
+```bash
+raps object download <bucket-key> <object-key> [--output PATH]
+```
+
+```bash
+$ raps object download my-bucket model.rvt --output ./downloads/
+Downloading model.rvt...
+████████████████████████████████████████ 100% (45.2 MB)
+✓ Downloaded to: ./downloads/model.rvt
+```
+
+## raps object list
+
+List all objects in a bucket.
+
+```bash
+$ raps object list my-bucket
+Objects in 'my-bucket':
+┌────────────────────────────┬──────────────┬──────────────────────┐
+│ Key                        │ Size         │ Last Modified        │
+├────────────────────────────┼──────────────┼──────────────────────┤
+│ model.rvt                  │ 45.2 MB      │ 2024-01-15 10:30:00  │
+│ floor-plan.dwg             │ 2.1 MB       │ 2024-01-15 10:32:00  │
+│ elevation.dwg              │ 1.8 MB       │ 2024-01-15 10:33:00  │
+└────────────────────────────┴──────────────┴──────────────────────┘
+```
+
+**With prefix filter:**
+
+```bash
+raps object list my-bucket --prefix "projects/2024/"
+```
+
+## raps object signed-url
+
+Generate a pre-signed S3 URL for direct download.
+
+```bash
+raps object signed-url <bucket-key> <object-key> [--minutes MINUTES]
+```
+
+```bash
+$ raps object signed-url my-bucket model.rvt --minutes 60
+Signed URL (expires in 60 minutes):
+https://developer.api.autodesk.com/oss/v2/signedresources/...
+```
+
+**Use cases:**
+- Share temporary download links
+- Integrate with external systems
+- Enable direct client downloads
+
+## raps object urn
+
+Get the Base64-encoded URN for an object (required for translation).
+
+```bash
+$ raps object urn my-bucket model.rvt
+URN: dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6bXktYnVja2V0L21vZGVsLnJ2dA
+```
+
+**Save to variable:**
+
+```bash
+URN=$(raps object urn my-bucket model.rvt --output plain)
+raps translate start "$URN" --format svf2
+```
+
+## raps object delete
+
+Delete an object from a bucket.
+
+```bash
+$ raps object delete my-bucket model.rvt
+⚠ Warning: This will permanently delete 'model.rvt'
+  Are you sure? (y/N): y
+✓ Object deleted successfully
+```
+
+## Large File Uploads
+
+For files over 100 MB, RAPS automatically uses resumable multipart uploads:
+
+```bash
+$ raps object upload my-bucket large-model.ifc
+Uploading large-model.ifc (2.1 GB)...
+Using resumable upload (21 parts)...
+████████████████████████████████████████ 100%
+✓ Upload complete!
+```
+
+**Benefits:**
+- Resume interrupted uploads
+- Better performance for large files
+- Automatic retry on failures
+
+## CI/CD Examples
+
+### Upload and get URN
+
+```bash
+raps object upload my-bucket model.rvt
+URN=$(raps object urn my-bucket model.rvt --output plain)
+echo "Uploaded with URN: $URN"
+```
+
+### Batch upload entire directory
+
+```bash
+find ./models -name "*.dwg" | xargs -I {} raps object upload my-bucket {}
+```
+
+## Next Steps
+
+- [Translation](/docs/translation) — Convert uploaded models
+- [Data Management](/docs/data-management) — Work with BIM 360/ACC
+

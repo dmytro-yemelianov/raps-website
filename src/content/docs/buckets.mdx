@@ -1,0 +1,157 @@
+---
+title: "Bucket Commands"
+description: "Manage OSS buckets for file storage"
+section: "commands"
+order: 2
+icon: "📦"
+---
+
+# Bucket Commands
+
+Manage Object Storage Service (OSS) buckets for storing files.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps bucket create` | Create a new bucket |
+| `raps bucket list` | List all buckets |
+| `raps bucket details` | Get bucket details |
+| `raps bucket delete` | Delete a bucket |
+
+## raps bucket create
+
+Create a new OSS bucket interactively.
+
+```bash
+raps bucket create [--key KEY] [--policy POLICY] [--region REGION]
+```
+
+**Options:**
+- `--key, -k`: Bucket key (will prompt if not provided)
+- `--policy, -p`: Retention policy: `transient`, `temporary`, or `persistent`
+- `--region, -r`: Region: `US` or `EMEA`
+
+**Interactive Example:**
+
+```bash
+$ raps bucket create
+Note: Bucket keys must be globally unique across all APS applications.
+Suggestion: Use a prefix like 'aps-1234567890-yourname'
+Enter bucket key: aps-1234567890-mybucket
+Select region:
+  > US
+    EMEA
+Select retention policy:
+  > transient (deleted after 24 hours)
+    temporary (deleted after 30 days)
+    persistent (kept until deleted)
+
+✓ Bucket created successfully!
+  Key: aps-1234567890-mybucket
+  Policy: transient
+```
+
+**Non-interactive Example:**
+
+```bash
+$ raps bucket create --key my-bucket --policy persistent --region US
+✓ Bucket created successfully!
+```
+
+### Retention Policies
+
+| Policy | Description |
+|--------|-------------|
+| `transient` | Deleted automatically after 24 hours |
+| `temporary` | Deleted automatically after 30 days |
+| `persistent` | Kept until manually deleted |
+
+### Bucket Key Rules
+
+- Must be globally unique across all APS applications
+- 3-128 characters
+- Lowercase letters, numbers, hyphens, underscores, and dots only
+
+## raps bucket list
+
+List all buckets from all regions.
+
+```bash
+$ raps bucket list
+Fetching buckets from all regions...
+
+US Region:
+┌────────────────────────────────────┬────────────┬──────────────────────┐
+│ Key                                │ Policy     │ Created              │
+├────────────────────────────────────┼────────────┼──────────────────────┤
+│ my-app-models                      │ persistent │ 2024-01-10 10:30:00  │
+│ temp-uploads-12345                 │ transient  │ 2024-01-15 14:22:00  │
+└────────────────────────────────────┴────────────┴──────────────────────┘
+
+EMEA Region:
+┌────────────────────────────────────┬────────────┬──────────────────────┐
+│ Key                                │ Policy     │ Created              │
+├────────────────────────────────────┼────────────┼──────────────────────┤
+│ eu-project-files                   │ persistent │ 2024-01-08 09:15:00  │
+└────────────────────────────────────┴────────────┴──────────────────────┘
+```
+
+**JSON Output:**
+
+```bash
+raps bucket list --output json
+```
+
+## raps bucket details
+
+Get detailed information about a specific bucket.
+
+```bash
+$ raps bucket details my-bucket
+Bucket Details:
+  Key: my-bucket
+  Policy: persistent
+  Owner: abc123xyz
+  Created: 2024-01-10 10:30:00 UTC
+```
+
+## raps bucket delete
+
+Delete an empty bucket.
+
+```bash
+$ raps bucket delete my-bucket
+⚠ Warning: This will permanently delete bucket 'my-bucket'
+  Are you sure? (y/N): y
+✓ Bucket deleted successfully
+```
+
+**Force delete (skip confirmation):**
+
+```bash
+raps bucket delete my-bucket --force
+```
+
+> **Note:** Buckets must be empty before deletion. Delete all objects first.
+
+## CI/CD Examples
+
+### Create bucket with unique name
+
+```bash
+BUCKET_KEY="app-$(date +%s)-$CI_JOB_ID"
+raps bucket create --key "$BUCKET_KEY" --policy transient --region US
+```
+
+### List buckets as JSON for processing
+
+```bash
+raps bucket list --output json | jq '.[] | select(.policy == "persistent")'
+```
+
+## Next Steps
+
+- [Object operations](/docs/objects) — Upload and manage files
+- [Translation](/docs/translation) — Convert models to viewable formats
+
