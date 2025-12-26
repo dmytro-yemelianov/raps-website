@@ -2,8 +2,8 @@
 const navItems = [
   { href: '/', label: 'Home' },
   { href: '/docs', label: 'Docs' },
+  { href: '/api-coverage', label: 'API Coverage' },
   { href: '/quickstart', label: 'Quick Start' },
-  { href: '/blog', label: 'Blog' },
   { href: '/changelog', label: 'Changelog' },
   { href: '/about', label: 'About' },
 ];
@@ -41,6 +41,7 @@ const isActive = (href: string) => {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
               item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400 hover:text-rapeseed-300',
               item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400 hover:text-emerald-300',
+              item.label === 'API Coverage' && !isActive(item.href) && 'text-purple-400 hover:text-purple-300',
             ]}
           >
             {item.label}
@@ -96,6 +97,7 @@ const isActive = (href: string) => {
               : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
             item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400',
             item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400',
+            item.label === 'API Coverage' && !isActive(item.href) && 'text-purple-400',
           ]}
         >
           {item.label}
