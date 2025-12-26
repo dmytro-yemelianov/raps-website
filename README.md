@@ -1,0 +1,146 @@
+# RAPS Website
+
+The official website and blog for [RAPS](https://github.com/dmytro-yemelianov/raps) - Rust APS CLI.
+
+🌐 **Live site:** [raps.dev](https://raps.dev) (or your deployment URL)
+
+## Features
+
+- **Landing page** — Marketing and product overview
+- **Blog** — Technical articles on APS automation and CI/CD
+- **Changelog** — Release history with detailed change notes
+- **About** — Author information and project background
+- **RSS feed** — Subscribe to blog updates
+- **SEO optimized** — Open Graph, Twitter cards, structured data
+
+## Tech Stack
+
+- [Astro](https://astro.build/) — Static site generator
+- [Tailwind CSS](https://tailwindcss.com/) — Utility-first styling
+- [MDX](https://mdxjs.com/) — Markdown with components for blog posts
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/dmytro-yemelianov/raps-website.git
+cd raps-website
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The site will be available at `http://localhost:4321`.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build locally |
+
+## Project Structure
+
+```
+raps-website/
+├── public/              # Static assets (favicon, images)
+├── src/
+│   ├── components/      # Reusable UI components
+│   ├── content/
+│   │   └── blog/        # Blog posts (MDX files)
+│   ├── layouts/         # Page layouts
+│   └── pages/           # Routes
+│       ├── index.astro  # Landing page
+│       ├── about.astro  # About page
+│       ├── changelog.astro
+│       └── blog/        # Blog listing and posts
+├── astro.config.mjs
+├── tailwind.config.mjs
+└── package.json
+```
+
+## Writing Blog Posts
+
+Create a new `.mdx` file in `src/content/blog/`:
+
+```mdx
+---
+title: "Your Post Title"
+description: "A brief description for SEO and previews"
+pubDate: 2026-01-15
+author: "Dmytro Yemelianov"
+tags: ["ci-cd", "automation"]
+series: "DevOps for Design"  # Optional
+seriesOrder: 1               # Optional
+---
+
+Your content here...
+```
+
+### Frontmatter Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | Yes | Post title |
+| `description` | Yes | Short description for SEO |
+| `pubDate` | Yes | Publication date (YYYY-MM-DD) |
+| `author` | No | Author name (default: Dmytro Yemelianov) |
+| `tags` | No | Array of tags for categorization |
+| `image` | No | OG image path |
+| `draft` | No | Set to `true` to hide from listing |
+| `series` | No | Series name for related posts |
+| `seriesOrder` | No | Order within the series |
+
+## Deployment
+
+### GitHub Pages
+
+The site is configured for GitHub Pages deployment via GitHub Actions.
+
+1. Go to repository Settings → Pages
+2. Set Source to "GitHub Actions"
+3. Push to `main` branch to trigger deployment
+
+### Custom Domain
+
+1. Add your domain in GitHub Pages settings
+2. Update `site` in `astro.config.mjs`:
+   ```js
+   site: 'https://raps.dev'
+   ```
+3. Add DNS records:
+   - A record: `185.199.108.153` (GitHub Pages IPs)
+   - CNAME: `your-username.github.io`
+
+### Vercel / Netlify
+
+The site can also be deployed to:
+
+- **Vercel:** Connect repo, auto-detected as Astro
+- **Netlify:** Connect repo, build command `npm run build`, publish directory `dist`
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE)
+
+---
+
+Built with ❤️ by [Dmytro Yemelianov](https://www.linkedin.com/in/dmytro-yemelianov/)

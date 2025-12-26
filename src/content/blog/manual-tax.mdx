@@ -1,0 +1,104 @@
+---
+title: "The Manual Tax: What AEC Loses Without CI/CD"
+description: "The AEC industry has embraced sophisticated design technology but still operates with manual processes that software development abandoned decades ago. Here's what that costs us."
+pubDate: 2026-01-15
+author: "Dmytro Yemelianov"
+tags: ["ci-cd", "automation", "industry"]
+series: "DevOps for Design"
+seriesOrder: 1
+---
+
+## The State of AEC Automation
+
+Walk into any software company today, and you'll find automated testing, continuous integration, and deployment pipelines that move code from a developer's laptop to production with minimal human intervention. Now walk into an AEC firm's BIM department.
+
+What do you see? Someone manually uploading Revit files to BIM 360. A coordinator clicking through the Autodesk Platform Services web interface to check translation status. An email chain deciding whether a model is "ready" for the next phase.
+
+This is the **manual tax** — the cumulative cost of human intervention in processes that could be automated.
+
+## What Manual Processes Actually Cost
+
+### Time
+
+Consider a typical model coordination workflow:
+
+1. Designer saves model locally (1 min)
+2. Opens browser, navigates to ACC (1 min)
+3. Uploads file, waits for transfer (5-15 min depending on size)
+4. Triggers translation (1 min + wait)
+5. Checks status periodically (10-30 min of interrupted work)
+6. Emails team that model is ready (2 min)
+7. Each team member downloads and opens (5 min × N people)
+
+That's **30-60 minutes per upload**, multiplied by dozens of uploads per week, across multiple team members. The time adds up to weeks of lost productivity per year.
+
+### Errors
+
+Manual processes introduce errors at every step:
+
+- Wrong file version uploaded
+- Translation started with wrong parameters
+- Notification sent before translation completed
+- Team member missed the email and used outdated model
+
+In software development, these would be caught by automated tests. In AEC, they're often discovered days or weeks later during coordination meetings.
+
+### Context Switching
+
+The most insidious cost is cognitive. When a designer has to stop their creative work to:
+
+1. Remember where to upload
+2. Navigate through web interfaces
+3. Check back periodically for completion
+4. Compose and send notifications
+
+...they lose the mental context of their design work. Studies suggest it takes **23 minutes** to fully regain focus after an interruption.
+
+## What Software Development Learned
+
+The software industry went through this exact evolution. In the 1990s, "builds" were manual processes — someone would compile the code, run some tests by hand, and decide if it was ready to ship.
+
+Then came continuous integration. The rules were simple:
+
+1. **Automate everything repeatable** — if a human does it the same way twice, a computer should do it
+2. **Fail fast** — catch errors in minutes, not days
+3. **Single source of truth** — one process, documented in code, that everyone follows
+4. **Observability** — know the status of everything at any moment
+
+The results were transformative. Teams that adopted CI/CD shipped faster, with fewer bugs, and with happier developers.
+
+## Bringing CI/CD to APS
+
+This is why I built RAPS. The Autodesk Platform Services APIs are powerful and comprehensive — they expose everything needed to automate AEC workflows. But they've been accessible primarily to developers comfortable with REST APIs and OAuth flows.
+
+RAPS bridges that gap with a command-line interface that makes APS automation accessible:
+
+```bash
+# This is what a CI/CD pipeline looks like
+raps auth test
+raps object upload my-bucket model.rvt
+raps translate start $URN --format svf2 --wait
+raps translate manifest $URN --output json
+```
+
+Four commands. No clicking. No waiting. No email chains.
+
+When this runs in a GitHub Actions workflow, it happens automatically every time a model changes. The team is notified through Slack or Teams. Errors are caught immediately. The status is visible in a dashboard, not someone's inbox.
+
+## The Path Forward
+
+Adopting CI/CD for APS workflows doesn't require rewriting your entire process overnight. Start small:
+
+1. **Automate one workflow** — pick the most painful manual process
+2. **Measure the improvement** — time saved, errors avoided
+3. **Expand gradually** — add more workflows as the team gains confidence
+
+The tools exist. The APIs are mature. The patterns are proven from decades of software development.
+
+The only question is: how long do you want to keep paying the manual tax?
+
+---
+
+*This is the first article in the "DevOps for Design" series. [Next: CI/CD 101 for AEC Professionals →](/blog/cicd-101-for-aec)*
+
+*Have questions about automating your APS workflows? [Open an issue on GitHub](https://github.com/dmytro-yemelianov/raps/issues) or connect with me on [LinkedIn](https://www.linkedin.com/in/dmytro-yemelianov/).*

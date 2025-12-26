@@ -1,0 +1,320 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const features = [
+  {
+    icon: '🔐',
+    title: 'Authentication',
+    description: '2-legged, 3-legged OAuth, device-code, and token-based auth for any scenario.',
+  },
+  {
+    icon: '📦',
+    title: 'Object Storage',
+    description: 'Upload, download, batch process with resumable multipart uploads.',
+  },
+  {
+    icon: '🔄',
+    title: 'Model Translation',
+    description: 'Translate CAD files to SVF2, OBJ, STL, STEP with status polling.',
+  },
+  {
+    icon: '🏗️',
+    title: 'Data Management',
+    description: 'Browse hubs, projects, folders. Full BIM 360/ACC integration.',
+  },
+  {
+    icon: '⚙️',
+    title: 'Design Automation',
+    description: 'Manage engines, activities, and work items for batch processing.',
+  },
+  {
+    icon: '📋',
+    title: 'ACC Modules',
+    description: 'Issues, RFIs, Assets, Submittals, Checklists — all from CLI.',
+  },
+];
+
+const stats = [
+  { value: '15+', label: 'APS APIs Covered' },
+  { value: '100+', label: 'Commands' },
+  { value: '6', label: 'Output Formats' },
+  { value: '5', label: 'Platforms' },
+];
+---
+
+<BaseLayout title="CI/CD for Autodesk Platform Services">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden">
+    <!-- Background gradient -->
+    <div class="absolute inset-0 bg-gradient-to-b from-primary-950/50 to-transparent pointer-events-none"></div>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 sm:pt-32 sm:pb-24">
+      <div class="text-center">
+        <!-- Badge -->
+        <a
+          href="https://github.com/dmytro-yemelianov/raps/releases"
+          class="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-300 hover:border-primary-500/50 transition-colors mb-8"
+        >
+          <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          v2.0.0 Released — See what's new →
+        </a>
+        
+        <!-- Headline -->
+        <h1 class="text-4xl sm:text-6xl font-bold text-white mb-6 tracking-tight">
+          CI/CD for
+          <span class="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+            Autodesk Platform Services
+          </span>
+        </h1>
+        
+        <!-- Subheadline -->
+        <p class="text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+          Stop clicking buttons. Start writing pipelines.
+          RAPS brings modern DevOps practices to APS with a fast, reliable CLI written in Rust.
+        </p>
+        
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/releases"
+            class="w-full sm:w-auto px-8 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download RAPS
+          </a>
+          <a
+            href="/docs"
+            class="w-full sm:w-auto px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors border border-slate-700"
+          >
+            Read Documentation
+          </a>
+        </div>
+        
+        <!-- Terminal Demo -->
+        <div class="max-w-3xl mx-auto">
+          <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
+            <!-- Terminal header -->
+            <div class="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border-b border-slate-800">
+              <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+              </div>
+              <span class="text-sm text-slate-500 ml-2">Terminal</span>
+            </div>
+            <!-- Terminal content -->
+            <div class="p-6 font-mono text-sm text-left overflow-x-auto">
+              <div class="text-slate-500"># Install RAPS</div>
+              <div class="text-green-400">$ <span class="text-white">cargo install raps</span></div>
+              <div class="mt-4 text-slate-500"># Test authentication</div>
+              <div class="text-green-400">$ <span class="text-white">raps auth test</span></div>
+              <div class="text-slate-300">✓ 2-legged authentication successful</div>
+              <div class="mt-4 text-slate-500"># Upload and translate a model</div>
+              <div class="text-green-400">$ <span class="text-white">raps object upload my-bucket model.rvt</span></div>
+              <div class="text-slate-300">Uploading model.rvt... ████████████████ 100%</div>
+              <div class="text-green-400">$ <span class="text-white">raps translate start $URN --format svf2 --wait</span></div>
+              <div class="text-slate-300">Translation complete in 47s</div>
+              <div class="mt-4 text-slate-500"># Export as JSON for CI/CD</div>
+              <div class="text-green-400">$ <span class="text-white">raps translate manifest $URN --output json | jq</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Stats Section -->
+  <section class="py-12 border-y border-slate-800 bg-slate-900/50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        {stats.map((stat) => (
+          <div class="text-center">
+            <div class="text-3xl sm:text-4xl font-bold text-white mb-1">{stat.value}</div>
+            <div class="text-sm text-slate-400">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  
+  <!-- Features Section -->
+  <section class="py-20 sm:py-28">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+          Everything you need for APS automation
+        </h2>
+        <p class="text-lg text-slate-400 max-w-2xl mx-auto">
+          From authentication to model translation, RAPS provides comprehensive coverage
+          of Autodesk Platform Services APIs.
+        </p>
+      </div>
+      
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map((feature) => (
+          <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 transition-colors group">
+            <div class="text-3xl mb-4">{feature.icon}</div>
+            <h3 class="text-lg font-semibold text-white mb-2 group-hover:text-primary-400 transition-colors">
+              {feature.title}
+            </h3>
+            <p class="text-slate-400 text-sm">
+              {feature.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  
+  <!-- Why RAPS Section -->
+  <section class="py-20 sm:py-28 bg-slate-900/50 border-y border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
+            Why RAPS?
+          </h2>
+          <div class="space-y-6">
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-10 h-10 bg-primary-500/10 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-white mb-1">Built for CI/CD</h3>
+                <p class="text-slate-400 text-sm">Standardized exit codes, JSON/YAML output, non-interactive mode. Designed from day one for automation pipelines.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-10 h-10 bg-rust-500/10 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-rust-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-white mb-1">Written in Rust</h3>
+                <p class="text-slate-400 text-sm">Fast, memory-safe, single binary. No runtime dependencies. Works on Windows, macOS, Linux.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-10 h-10 bg-accent-500/10 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-white mb-1">Comprehensive Coverage</h3>
+                <p class="text-slate-400 text-sm">15+ APS APIs. OSS, Model Derivative, Data Management, Design Automation, ACC Issues, RFIs, and more.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-white mb-1">Pipeline Automation</h3>
+                <p class="text-slate-400 text-sm">YAML/JSON pipeline definitions, variable substitution, conditional execution, dry-run mode.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Code example -->
+        <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border-b border-slate-800">
+            <span class="text-sm text-slate-400">pipeline.yml</span>
+          </div>
+          <div class="p-6 font-mono text-sm overflow-x-auto">
+            <pre class="text-slate-300"><code><span class="text-slate-500"># GitHub Actions workflow</span>
+<span class="text-primary-400">name:</span> APS Model Pipeline
+
+<span class="text-primary-400">on:</span>
+  <span class="text-primary-400">push:</span>
+    <span class="text-primary-400">paths:</span>
+      - <span class="text-green-400">'models/**'</span>
+
+<span class="text-primary-400">jobs:</span>
+  <span class="text-primary-400">translate:</span>
+    <span class="text-primary-400">runs-on:</span> ubuntu-latest
+    <span class="text-primary-400">container:</span> ghcr.io/dmytro-yemelianov/raps
+    <span class="text-primary-400">steps:</span>
+      - <span class="text-primary-400">run:</span> raps auth test
+      - <span class="text-primary-400">run:</span> |
+          raps object upload $BUCKET model.rvt
+          raps translate start $URN --wait
+          raps translate manifest $URN -o json</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- About Section -->
+  <section class="py-20 sm:py-28">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
+          Built by an APS Expert
+        </h2>
+        <p class="text-lg text-slate-400 mb-8">
+          RAPS is created by Dmytro Yemelianov, an Autodesk Expert Elite with 15+ years
+          of experience in Autodesk platform development. ADN member since 2012.
+        </p>
+        <div class="flex items-center justify-center gap-4">
+          <a
+            href="/about"
+            class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors border border-slate-700"
+          >
+            Learn More
+          </a>
+          <a
+            href="https://www.linkedin.com/in/dmytro-yemelianov/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-2.5 text-slate-400 hover:text-white font-medium transition-colors"
+          >
+            Connect on LinkedIn →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- CTA Section -->
+  <section class="py-20 sm:py-28 bg-gradient-to-b from-primary-950/50 to-slate-950">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
+        Ready to automate your APS workflow?
+      </h2>
+      <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto">
+        Get started with RAPS in minutes. Available on Windows, macOS, Linux,
+        Docker, and as a GitHub Action.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a
+          href="https://github.com/dmytro-yemelianov/raps/releases"
+          class="w-full sm:w-auto px-8 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-lg transition-colors"
+        >
+          Download RAPS
+        </a>
+        <a
+          href="https://github.com/dmytro-yemelianov/raps"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="w-full sm:w-auto px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors border border-slate-700 flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+          </svg>
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
