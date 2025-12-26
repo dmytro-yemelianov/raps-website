@@ -5,6 +5,10 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   site: 'https://rapscli.xyz',
+  trailingSlash: 'ignore',
+  build: {
+    format: 'directory',
+  },
   integrations: [
     mdx(),
     sitemap(),
