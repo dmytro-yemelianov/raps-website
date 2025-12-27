@@ -434,10 +434,11 @@ const navSections = [
       });
       
       // Initialize Mermaid diagrams
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', async () => {
         if (typeof mermaid !== 'undefined') {
+          // Initialize mermaid with config (don't auto-start)
           mermaid.initialize({
-            startOnLoad: true,
+            startOnLoad: false,
             theme: 'dark',
             themeVariables: {
               primaryColor: '#1e293b',
@@ -490,6 +491,33 @@ const navSections = [
               useMaxWidth: true,
             },
           });
+          
+          // Find all mermaid code blocks (rendered by Shiki as <pre><code class="language-mermaid">)
+          const codeBlocks = document.querySelectorAll('pre code.language-mermaid, pre code[class*="language-mermaid"]');
+          
+          for (let i = 0; i < codeBlocks.length; i++) {
+            const codeEl = codeBlocks[i];
+            const preEl = codeEl.parentElement;
+            const diagramCode = codeEl.textContent || '';
+            
+            // Create a container div for the rendered diagram
+            const container = document.createElement('div');
+            container.className = 'mermaid-diagram';
+            
+            try {
+              // Render the diagram
+              const { svg } = await mermaid.render(`mermaid-${i}`, diagramCode);
+              container.innerHTML = svg;
+              
+              // Replace the pre element with the rendered diagram
+              preEl.parentNode.replaceChild(container, preEl);
+            } catch (e) {
+              console.error('Mermaid render error:', e);
+              // Show error message in the container
+              container.innerHTML = `<div class="mermaid-error">Diagram rendering error: ${e.message}</div>`;
+              preEl.parentNode.replaceChild(container, preEl);
+            }
+          }
         }
       });
     </script>
@@ -580,16 +608,22 @@ const navSections = [
   
   /* Mermaid diagram styling */
   .docs-content .mermaid,
-  .docs-content pre.mermaid {
+  .docs-content pre.mermaid,
+  .docs-content .mermaid-diagram {
     @apply bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 my-6 overflow-x-auto;
     display: flex;
     justify-content: center;
     min-height: 100px;
   }
   
-  .docs-content .mermaid svg {
+  .docs-content .mermaid svg,
+  .docs-content .mermaid-diagram svg {
     max-width: 100%;
     height: auto;
+  }
+  
+  .docs-content .mermaid-error {
+    @apply text-red-400 text-sm p-4;
   }
   
   /* Override code block styles for mermaid */
@@ -602,7 +636,11 @@ const navSections = [
   .mermaid .node rect,
   .mermaid .node polygon,
   .mermaid .node circle,
-  .mermaid .node ellipse {
+  .mermaid .node ellipse,
+  .mermaid-diagram .node rect,
+  .mermaid-diagram .node polygon,
+  .mermaid-diagram .node circle,
+  .mermaid-diagram .node ellipse {
     fill: #1e293b !important;
     stroke: #f5c542 !important;
     stroke-width: 1.5px !important;
@@ -610,88 +648,114 @@ const navSections = [
   
   .mermaid .nodeLabel,
   .mermaid .label,
-  .mermaid text {
+  .mermaid text,
+  .mermaid-diagram .nodeLabel,
+  .mermaid-diagram .label,
+  .mermaid-diagram text {
     fill: #f1f5f9 !important;
     color: #f1f5f9 !important;
   }
   
-  .mermaid .edgePath path.path {
+  .mermaid .edgePath path.path,
+  .mermaid-diagram .edgePath path.path {
     stroke: #64748b !important;
     stroke-width: 1.5px !important;
   }
   
   .mermaid .arrowheadPath,
-  .mermaid marker path {
+  .mermaid marker path,
+  .mermaid-diagram .arrowheadPath,
+  .mermaid-diagram marker path {
     fill: #64748b !important;
     stroke: #64748b !important;
   }
   
-  .mermaid .cluster rect {
+  .mermaid .cluster rect,
+  .mermaid-diagram .cluster rect {
     fill: #0f172a !important;
     stroke: #334155 !important;
     rx: 8px !important;
   }
   
   .mermaid .cluster-label .nodeLabel,
-  .mermaid .cluster span {
+  .mermaid .cluster span,
+  .mermaid-diagram .cluster-label .nodeLabel,
+  .mermaid-diagram .cluster span {
     color: #94a3b8 !important;
     fill: #94a3b8 !important;
   }
   
-  .mermaid .actor {
+  .mermaid .actor,
+  .mermaid-diagram .actor {
     fill: #1e293b !important;
     stroke: #f5c542 !important;
   }
   
-  .mermaid text.actor {
+  .mermaid text.actor,
+  .mermaid-diagram text.actor {
     fill: #f1f5f9 !important;
   }
   
   .mermaid .messageLine0,
-  .mermaid .messageLine1 {
+  .mermaid .messageLine1,
+  .mermaid-diagram .messageLine0,
+  .mermaid-diagram .messageLine1 {
     stroke: #64748b !important;
   }
   
-  .mermaid .messageText {
+  .mermaid .messageText,
+  .mermaid-diagram .messageText {
     fill: #f1f5f9 !important;
   }
   
   .mermaid .activation0,
   .mermaid .activation1,
-  .mermaid .activation2 {
+  .mermaid .activation2,
+  .mermaid-diagram .activation0,
+  .mermaid-diagram .activation1,
+  .mermaid-diagram .activation2 {
     fill: #334155 !important;
     stroke: #f5c542 !important;
   }
   
-  .mermaid .loopLine {
+  .mermaid .loopLine,
+  .mermaid-diagram .loopLine {
     stroke: #475569 !important;
   }
   
   .mermaid .loopText,
-  .mermaid .loopText tspan {
+  .mermaid .loopText tspan,
+  .mermaid-diagram .loopText,
+  .mermaid-diagram .loopText tspan {
     fill: #94a3b8 !important;
   }
   
-  .mermaid .note {
+  .mermaid .note,
+  .mermaid-diagram .note {
     fill: #1e293b !important;
     stroke: #f5c542 !important;
   }
   
-  .mermaid .noteText {
+  .mermaid .noteText,
+  .mermaid-diagram .noteText {
     fill: #f1f5f9 !important;
   }
   
-  .mermaid .labelBox {
+  .mermaid .labelBox,
+  .mermaid-diagram .labelBox {
     fill: #1e293b !important;
     stroke: #334155 !important;
   }
   
   .mermaid .labelText,
-  .mermaid .labelText tspan {
+  .mermaid .labelText tspan,
+  .mermaid-diagram .labelText,
+  .mermaid-diagram .labelText tspan {
     fill: #f1f5f9 !important;
   }
   
-  .mermaid line {
+  .mermaid line,
+  .mermaid-diagram line {
     stroke: #475569 !important;
   }
 </style>
