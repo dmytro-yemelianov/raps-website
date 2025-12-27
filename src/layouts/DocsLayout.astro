@@ -33,7 +33,7 @@ const getCurrentSection = () => {
 
 const currentSection = getCurrentSection();
 
-// Navigation structure - all sections are collapsible
+// Navigation structure
 const navSections = [
   {
     id: 'getting-started',
@@ -97,11 +97,15 @@ const navSections = [
   },
 ];
 
-// Clean up title for display
 const cleanTitle = (title: string) => {
   return title
     .replace(/^Cookbook:\s*/i, '')
     .replace(/^Recipe:\s*/i, '');
+};
+
+// Check if section contains current page
+const sectionContainsCurrent = (sectionId: string) => {
+  return currentSection === sectionId;
 };
 ---
 
@@ -134,24 +138,24 @@ const cleanTitle = (title: string) => {
     <div class="flex">
       <!-- Sidebar -->
       <aside class="hidden lg:block w-64 fixed left-0 top-16 bottom-0 overflow-y-auto border-r border-slate-800/50 bg-slate-950">
-        <nav class="py-6 px-4">
+        <nav class="py-6 px-4" id="docs-nav">
           {navSections.map(section => (
             section.items.length > 0 && (
-              <div class="nav-section mb-2" data-section={section.id}>
+              <div class="nav-section mb-1" data-section={section.id}>
                 <button
                   class:list={[
                     "nav-toggle w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    currentSection === section.id
-                      ? "text-white bg-slate-800/50"
+                    sectionContainsCurrent(section.id)
+                      ? "text-white"
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
                   ]}
-                  data-expanded={currentSection === section.id ? "true" : "false"}
+                  data-expanded={sectionContainsCurrent(section.id) ? "true" : "false"}
                 >
                   <span>{section.title}</span>
                   <svg
                     class:list={[
-                      "nav-chevron w-4 h-4 transition-transform",
-                      currentSection === section.id ? "rotate-180" : ""
+                      "nav-chevron w-4 h-4 transition-transform duration-200",
+                      sectionContainsCurrent(section.id) ? "rotate-180" : ""
                     ]}
                     fill="none"
                     stroke="currentColor"
@@ -163,8 +167,8 @@ const cleanTitle = (title: string) => {
                 
                 <ul
                   class:list={[
-                    "nav-items mt-1 ml-3 border-l border-slate-800 overflow-hidden",
-                    currentSection === section.id ? "" : "hidden"
+                    "nav-items mt-1 ml-3 border-l border-slate-800 transition-all duration-200",
+                    sectionContainsCurrent(section.id) ? "" : "hidden"
                   ]}
                 >
                   {section.items.map(doc => (
@@ -175,8 +179,9 @@ const cleanTitle = (title: string) => {
                           "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
                           currentSlug === doc.slug
                             ? "text-rapeseed-400 border-rapeseed-400 font-medium"
-                            : "text-slate-400 border-transparent hover:text-slate-200 hover:border-slate-600"
+                            : "text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600"
                         ]}
+                        data-current={currentSlug === doc.slug ? "true" : undefined}
                       >
                         {cleanTitle(doc.data.title)}
                       </a>
@@ -215,21 +220,21 @@ const cleanTitle = (title: string) => {
           <nav class="py-4 px-3">
             {navSections.map(section => (
               section.items.length > 0 && (
-                <div class="nav-section mb-2" data-section={section.id}>
+                <div class="nav-section mb-1" data-section={section.id}>
                   <button
                     class:list={[
                       "nav-toggle w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                      currentSection === section.id
-                        ? "text-white bg-slate-800/50"
+                      sectionContainsCurrent(section.id)
+                        ? "text-white"
                         : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
                     ]}
-                    data-expanded={currentSection === section.id ? "true" : "false"}
+                    data-expanded={sectionContainsCurrent(section.id) ? "true" : "false"}
                   >
                     <span>{section.title}</span>
                     <svg
                       class:list={[
-                        "nav-chevron w-4 h-4 transition-transform",
-                        currentSection === section.id ? "rotate-180" : ""
+                        "nav-chevron w-4 h-4 transition-transform duration-200",
+                        sectionContainsCurrent(section.id) ? "rotate-180" : ""
                       ]}
                       fill="none"
                       stroke="currentColor"
@@ -241,8 +246,8 @@ const cleanTitle = (title: string) => {
                   
                   <ul
                     class:list={[
-                      "nav-items mt-1 ml-3 border-l border-slate-700 overflow-hidden",
-                      currentSection === section.id ? "" : "hidden"
+                      "nav-items mt-1 ml-3 border-l border-slate-700 transition-all duration-200",
+                      sectionContainsCurrent(section.id) ? "" : "hidden"
                     ]}
                   >
                     {section.items.map(doc => (
@@ -253,7 +258,7 @@ const cleanTitle = (title: string) => {
                             "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
                             currentSlug === doc.slug
                               ? "text-rapeseed-400 border-rapeseed-400 font-medium"
-                              : "text-slate-400 border-transparent hover:text-slate-200 hover:border-slate-600"
+                              : "text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600"
                           ]}
                         >
                           {cleanTitle(doc.data.title)}
@@ -276,7 +281,7 @@ const cleanTitle = (title: string) => {
       </main>
     </div>
     
-    <!-- Mermaid.js for diagram rendering -->
+    <!-- Mermaid.js -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     
     <script>
@@ -286,19 +291,17 @@ const cleanTitle = (title: string) => {
       const close = document.getElementById('docs-menu-close');
       const backdrop = document.getElementById('docs-sidebar-backdrop');
       
-      function openSidebar() {
+      toggle?.addEventListener('click', () => {
         sidebar?.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-      }
+      });
       
-      function closeSidebar() {
-        sidebar?.classList.add('hidden');
-        document.body.style.overflow = '';
-      }
-      
-      toggle?.addEventListener('click', openSidebar);
-      close?.addEventListener('click', closeSidebar);
-      backdrop?.addEventListener('click', closeSidebar);
+      [close, backdrop].forEach(el => {
+        el?.addEventListener('click', () => {
+          sidebar?.classList.add('hidden');
+          document.body.style.overflow = '';
+        });
+      });
       
       // Collapsible navigation
       document.querySelectorAll('.nav-toggle').forEach(button => {
@@ -309,16 +312,73 @@ const cleanTitle = (title: string) => {
           const isExpanded = button.getAttribute('data-expanded') === 'true';
           
           if (items) {
-            if (isExpanded) {
-              items.classList.add('hidden');
-              button.setAttribute('data-expanded', 'false');
-              chevron?.classList.remove('rotate-180');
-            } else {
-              items.classList.remove('hidden');
-              button.setAttribute('data-expanded', 'true');
-              chevron?.classList.add('rotate-180');
-            }
+            items.classList.toggle('hidden', isExpanded);
+            button.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
+            chevron?.classList.toggle('rotate-180', !isExpanded);
           }
+        });
+      });
+      
+      // Scroll current nav item into view
+      document.addEventListener('DOMContentLoaded', () => {
+        const currentLink = document.querySelector('#docs-nav a[data-current="true"]');
+        if (currentLink) {
+          currentLink.scrollIntoView({ block: 'center', behavior: 'instant' });
+        }
+      });
+      
+      // Add copy buttons to code blocks
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.docs-content pre').forEach(pre => {
+          // Skip mermaid blocks
+          if (pre.getAttribute('data-language') === 'mermaid') return;
+          
+          // Create wrapper
+          const wrapper = document.createElement('div');
+          wrapper.className = 'code-block-wrapper';
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+          
+          // Get language
+          const lang = pre.getAttribute('data-language') || '';
+          
+          // Create header
+          const header = document.createElement('div');
+          header.className = 'code-block-header';
+          
+          // Language label
+          if (lang) {
+            const langLabel = document.createElement('span');
+            langLabel.className = 'code-lang';
+            langLabel.textContent = lang;
+            header.appendChild(langLabel);
+          } else {
+            header.appendChild(document.createElement('span'));
+          }
+          
+          // Copy button
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'copy-btn';
+          copyBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>`;
+          copyBtn.title = 'Copy code';
+          
+          copyBtn.addEventListener('click', async () => {
+            const code = pre.querySelector('code')?.textContent || pre.textContent || '';
+            await navigator.clipboard.writeText(code);
+            copyBtn.innerHTML = `<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>`;
+            setTimeout(() => {
+              copyBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>`;
+            }, 2000);
+          });
+          
+          header.appendChild(copyBtn);
+          wrapper.insertBefore(header, pre);
         });
       });
       
@@ -424,6 +484,27 @@ const cleanTitle = (title: string) => {
   
   .docs-content code:not(pre code) {
     @apply bg-slate-800 text-rapeseed-400 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  
+  /* Code blocks with header */
+  .docs-content .code-block-wrapper {
+    @apply mb-4 rounded-lg overflow-hidden border border-slate-800;
+  }
+  
+  .docs-content .code-block-header {
+    @apply flex items-center justify-between px-4 py-2 bg-slate-800/80 border-b border-slate-700/50;
+  }
+  
+  .docs-content .code-lang {
+    @apply text-xs font-medium text-slate-400 uppercase tracking-wider;
+  }
+  
+  .docs-content .copy-btn {
+    @apply p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-colors;
+  }
+  
+  .docs-content .code-block-wrapper pre {
+    @apply mb-0 border-0 rounded-none;
   }
   
   .docs-content pre {
