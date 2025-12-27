@@ -1,0 +1,108 @@
+---
+interface Props {
+  chart: string;
+  class?: string;
+}
+
+const { chart, class: className = '' } = Astro.props;
+---
+
+<div class:list={["mermaid-container", className]}>
+  <pre class="mermaid">{chart}</pre>
+</div>
+
+<style>
+  .mermaid-container {
+    @apply my-6 overflow-x-auto;
+  }
+  
+  .mermaid {
+    @apply bg-slate-900/50 border border-slate-700/50 rounded-xl p-6;
+    display: flex;
+    justify-content: center;
+    min-height: 100px;
+  }
+  
+  /* Loading state */
+  .mermaid:not([data-processed="true"]) {
+    @apply text-slate-500 text-sm;
+  }
+  
+  /* Mermaid theme overrides for dark mode */
+  :global(.mermaid svg) {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  :global(.mermaid .node rect),
+  :global(.mermaid .node polygon) {
+    fill: #1e293b !important;
+    stroke: #f5c542 !important;
+    stroke-width: 1.5px !important;
+  }
+  
+  :global(.mermaid .nodeLabel),
+  :global(.mermaid .label) {
+    color: #f1f5f9 !important;
+    fill: #f1f5f9 !important;
+  }
+  
+  :global(.mermaid .edgePath path.path) {
+    stroke: #64748b !important;
+    stroke-width: 1.5px !important;
+  }
+  
+  :global(.mermaid .arrowheadPath) {
+    fill: #64748b !important;
+  }
+  
+  :global(.mermaid .cluster rect) {
+    fill: #0f172a !important;
+    stroke: #334155 !important;
+    rx: 8px !important;
+  }
+  
+  :global(.mermaid .cluster-label .nodeLabel) {
+    color: #94a3b8 !important;
+    fill: #94a3b8 !important;
+  }
+  
+  :global(.mermaid .messageText),
+  :global(.mermaid .loopText) {
+    fill: #f1f5f9 !important;
+  }
+  
+  :global(.mermaid .actor) {
+    fill: #1e293b !important;
+    stroke: #f5c542 !important;
+  }
+  
+  :global(.mermaid text.actor) {
+    fill: #f1f5f9 !important;
+  }
+  
+  :global(.mermaid .messageLine0),
+  :global(.mermaid .messageLine1) {
+    stroke: #64748b !important;
+  }
+  
+  :global(.mermaid .activation0),
+  :global(.mermaid .activation1),
+  :global(.mermaid .activation2) {
+    fill: #334155 !important;
+    stroke: #f5c542 !important;
+  }
+  
+  :global(.mermaid .loopLine) {
+    stroke: #475569 !important;
+  }
+  
+  :global(.mermaid .note) {
+    fill: #1e293b !important;
+    stroke: #f5c542 !important;
+  }
+  
+  :global(.mermaid .noteText) {
+    fill: #f1f5f9 !important;
+  }
+</style>

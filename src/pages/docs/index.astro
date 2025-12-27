@@ -30,6 +30,12 @@ const sections = {
     description: 'Technical reference and specifications',
     docs: allDocs.filter(d => d.data.section === 'reference').sort((a, b) => a.data.order - b.data.order),
   },
+  'cookbook': {
+    title: 'Cookbook',
+    icon: '🍳',
+    description: 'Industry-specific recipes and real-world workflows',
+    docs: allDocs.filter(d => d.data.section === 'cookbook').sort((a, b) => a.data.order - b.data.order),
+  },
 };
 ---
 
