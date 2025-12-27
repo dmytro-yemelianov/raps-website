@@ -1,0 +1,39 @@
+---
+title: "Troubleshooting"
+description: "Fix common errors when installing, configuring, or running RAPS"
+section: "reference"
+order: 2
+icon: "🧭"
+---
+
+# Troubleshooting
+
+Common fixes for installation, authentication, and runtime problems when working with **RAPS**.
+
+## Installation issues
+
+- **Command not found** — confirm `raps` is on your `PATH`. On Windows, reopen your terminal after Scoop/PowerShell installs; on macOS/Linux ensure `/usr/local/bin` or your chosen install directory is in `PATH`.
+- **Outdated binary** — run `raps --version` and reinstall from [Releases](https://github.com/dmytro-yemelianov/raps/releases) or your package manager if the version is below the one referenced in docs/blog posts.
+- **Missing SSL certificates** — container images or minimal distros may not ship CA bundles. Install `ca-certificates` (Debian/Ubuntu) or `ca-certificates-utils` (Arch) to allow OAuth traffic.
+
+## Authentication problems
+
+- **Invalid client credentials** — re-copy the `APS_CLIENT_ID` and `APS_CLIENT_SECRET` from the [APS Developer Portal](https://aps.autodesk.com/myapps) and run `raps auth test`. Clipboard whitespace or swapped values are the most common causes of `401` responses.
+- **Device code timeouts** — if SSO approval takes too long, use `raps auth login --force-pkce` to trigger an interactive PKCE flow in the browser instead of the device code loop.
+- **Multiple profiles** — `raps config profile list` shows which profile is active. Use `raps config profile use staging` (or another name) before running commands to avoid mixing sandbox and production tokens.
+
+## Authorization and permissions
+
+- **403 Forbidden** — verify the APS app has the correct scopes for the API you are calling. For bucket/object operations you typically need `data:read`, `data:write`, and `bucket:create` scopes.
+- **ACC/BIM 360 access** — ensure the APS app is added to the BIM 360 account with the right role. Without admin approval, folder or issue queries will return empty lists.
+- **Region mismatches** — list your buckets with `raps bucket list --region us` or `--region emea` to ensure uploads and translations happen in the correct region.
+
+## Workflow reliability
+
+- **Large uploads** — switch to multipart uploads with `raps object upload my-bucket model.rvt --multipart --chunk-size 16MB` to avoid timeouts over slow networks.
+- **Translation stuck in pending** — use `raps translate status $URN --wait --interval 10` to poll and surface errors. If status stays pending, re-run with the correct input format flag (e.g., `--format svf2`).
+- **CI/CD flakiness** — enable verbose logs with `RAPS_LOG=debug` in your workflow and check for retryable HTTP codes. Standardized exit codes (`raps --help exit-codes`) help fail fast in pipelines.
+
+## Getting help
+
+If issues persist, open a GitHub issue with your OS, RAPS version, and a minimal command that reproduces the problem. Sanitizing secrets before sharing logs keeps credentials safe.
