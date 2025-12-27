@@ -20,7 +20,56 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 // Get all docs and organize by section
 const allDocs = await getCollection('docs');
 
-// Define navigation structure
+// Helper to check if current page is in a cookbook sub-category
+const currentCookbookCategory = (() => {
+  if (currentSlug.startsWith('cookbook-aec')) return 'aec';
+  if (currentSlug.startsWith('cookbook-acc')) return 'construction';
+  if (currentSlug.startsWith('cookbook-mfg') || currentSlug.startsWith('cookbook-manufacturing')) return 'manufacturing';
+  if (currentSlug.startsWith('cookbook-media')) return 'media';
+  return null;
+})();
+
+// Cookbook subcategories with their items
+const cookbookCategories = [
+  {
+    id: 'aec',
+    title: 'AEC & BIM',
+    icon: '🏗️',
+    hub: allDocs.find(d => d.slug === 'cookbook-aec'),
+    items: allDocs
+      .filter(d => d.slug.startsWith('cookbook-aec-'))
+      .sort((a, b) => a.data.order - b.data.order)
+  },
+  {
+    id: 'construction',
+    title: 'Construction (ACC)',
+    icon: '👷',
+    hub: allDocs.find(d => d.slug === 'cookbook-construction'),
+    items: allDocs
+      .filter(d => d.slug.startsWith('cookbook-acc-'))
+      .sort((a, b) => a.data.order - b.data.order)
+  },
+  {
+    id: 'manufacturing',
+    title: 'Manufacturing',
+    icon: '🏭',
+    hub: allDocs.find(d => d.slug === 'cookbook-manufacturing'),
+    items: allDocs
+      .filter(d => d.slug.startsWith('cookbook-mfg-'))
+      .sort((a, b) => a.data.order - b.data.order)
+  },
+  {
+    id: 'media',
+    title: 'Media & Assets',
+    icon: '🎬',
+    hub: allDocs.find(d => d.slug === 'cookbook-media'),
+    items: allDocs
+      .filter(d => d.slug.startsWith('cookbook-media-'))
+      .sort((a, b) => a.data.order - b.data.order)
+  },
+];
+
+// Define navigation structure (non-cookbook sections)
 const navSections = [
   {
     title: 'Getting Started',
@@ -82,7 +131,8 @@ const navSections = [
     <div class="flex">
       <!-- Sidebar -->
       <aside class="hidden lg:block w-72 fixed left-0 top-16 bottom-0 overflow-y-auto border-r border-slate-800 bg-slate-950/50 backdrop-blur-sm">
-        <nav class="p-6 space-y-8">
+        <nav class="p-6 space-y-6">
+          {/* Regular sections */}
           {navSections.map(section => (
             section.items.length > 0 && (
               <div>
@@ -111,6 +161,87 @@ const navSections = [
               </div>
             )
           ))}
+          
+          {/* Cookbook section with subcategories */}
+          <div>
+            <h3 class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <span>🍳</span>
+              Cookbook
+            </h3>
+            <ul class="space-y-1">
+              {cookbookCategories.map(category => (
+                <li class="cookbook-category" data-category={category.id}>
+                  {/* Category header with toggle */}
+                  <button
+                    class:list={[
+                      "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group cookbook-toggle",
+                      currentCookbookCategory === category.id
+                        ? "bg-slate-800/70 text-white"
+                        : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+                    ]}
+                    data-expanded={currentCookbookCategory === category.id ? "true" : "false"}
+                  >
+                    <span class="flex items-center gap-2">
+                      <span>{category.icon}</span>
+                      {category.title}
+                    </span>
+                    <svg
+                      class:list={[
+                        "w-4 h-4 transition-transform cookbook-chevron",
+                        currentCookbookCategory === category.id ? "rotate-180" : ""
+                      ]}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {/* Subcategory items */}
+                  <ul
+                    class:list={[
+                      "cookbook-items ml-4 mt-1 space-y-1 border-l border-slate-700/50 pl-3 overflow-hidden transition-all",
+                      currentCookbookCategory === category.id ? "" : "hidden"
+                    ]}
+                  >
+                    {/* Hub page link */}
+                    {category.hub && (
+                      <li>
+                        <a
+                          href={`/docs/${category.hub.slug}`}
+                          class:list={[
+                            "block px-2 py-1.5 rounded text-sm transition-colors",
+                            currentSlug === category.hub.slug
+                              ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
+                              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                          ]}
+                        >
+                          Overview
+                        </a>
+                      </li>
+                    )}
+                    {/* Individual recipes */}
+                    {category.items.map(doc => (
+                      <li>
+                        <a
+                          href={`/docs/${doc.slug}`}
+                          class:list={[
+                            "block px-2 py-1.5 rounded text-sm transition-colors",
+                            currentSlug === doc.slug
+                              ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
+                              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                          ]}
+                        >
+                          {doc.data.title.replace(/^Cookbook:\s*/, '').replace(/^Recipe:\s*/, '')}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         </nav>
       </aside>
       
@@ -137,7 +268,8 @@ const navSections = [
               </svg>
             </button>
           </div>
-          <nav class="p-6 space-y-8">
+          <nav class="p-6 space-y-6">
+            {/* Regular sections */}
             {navSections.map(section => (
               section.items.length > 0 && (
                 <div>
@@ -166,6 +298,83 @@ const navSections = [
                 </div>
               )
             ))}
+            
+            {/* Cookbook section with subcategories (mobile) */}
+            <div>
+              <h3 class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                <span>🍳</span>
+                Cookbook
+              </h3>
+              <ul class="space-y-1">
+                {cookbookCategories.map(category => (
+                  <li class="cookbook-category" data-category={category.id}>
+                    <button
+                      class:list={[
+                        "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group cookbook-toggle",
+                        currentCookbookCategory === category.id
+                          ? "bg-slate-800/70 text-white"
+                          : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+                      ]}
+                      data-expanded={currentCookbookCategory === category.id ? "true" : "false"}
+                    >
+                      <span class="flex items-center gap-2">
+                        <span>{category.icon}</span>
+                        {category.title}
+                      </span>
+                      <svg
+                        class:list={[
+                          "w-4 h-4 transition-transform cookbook-chevron",
+                          currentCookbookCategory === category.id ? "rotate-180" : ""
+                        ]}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    <ul
+                      class:list={[
+                        "cookbook-items ml-4 mt-1 space-y-1 border-l border-slate-700/50 pl-3 overflow-hidden transition-all",
+                        currentCookbookCategory === category.id ? "" : "hidden"
+                      ]}
+                    >
+                      {category.hub && (
+                        <li>
+                          <a
+                            href={`/docs/${category.hub.slug}`}
+                            class:list={[
+                              "block px-2 py-1.5 rounded text-sm transition-colors",
+                              currentSlug === category.hub.slug
+                                ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
+                                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                            ]}
+                          >
+                            Overview
+                          </a>
+                        </li>
+                      )}
+                      {category.items.map(doc => (
+                        <li>
+                          <a
+                            href={`/docs/${doc.slug}`}
+                            class:list={[
+                              "block px-2 py-1.5 rounded text-sm transition-colors",
+                              currentSlug === doc.slug
+                                ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
+                                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                            ]}
+                          >
+                            {doc.data.title.replace(/^Cookbook:\s*/, '').replace(/^Recipe:\s*/, '')}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </nav>
         </aside>
       </div>
@@ -178,7 +387,11 @@ const navSections = [
       </main>
     </div>
     
+    <!-- Mermaid.js for diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    
     <script>
+      // Mobile sidebar functionality
       const toggle = document.getElementById('docs-menu-toggle');
       const sidebar = document.getElementById('docs-mobile-sidebar');
       const close = document.getElementById('docs-menu-close');
@@ -197,6 +410,88 @@ const navSections = [
       toggle?.addEventListener('click', openSidebar);
       close?.addEventListener('click', closeSidebar);
       backdrop?.addEventListener('click', closeSidebar);
+      
+      // Collapsible cookbook navigation
+      document.querySelectorAll('.cookbook-toggle').forEach(button => {
+        button.addEventListener('click', () => {
+          const category = button.closest('.cookbook-category');
+          const items = category?.querySelector('.cookbook-items');
+          const chevron = button.querySelector('.cookbook-chevron');
+          const isExpanded = button.getAttribute('data-expanded') === 'true';
+          
+          if (items) {
+            if (isExpanded) {
+              items.classList.add('hidden');
+              button.setAttribute('data-expanded', 'false');
+              chevron?.classList.remove('rotate-180');
+            } else {
+              items.classList.remove('hidden');
+              button.setAttribute('data-expanded', 'true');
+              chevron?.classList.add('rotate-180');
+            }
+          }
+        });
+      });
+      
+      // Initialize Mermaid diagrams
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof mermaid !== 'undefined') {
+          mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+              primaryColor: '#1e293b',
+              primaryBorderColor: '#f5c542',
+              primaryTextColor: '#f1f5f9',
+              secondaryColor: '#0f172a',
+              secondaryBorderColor: '#334155',
+              secondaryTextColor: '#94a3b8',
+              tertiaryColor: '#1e293b',
+              tertiaryBorderColor: '#475569',
+              tertiaryTextColor: '#f1f5f9',
+              lineColor: '#64748b',
+              textColor: '#f1f5f9',
+              mainBkg: '#1e293b',
+              nodeBorder: '#f5c542',
+              clusterBkg: '#0f172a',
+              clusterBorder: '#334155',
+              edgeLabelBackground: '#1e293b',
+              nodeTextColor: '#f1f5f9',
+              actorBorder: '#f5c542',
+              actorBkg: '#1e293b',
+              actorTextColor: '#f1f5f9',
+              actorLineColor: '#64748b',
+              signalColor: '#64748b',
+              signalTextColor: '#f1f5f9',
+              labelTextColor: '#f1f5f9',
+              loopTextColor: '#f1f5f9',
+              activationBorderColor: '#f5c542',
+              activationBkgColor: '#334155',
+              noteBorderColor: '#f5c542',
+              noteBkgColor: '#1e293b',
+              noteTextColor: '#f1f5f9',
+            },
+            flowchart: {
+              curve: 'basis',
+              padding: 20,
+              nodeSpacing: 50,
+              rankSpacing: 50,
+              htmlLabels: true,
+            },
+            sequence: {
+              diagramMarginX: 10,
+              diagramMarginY: 10,
+              actorMargin: 50,
+              boxMargin: 10,
+              boxTextMargin: 5,
+              noteMargin: 10,
+              messageMargin: 35,
+              mirrorActors: false,
+              useMaxWidth: true,
+            },
+          });
+        }
+      });
     </script>
   </body>
 </html>
@@ -281,6 +576,123 @@ const navSections = [
   
   .docs-content strong {
     @apply font-semibold text-white;
+  }
+  
+  /* Mermaid diagram styling */
+  .docs-content .mermaid,
+  .docs-content pre.mermaid {
+    @apply bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 my-6 overflow-x-auto;
+    display: flex;
+    justify-content: center;
+    min-height: 100px;
+  }
+  
+  .docs-content .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Override code block styles for mermaid */
+  .docs-content pre:has(.mermaid),
+  .docs-content pre.language-mermaid {
+    @apply bg-slate-900/50 border border-slate-700/50;
+  }
+  
+  /* Mermaid theme overrides for dark mode */
+  .mermaid .node rect,
+  .mermaid .node polygon,
+  .mermaid .node circle,
+  .mermaid .node ellipse {
+    fill: #1e293b !important;
+    stroke: #f5c542 !important;
+    stroke-width: 1.5px !important;
+  }
+  
+  .mermaid .nodeLabel,
+  .mermaid .label,
+  .mermaid text {
+    fill: #f1f5f9 !important;
+    color: #f1f5f9 !important;
+  }
+  
+  .mermaid .edgePath path.path {
+    stroke: #64748b !important;
+    stroke-width: 1.5px !important;
+  }
+  
+  .mermaid .arrowheadPath,
+  .mermaid marker path {
+    fill: #64748b !important;
+    stroke: #64748b !important;
+  }
+  
+  .mermaid .cluster rect {
+    fill: #0f172a !important;
+    stroke: #334155 !important;
+    rx: 8px !important;
+  }
+  
+  .mermaid .cluster-label .nodeLabel,
+  .mermaid .cluster span {
+    color: #94a3b8 !important;
+    fill: #94a3b8 !important;
+  }
+  
+  .mermaid .actor {
+    fill: #1e293b !important;
+    stroke: #f5c542 !important;
+  }
+  
+  .mermaid text.actor {
+    fill: #f1f5f9 !important;
+  }
+  
+  .mermaid .messageLine0,
+  .mermaid .messageLine1 {
+    stroke: #64748b !important;
+  }
+  
+  .mermaid .messageText {
+    fill: #f1f5f9 !important;
+  }
+  
+  .mermaid .activation0,
+  .mermaid .activation1,
+  .mermaid .activation2 {
+    fill: #334155 !important;
+    stroke: #f5c542 !important;
+  }
+  
+  .mermaid .loopLine {
+    stroke: #475569 !important;
+  }
+  
+  .mermaid .loopText,
+  .mermaid .loopText tspan {
+    fill: #94a3b8 !important;
+  }
+  
+  .mermaid .note {
+    fill: #1e293b !important;
+    stroke: #f5c542 !important;
+  }
+  
+  .mermaid .noteText {
+    fill: #f1f5f9 !important;
+  }
+  
+  .mermaid .labelBox {
+    fill: #1e293b !important;
+    stroke: #334155 !important;
+  }
+  
+  .mermaid .labelText,
+  .mermaid .labelText tspan {
+    fill: #f1f5f9 !important;
+  }
+  
+  .mermaid line {
+    stroke: #475569 !important;
   }
 </style>
 
