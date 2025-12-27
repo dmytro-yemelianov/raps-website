@@ -50,6 +50,22 @@ The site will be available at `http://localhost:4321`.
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build locally |
 
+### Quick Start
+
+```bash
+# Install the CLI (Cargo, Homebrew, Scoop, or download a release)
+cargo install raps
+
+# Configure your APS credentials
+export APS_CLIENT_ID="your_client_id"
+export APS_CLIENT_SECRET="your_client_secret"
+
+# Verify authentication before running pipelines
+raps auth test
+```
+
+Explore the new [Troubleshooting guide](https://rapscli.xyz/docs/troubleshooting) for fixes to common install and auth errors.
+
 ## Project Structure
 
 ```
