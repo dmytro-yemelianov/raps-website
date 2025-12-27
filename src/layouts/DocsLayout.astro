@@ -17,89 +17,92 @@ const {
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-// Get all docs and organize by section
+// Get all docs
 const allDocs = await getCollection('docs');
 
-// Helper to check if current page is in a cookbook sub-category
-const currentCookbookCategory = (() => {
-  if (currentSlug.startsWith('cookbook-aec')) return 'aec';
-  if (currentSlug.startsWith('cookbook-acc')) return 'construction';
-  if (currentSlug.startsWith('cookbook-mfg') || currentSlug.startsWith('cookbook-manufacturing')) return 'manufacturing';
-  if (currentSlug.startsWith('cookbook-media')) return 'media';
+// Helper to check current section
+const getCurrentSection = () => {
+  const doc = allDocs.find(d => d.slug === currentSlug);
+  if (doc?.data.section) return doc.data.section;
+  if (currentSlug.startsWith('cookbook-aec')) return 'cookbook-aec';
+  if (currentSlug.startsWith('cookbook-acc')) return 'cookbook-acc';
+  if (currentSlug.startsWith('cookbook-mfg') || currentSlug === 'cookbook-manufacturing') return 'cookbook-mfg';
+  if (currentSlug.startsWith('cookbook-media')) return 'cookbook-media';
   return null;
-})();
+};
 
-// Cookbook subcategories with their items
-const cookbookCategories = [
-  {
-    id: 'aec',
-    title: 'AEC & BIM',
-    icon: '🏗️',
-    hub: allDocs.find(d => d.slug === 'cookbook-aec'),
-    items: allDocs
-      .filter(d => d.slug.startsWith('cookbook-aec-'))
-      .sort((a, b) => a.data.order - b.data.order)
-  },
-  {
-    id: 'construction',
-    title: 'Construction (ACC)',
-    icon: '👷',
-    hub: allDocs.find(d => d.slug === 'cookbook-construction'),
-    items: allDocs
-      .filter(d => d.slug.startsWith('cookbook-acc-'))
-      .sort((a, b) => a.data.order - b.data.order)
-  },
-  {
-    id: 'manufacturing',
-    title: 'Manufacturing',
-    icon: '🏭',
-    hub: allDocs.find(d => d.slug === 'cookbook-manufacturing'),
-    items: allDocs
-      .filter(d => d.slug.startsWith('cookbook-mfg-'))
-      .sort((a, b) => a.data.order - b.data.order)
-  },
-  {
-    id: 'media',
-    title: 'Media & Assets',
-    icon: '🎬',
-    hub: allDocs.find(d => d.slug === 'cookbook-media'),
-    items: allDocs
-      .filter(d => d.slug.startsWith('cookbook-media-'))
-      .sort((a, b) => a.data.order - b.data.order)
-  },
-];
+const currentSection = getCurrentSection();
 
-// Define navigation structure (non-cookbook sections)
+// Navigation structure - all sections are collapsible
 const navSections = [
   {
+    id: 'getting-started',
     title: 'Getting Started',
-    icon: '🚀',
     items: allDocs
       .filter(doc => doc.data.section === 'getting-started')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
+    id: 'commands',
     title: 'Commands',
-    icon: '⌨️',
     items: allDocs
       .filter(doc => doc.data.section === 'commands')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
+    id: 'guides',
     title: 'Guides',
-    icon: '📖',
     items: allDocs
       .filter(doc => doc.data.section === 'guides')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
+    id: 'reference',
     title: 'Reference',
-    icon: '📚',
     items: allDocs
       .filter(doc => doc.data.section === 'reference')
       .sort((a, b) => a.data.order - b.data.order)
   },
+  {
+    id: 'cookbook-aec',
+    title: 'AEC & BIM',
+    items: [
+      allDocs.find(d => d.slug === 'cookbook-aec'),
+      ...allDocs.filter(d => d.slug.startsWith('cookbook-aec-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+  {
+    id: 'cookbook-acc',
+    title: 'Construction',
+    items: [
+      allDocs.find(d => d.slug === 'cookbook-construction'),
+      ...allDocs.filter(d => d.slug.startsWith('cookbook-acc-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+  {
+    id: 'cookbook-mfg',
+    title: 'Manufacturing',
+    items: [
+      allDocs.find(d => d.slug === 'cookbook-manufacturing'),
+      ...allDocs.filter(d => d.slug.startsWith('cookbook-mfg-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+  {
+    id: 'cookbook-media',
+    title: 'Media & Assets',
+    items: [
+      allDocs.find(d => d.slug === 'cookbook-media'),
+      ...allDocs.filter(d => d.slug.startsWith('cookbook-media-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
 ];
+
+// Clean up title for display
+const cleanTitle = (title: string) => {
+  return title
+    .replace(/^Cookbook:\s*/i, '')
+    .replace(/^Recipe:\s*/i, '');
+};
 ---
 
 <!doctype html>
@@ -130,30 +133,52 @@ const navSections = [
     
     <div class="flex">
       <!-- Sidebar -->
-      <aside class="hidden lg:block w-72 fixed left-0 top-16 bottom-0 overflow-y-auto border-r border-slate-800 bg-slate-950/50 backdrop-blur-sm">
-        <nav class="p-6 space-y-6">
-          {/* Regular sections */}
+      <aside class="hidden lg:block w-64 fixed left-0 top-16 bottom-0 overflow-y-auto border-r border-slate-800/50 bg-slate-950">
+        <nav class="py-6 px-4">
           {navSections.map(section => (
             section.items.length > 0 && (
-              <div>
-                <h3 class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                  <span>{section.icon}</span>
-                  {section.title}
-                </h3>
-                <ul class="space-y-1">
+              <div class="nav-section mb-2" data-section={section.id}>
+                <button
+                  class:list={[
+                    "nav-toggle w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    currentSection === section.id
+                      ? "text-white bg-slate-800/50"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                  ]}
+                  data-expanded={currentSection === section.id ? "true" : "false"}
+                >
+                  <span>{section.title}</span>
+                  <svg
+                    class:list={[
+                      "nav-chevron w-4 h-4 transition-transform",
+                      currentSection === section.id ? "rotate-180" : ""
+                    ]}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                <ul
+                  class:list={[
+                    "nav-items mt-1 ml-3 border-l border-slate-800 overflow-hidden",
+                    currentSection === section.id ? "" : "hidden"
+                  ]}
+                >
                   {section.items.map(doc => (
                     <li>
                       <a
                         href={`/docs/${doc.slug}`}
                         class:list={[
-                          "block px-3 py-2 rounded-lg text-sm transition-colors",
-                          currentSlug === doc.slug 
-                            ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium" 
-                            : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+                          "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
+                          currentSlug === doc.slug
+                            ? "text-rapeseed-400 border-rapeseed-400 font-medium"
+                            : "text-slate-400 border-transparent hover:text-slate-200 hover:border-slate-600"
                         ]}
                       >
-                        {doc.data.icon && <span class="mr-2">{doc.data.icon}</span>}
-                        {doc.data.title}
+                        {cleanTitle(doc.data.title)}
                       </a>
                     </li>
                   ))}
@@ -161,91 +186,10 @@ const navSections = [
               </div>
             )
           ))}
-          
-          {/* Cookbook section with subcategories */}
-          <div>
-            <h3 class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              <span>🍳</span>
-              Cookbook
-            </h3>
-            <ul class="space-y-1">
-              {cookbookCategories.map(category => (
-                <li class="cookbook-category" data-category={category.id}>
-                  {/* Category header with toggle */}
-                  <button
-                    class:list={[
-                      "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group cookbook-toggle",
-                      currentCookbookCategory === category.id
-                        ? "bg-slate-800/70 text-white"
-                        : "text-slate-300 hover:text-white hover:bg-slate-800/50"
-                    ]}
-                    data-expanded={currentCookbookCategory === category.id ? "true" : "false"}
-                  >
-                    <span class="flex items-center gap-2">
-                      <span>{category.icon}</span>
-                      {category.title}
-                    </span>
-                    <svg
-                      class:list={[
-                        "w-4 h-4 transition-transform cookbook-chevron",
-                        currentCookbookCategory === category.id ? "rotate-180" : ""
-                      ]}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  
-                  {/* Subcategory items */}
-                  <ul
-                    class:list={[
-                      "cookbook-items ml-4 mt-1 space-y-1 border-l border-slate-700/50 pl-3 overflow-hidden transition-all",
-                      currentCookbookCategory === category.id ? "" : "hidden"
-                    ]}
-                  >
-                    {/* Hub page link */}
-                    {category.hub && (
-                      <li>
-                        <a
-                          href={`/docs/${category.hub.slug}`}
-                          class:list={[
-                            "block px-2 py-1.5 rounded text-sm transition-colors",
-                            currentSlug === category.hub.slug
-                              ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
-                              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                          ]}
-                        >
-                          Overview
-                        </a>
-                      </li>
-                    )}
-                    {/* Individual recipes */}
-                    {category.items.map(doc => (
-                      <li>
-                        <a
-                          href={`/docs/${doc.slug}`}
-                          class:list={[
-                            "block px-2 py-1.5 rounded text-sm transition-colors",
-                            currentSlug === doc.slug
-                              ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
-                              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                          ]}
-                        >
-                          {doc.data.title.replace(/^Cookbook:\s*/, '').replace(/^Recipe:\s*/, '')}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </div>
         </nav>
       </aside>
       
-      <!-- Mobile sidebar toggle -->
+      <!-- Mobile menu button -->
       <button 
         id="docs-menu-toggle"
         class="lg:hidden fixed bottom-6 left-6 z-50 p-3 bg-rapeseed-500 text-slate-900 rounded-full shadow-lg hover:bg-rapeseed-400 transition-colors"
@@ -256,7 +200,7 @@ const navSections = [
         </svg>
       </button>
       
-      <!-- Mobile sidebar overlay -->
+      <!-- Mobile sidebar -->
       <div id="docs-mobile-sidebar" class="lg:hidden fixed inset-0 z-40 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="docs-sidebar-backdrop"></div>
         <aside class="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 border-r border-slate-800 overflow-y-auto">
@@ -268,29 +212,51 @@ const navSections = [
               </svg>
             </button>
           </div>
-          <nav class="p-6 space-y-6">
-            {/* Regular sections */}
+          <nav class="py-4 px-3">
             {navSections.map(section => (
               section.items.length > 0 && (
-                <div>
-                  <h3 class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                    <span>{section.icon}</span>
-                    {section.title}
-                  </h3>
-                  <ul class="space-y-1">
+                <div class="nav-section mb-2" data-section={section.id}>
+                  <button
+                    class:list={[
+                      "nav-toggle w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      currentSection === section.id
+                        ? "text-white bg-slate-800/50"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+                    ]}
+                    data-expanded={currentSection === section.id ? "true" : "false"}
+                  >
+                    <span>{section.title}</span>
+                    <svg
+                      class:list={[
+                        "nav-chevron w-4 h-4 transition-transform",
+                        currentSection === section.id ? "rotate-180" : ""
+                      ]}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  <ul
+                    class:list={[
+                      "nav-items mt-1 ml-3 border-l border-slate-700 overflow-hidden",
+                      currentSection === section.id ? "" : "hidden"
+                    ]}
+                  >
                     {section.items.map(doc => (
                       <li>
                         <a
                           href={`/docs/${doc.slug}`}
                           class:list={[
-                            "block px-3 py-2 rounded-lg text-sm transition-colors",
-                            currentSlug === doc.slug 
-                              ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium" 
-                              : "text-slate-300 hover:text-white hover:bg-slate-800/50"
+                            "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
+                            currentSlug === doc.slug
+                              ? "text-rapeseed-400 border-rapeseed-400 font-medium"
+                              : "text-slate-400 border-transparent hover:text-slate-200 hover:border-slate-600"
                           ]}
                         >
-                          {doc.data.icon && <span class="mr-2">{doc.data.icon}</span>}
-                          {doc.data.title}
+                          {cleanTitle(doc.data.title)}
                         </a>
                       </li>
                     ))}
@@ -298,89 +264,12 @@ const navSections = [
                 </div>
               )
             ))}
-            
-            {/* Cookbook section with subcategories (mobile) */}
-            <div>
-              <h3 class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                <span>🍳</span>
-                Cookbook
-              </h3>
-              <ul class="space-y-1">
-                {cookbookCategories.map(category => (
-                  <li class="cookbook-category" data-category={category.id}>
-                    <button
-                      class:list={[
-                        "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group cookbook-toggle",
-                        currentCookbookCategory === category.id
-                          ? "bg-slate-800/70 text-white"
-                          : "text-slate-300 hover:text-white hover:bg-slate-800/50"
-                      ]}
-                      data-expanded={currentCookbookCategory === category.id ? "true" : "false"}
-                    >
-                      <span class="flex items-center gap-2">
-                        <span>{category.icon}</span>
-                        {category.title}
-                      </span>
-                      <svg
-                        class:list={[
-                          "w-4 h-4 transition-transform cookbook-chevron",
-                          currentCookbookCategory === category.id ? "rotate-180" : ""
-                        ]}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    
-                    <ul
-                      class:list={[
-                        "cookbook-items ml-4 mt-1 space-y-1 border-l border-slate-700/50 pl-3 overflow-hidden transition-all",
-                        currentCookbookCategory === category.id ? "" : "hidden"
-                      ]}
-                    >
-                      {category.hub && (
-                        <li>
-                          <a
-                            href={`/docs/${category.hub.slug}`}
-                            class:list={[
-                              "block px-2 py-1.5 rounded text-sm transition-colors",
-                              currentSlug === category.hub.slug
-                                ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
-                                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                            ]}
-                          >
-                            Overview
-                          </a>
-                        </li>
-                      )}
-                      {category.items.map(doc => (
-                        <li>
-                          <a
-                            href={`/docs/${doc.slug}`}
-                            class:list={[
-                              "block px-2 py-1.5 rounded text-sm transition-colors",
-                              currentSlug === doc.slug
-                                ? "bg-rapeseed-500/20 text-rapeseed-400 font-medium"
-                                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                            ]}
-                          >
-                            {doc.data.title.replace(/^Cookbook:\s*/, '').replace(/^Recipe:\s*/, '')}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </nav>
         </aside>
       </div>
       
       <!-- Main content -->
-      <main class="flex-1 lg:ml-72 min-h-screen">
+      <main class="flex-1 lg:ml-64 min-h-screen">
         <div class="max-w-4xl mx-auto px-6 py-12">
           <slot />
         </div>
@@ -391,7 +280,7 @@ const navSections = [
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     
     <script>
-      // Mobile sidebar functionality
+      // Mobile sidebar
       const toggle = document.getElementById('docs-menu-toggle');
       const sidebar = document.getElementById('docs-mobile-sidebar');
       const close = document.getElementById('docs-menu-close');
@@ -411,12 +300,12 @@ const navSections = [
       close?.addEventListener('click', closeSidebar);
       backdrop?.addEventListener('click', closeSidebar);
       
-      // Collapsible cookbook navigation
-      document.querySelectorAll('.cookbook-toggle').forEach(button => {
+      // Collapsible navigation
+      document.querySelectorAll('.nav-toggle').forEach(button => {
         button.addEventListener('click', () => {
-          const category = button.closest('.cookbook-category');
-          const items = category?.querySelector('.cookbook-items');
-          const chevron = button.querySelector('.cookbook-chevron');
+          const section = button.closest('.nav-section');
+          const items = section?.querySelector('.nav-items');
+          const chevron = button.querySelector('.nav-chevron');
           const isExpanded = button.getAttribute('data-expanded') === 'true';
           
           if (items) {
@@ -433,10 +322,9 @@ const navSections = [
         });
       });
       
-      // Initialize Mermaid diagrams
+      // Mermaid diagrams
       document.addEventListener('DOMContentLoaded', async () => {
         if (typeof mermaid !== 'undefined') {
-          // Initialize mermaid with config (don't auto-start)
           mermaid.initialize({
             startOnLoad: false,
             theme: 'dark',
@@ -448,51 +336,24 @@ const navSections = [
               secondaryBorderColor: '#334155',
               secondaryTextColor: '#94a3b8',
               tertiaryColor: '#1e293b',
-              tertiaryBorderColor: '#475569',
-              tertiaryTextColor: '#f1f5f9',
               lineColor: '#64748b',
               textColor: '#f1f5f9',
               mainBkg: '#1e293b',
               nodeBorder: '#f5c542',
               clusterBkg: '#0f172a',
               clusterBorder: '#334155',
-              edgeLabelBackground: '#1e293b',
               nodeTextColor: '#f1f5f9',
               actorBorder: '#f5c542',
               actorBkg: '#1e293b',
               actorTextColor: '#f1f5f9',
-              actorLineColor: '#64748b',
               signalColor: '#64748b',
-              signalTextColor: '#f1f5f9',
-              labelTextColor: '#f1f5f9',
-              loopTextColor: '#f1f5f9',
-              activationBorderColor: '#f5c542',
-              activationBkgColor: '#334155',
               noteBorderColor: '#f5c542',
               noteBkgColor: '#1e293b',
-              noteTextColor: '#f1f5f9',
             },
-            flowchart: {
-              curve: 'basis',
-              padding: 20,
-              nodeSpacing: 50,
-              rankSpacing: 50,
-              htmlLabels: true,
-            },
-            sequence: {
-              diagramMarginX: 10,
-              diagramMarginY: 10,
-              actorMargin: 50,
-              boxMargin: 10,
-              boxTextMargin: 5,
-              noteMargin: 10,
-              messageMargin: 35,
-              mirrorActors: false,
-              useMaxWidth: true,
-            },
+            flowchart: { curve: 'basis', padding: 20 },
+            sequence: { actorMargin: 50, useMaxWidth: true },
           });
           
-          // Find all mermaid code blocks (Shiki uses data-language="mermaid" on <pre>)
           const mermaidBlocks = document.querySelectorAll('pre[data-language="mermaid"]');
           
           for (let i = 0; i < mermaidBlocks.length; i++) {
@@ -500,21 +361,16 @@ const navSections = [
             const codeEl = preEl.querySelector('code');
             const diagramCode = codeEl ? codeEl.textContent : preEl.textContent || '';
             
-            // Create a container div for the rendered diagram
             const container = document.createElement('div');
             container.className = 'mermaid-diagram';
             
             try {
-              // Render the diagram
               const { svg } = await mermaid.render(`mermaid-${i}`, diagramCode);
               container.innerHTML = svg;
-              
-              // Replace the pre element with the rendered diagram
               preEl.parentNode.replaceChild(container, preEl);
             } catch (e) {
-              console.error('Mermaid render error:', e);
-              // Show error message in the container
-              container.innerHTML = `<div class="mermaid-error">Diagram rendering error: ${e.message}</div>`;
+              console.error('Mermaid error:', e);
+              container.innerHTML = `<div class="text-red-400 text-sm p-4">Diagram error: ${e.message}</div>`;
               preEl.parentNode.replaceChild(container, preEl);
             }
           }
@@ -606,157 +462,13 @@ const navSections = [
     @apply font-semibold text-white;
   }
   
-  /* Mermaid diagram styling */
-  .docs-content .mermaid,
-  .docs-content pre.mermaid,
-  .docs-content .mermaid-diagram {
-    @apply bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 my-6 overflow-x-auto;
-    display: flex;
-    justify-content: center;
-    min-height: 100px;
+  /* Mermaid diagrams */
+  .mermaid-diagram {
+    @apply bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 my-6 overflow-x-auto flex justify-center;
   }
   
-  .docs-content .mermaid svg,
-  .docs-content .mermaid-diagram svg {
+  .mermaid-diagram svg {
     max-width: 100%;
     height: auto;
   }
-  
-  .docs-content .mermaid-error {
-    @apply text-red-400 text-sm p-4;
-  }
-  
-  /* Override code block styles for mermaid */
-  .docs-content pre:has(.mermaid),
-  .docs-content pre.language-mermaid {
-    @apply bg-slate-900/50 border border-slate-700/50;
-  }
-  
-  /* Mermaid theme overrides for dark mode */
-  .mermaid .node rect,
-  .mermaid .node polygon,
-  .mermaid .node circle,
-  .mermaid .node ellipse,
-  .mermaid-diagram .node rect,
-  .mermaid-diagram .node polygon,
-  .mermaid-diagram .node circle,
-  .mermaid-diagram .node ellipse {
-    fill: #1e293b !important;
-    stroke: #f5c542 !important;
-    stroke-width: 1.5px !important;
-  }
-  
-  .mermaid .nodeLabel,
-  .mermaid .label,
-  .mermaid text,
-  .mermaid-diagram .nodeLabel,
-  .mermaid-diagram .label,
-  .mermaid-diagram text {
-    fill: #f1f5f9 !important;
-    color: #f1f5f9 !important;
-  }
-  
-  .mermaid .edgePath path.path,
-  .mermaid-diagram .edgePath path.path {
-    stroke: #64748b !important;
-    stroke-width: 1.5px !important;
-  }
-  
-  .mermaid .arrowheadPath,
-  .mermaid marker path,
-  .mermaid-diagram .arrowheadPath,
-  .mermaid-diagram marker path {
-    fill: #64748b !important;
-    stroke: #64748b !important;
-  }
-  
-  .mermaid .cluster rect,
-  .mermaid-diagram .cluster rect {
-    fill: #0f172a !important;
-    stroke: #334155 !important;
-    rx: 8px !important;
-  }
-  
-  .mermaid .cluster-label .nodeLabel,
-  .mermaid .cluster span,
-  .mermaid-diagram .cluster-label .nodeLabel,
-  .mermaid-diagram .cluster span {
-    color: #94a3b8 !important;
-    fill: #94a3b8 !important;
-  }
-  
-  .mermaid .actor,
-  .mermaid-diagram .actor {
-    fill: #1e293b !important;
-    stroke: #f5c542 !important;
-  }
-  
-  .mermaid text.actor,
-  .mermaid-diagram text.actor {
-    fill: #f1f5f9 !important;
-  }
-  
-  .mermaid .messageLine0,
-  .mermaid .messageLine1,
-  .mermaid-diagram .messageLine0,
-  .mermaid-diagram .messageLine1 {
-    stroke: #64748b !important;
-  }
-  
-  .mermaid .messageText,
-  .mermaid-diagram .messageText {
-    fill: #f1f5f9 !important;
-  }
-  
-  .mermaid .activation0,
-  .mermaid .activation1,
-  .mermaid .activation2,
-  .mermaid-diagram .activation0,
-  .mermaid-diagram .activation1,
-  .mermaid-diagram .activation2 {
-    fill: #334155 !important;
-    stroke: #f5c542 !important;
-  }
-  
-  .mermaid .loopLine,
-  .mermaid-diagram .loopLine {
-    stroke: #475569 !important;
-  }
-  
-  .mermaid .loopText,
-  .mermaid .loopText tspan,
-  .mermaid-diagram .loopText,
-  .mermaid-diagram .loopText tspan {
-    fill: #94a3b8 !important;
-  }
-  
-  .mermaid .note,
-  .mermaid-diagram .note {
-    fill: #1e293b !important;
-    stroke: #f5c542 !important;
-  }
-  
-  .mermaid .noteText,
-  .mermaid-diagram .noteText {
-    fill: #f1f5f9 !important;
-  }
-  
-  .mermaid .labelBox,
-  .mermaid-diagram .labelBox {
-    fill: #1e293b !important;
-    stroke: #334155 !important;
-  }
-  
-  .mermaid .labelText,
-  .mermaid .labelText tspan,
-  .mermaid-diagram .labelText,
-  .mermaid-diagram .labelText tspan {
-    fill: #f1f5f9 !important;
-  }
-  
-  .mermaid line,
-  .mermaid-diagram line {
-    stroke: #475569 !important;
-  }
 </style>
-
