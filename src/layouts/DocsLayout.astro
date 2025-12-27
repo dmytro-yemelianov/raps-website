@@ -492,13 +492,13 @@ const navSections = [
             },
           });
           
-          // Find all mermaid code blocks (rendered by Shiki as <pre><code class="language-mermaid">)
-          const codeBlocks = document.querySelectorAll('pre code.language-mermaid, pre code[class*="language-mermaid"]');
+          // Find all mermaid code blocks (Shiki uses data-language="mermaid" on <pre>)
+          const mermaidBlocks = document.querySelectorAll('pre[data-language="mermaid"]');
           
-          for (let i = 0; i < codeBlocks.length; i++) {
-            const codeEl = codeBlocks[i];
-            const preEl = codeEl.parentElement;
-            const diagramCode = codeEl.textContent || '';
+          for (let i = 0; i < mermaidBlocks.length; i++) {
+            const preEl = mermaidBlocks[i];
+            const codeEl = preEl.querySelector('code');
+            const diagramCode = codeEl ? codeEl.textContent : preEl.textContent || '';
             
             // Create a container div for the rendered diagram
             const container = document.createElement('div');
