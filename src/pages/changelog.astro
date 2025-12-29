@@ -4,6 +4,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '3.1.0',
+    date: '2025-12-29',
+    highlights: ['Rust 2024 Edition', 'CI Speedups', 'Command Dispatch Fix'],
+    type: 'minor',
+    changes: {
+      added: [
+        'Comprehensive command dispatch tests (19 tests covering all subcommands)',
+        '`cargo-nextest` for parallel test execution in CI',
+        '`sccache` for build caching in release workflows',
+        'Parallel build jobs in CI with `lld` linker for faster builds',
+      ],
+      changed: [
+        'Migrated to Rust 2024 Edition',
+        'Updated MSRV to Rust 1.85',
+        'Wrapped `std::env::set_var/remove_var` in `unsafe` blocks (Rust 2024 requirement)',
+        'Use `div_ceil` instead of manual ceiling division',
+      ],
+      fixed: [
+        'Critical bug: `raps auth test` and other commands panicking with "unreachable code"',
+        'Command dispatch logic that was corrupting CLI state',
+      ],
+    },
+  },
+  {
     version: '3.0.0',
     date: '2025-12-27',
     highlights: ['MCP Server', 'AI Assistant Integration', '14 MCP Tools'],
