@@ -12,6 +12,7 @@ The official website and blog for [RAPS](https://github.com/dmytro-yemelianov/ra
 - **About** — Author information and project background
 - **RSS feed** — Subscribe to blog updates
 - **SEO optimized** — Open Graph, Twitter cards, structured data
+- **Architecture Documentation** — Microkernel architecture details
 
 ## Tech Stack
 
@@ -65,6 +66,34 @@ raps auth test
 ```
 
 Explore the new [Troubleshooting guide](https://rapscli.xyz/docs/troubleshooting) for fixes to common install and auth errors.
+
+## RAPS Architecture
+
+RAPS follows a **microkernel architecture** inspired by Unix OS design principles:
+
+### Architecture Overview
+
+- **Kernel (`raps-kernel`)**: Minimal trusted foundation with authentication, HTTP client, configuration, and error handling
+- **Service Crates**: Independent modules for APS APIs (OSS, Model Derivative, Data Management, SSA)
+- **Application Layer**: User interfaces (CLI, MCP Server, TUI) and extended features
+
+**Key Features:**
+- Essential APS APIs (Authentication, SSA, OSS, Model Derivative, Data Management)
+- Extended features (ACC modules, Design Automation, Reality Capture, Webhooks, MCP server, TUI)
+- Plugin system for extensibility
+
+**Build Commands:**
+```bash
+# Standard build (includes all features)
+cargo build
+
+# Minimal build (kernel + core services only)
+cargo build --no-default-features --features core
+```
+
+For detailed architecture documentation, see:
+- [Architecture Guide](https://rapscli.xyz/docs/architecture)
+- [RAPS Ecosystem Constitution](../.specify/memory/constitution.md)
 
 ## Project Structure
 
