@@ -526,7 +526,27 @@ const sectionContainsCurrent = (sectionId: string) => {
           copyBtn.title = 'Copy code';
           
           copyBtn.addEventListener('click', async () => {
-            const code = pre.querySelector('code')?.textContent || pre.textContent || '';
+            let code = pre.querySelector('code')?.textContent || pre.textContent || '';
+            
+            // Strip prompt characters for shell/bash/powershell/cmd code blocks
+            const shellLanguages = ['bash', 'sh', 'shell', 'zsh', 'fish', 'powershell', 'ps1', 'ps', 'cmd', 'bat'];
+            if (shellLanguages.includes(lang.toLowerCase())) {
+              code = code.split('\n').map(line => {
+                // Remove common prompt patterns:
+                // $ , # , > , PS> , PS C:\> , C:\> , >>> , ...
+                return line
+                  .replace(/^\s*\$+\s+/, '')           // $ or $$
+                  .replace(/^\s*#+\s+/, '')             // # (root prompt)
+                  .replace(/^\s*>\s+/, '')              // > (continuation)
+                  .replace(/^\s*PS\s*>\s*/, '')        // PS>
+                  .replace(/^\s*PS\s+[A-Z]:\\.*?>\s*/, '') // PS C:\...>
+                  .replace(/^\s*[A-Z]:\\.*?>\s*/, '')   // C:\...>
+                  .replace(/^\s*>>>\s+/, '')            // Python >>>
+                  .replace(/^\s*\.\.\.\s+/, '')         // ... continuation
+                  .replace(/^\s*\+\s+/, '');            // + continuation
+              }).join('\n');
+            }
+            
             await navigator.clipboard.writeText(code);
             copyBtn.innerHTML = `<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
