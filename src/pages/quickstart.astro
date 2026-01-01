@@ -104,29 +104,53 @@ const steps = [
     content: `
       <p class="text-slate-400 mb-4">Get your credentials from the <a href="https://aps.autodesk.com/myapps" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300 underline">APS Developer Portal</a>.</p>
       <div class="space-y-4">
-        <div>
+        <div class="relative">
           <h4 class="text-sm font-semibold text-white mb-2">Option 1: Environment Variables</h4>
           <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
             <div class="text-slate-500"># PowerShell</div>
             <div><span class="text-green-400">$env:</span>APS_CLIENT_ID = <span class="text-amber-400">"your_client_id"</span></div>
             <div><span class="text-green-400">$env:</span>APS_CLIENT_SECRET = <span class="text-amber-400">"your_client_secret"</span></div>
           </div>
+          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option1" title="Copy commands">
+            <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <svg class="w-4 h-4 check-icon hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
         </div>
-        <div>
+        <div class="relative">
           <h4 class="text-sm font-semibold text-white mb-2">Option 2: .env File</h4>
           <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
             <div class="text-slate-500"># Create .env in your project directory</div>
             <div>APS_CLIENT_ID=your_client_id</div>
             <div>APS_CLIENT_SECRET=your_client_secret</div>
           </div>
+          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option2" title="Copy commands">
+            <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <svg class="w-4 h-4 check-icon hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
         </div>
-        <div>
+        <div class="relative">
           <h4 class="text-sm font-semibold text-white mb-2">Option 3: RAPS Profile</h4>
           <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
             <div class="text-green-400">$ <span class="text-white">raps config profile create production</span></div>
             <div class="text-green-400">$ <span class="text-white">raps config set client_id "your_client_id"</span></div>
             <div class="text-green-400">$ <span class="text-white">raps config set client_secret "your_client_secret"</span></div>
           </div>
+          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option3" title="Copy commands">
+            <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <svg class="w-4 h-4 check-icon hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
         </div>
       </div>
     `,
@@ -264,13 +288,27 @@ const nextSteps = [
                         class:list={["p-6", tabIndex !== 0 && "hidden"]}
                         data-tab-content={tab.id}
                       >
-                        <div class="font-mono text-sm space-y-1">
-                          {tab.commands.map(cmd => (
-                            <div class={cmd.startsWith('#') ? 'text-slate-500' : ''}>
-                              {!cmd.startsWith('#') && <span class="text-green-400">$ </span>}
-                              <span class="text-white">{cmd}</span>
-                            </div>
-                          ))}
+                        <div class="relative">
+                          <button
+                            class="absolute top-0 right-0 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-tab-btn"
+                            data-tab-id={tab.id}
+                            title="Copy commands"
+                          >
+                            <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <svg class="w-4 h-4 check-icon hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <div class="font-mono text-sm space-y-1 pr-10">
+                            {tab.commands.map(cmd => (
+                              <div class={cmd.startsWith('#') ? 'text-slate-500' : ''}>
+                                {!cmd.startsWith('#') && <span class="text-green-400">$ </span>}
+                                <span class="text-white">{cmd}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                         {tab.note && (
                           <p class="mt-4 text-sm text-slate-500">{tab.note}</p>
@@ -287,7 +325,18 @@ const nextSteps = [
                 
                 {/* Code examples */}
                 {step.code && (
-                  <div class="bg-slate-900 rounded-xl border border-slate-800 p-6 font-mono text-sm space-y-4">
+                  <div class="bg-slate-900 rounded-xl border border-slate-800 p-6 font-mono text-sm space-y-4 relative">
+                    <button
+                      class="absolute top-4 right-4 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-code-btn"
+                      title="Copy commands"
+                    >
+                      <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <svg class="w-4 h-4 check-icon hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
                     {step.code.map(line => (
                       <div>
                         <div class="text-green-400">{line.prompt} <span class="text-white">{line.cmd}</span></div>
@@ -346,6 +395,22 @@ const nextSteps = [
 </BaseLayout>
 
 <script>
+  // Helper function to strip prompt characters
+  function stripPrompts(text) {
+    return text.split('\n').map(line => {
+      return line
+        .replace(/^\s*\$+\s+/, '')           // $ or $$
+        .replace(/^\s*#+\s+/, '')             // # (root prompt)
+        .replace(/^\s*>\s+/, '')              // > (continuation)
+        .replace(/^\s*PS\s*>\s*/, '')        // PS>
+        .replace(/^\s*PS\s+[A-Z]:\\.*?>\s*/, '') // PS C:\...>
+        .replace(/^\s*[A-Z]:\\.*?>\s*/, '')   // C:\...>
+        .replace(/^\s*>>>\s+/, '')            // Python >>>
+        .replace(/^\s*\.\.\.\s+/, '')         // ... continuation
+        .replace(/^\s*\+\s+/, '');            // + continuation
+    }).join('\n');
+  }
+
   // Tab switching functionality
   document.querySelectorAll('[data-step-tabs]').forEach(tabContainer => {
     const buttons = tabContainer.querySelectorAll('[data-tab]');
@@ -372,6 +437,116 @@ const nextSteps = [
           }
         });
       });
+    });
+  });
+
+  // Copy buttons for tab commands
+  document.querySelectorAll('.copy-tab-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const tabId = this.getAttribute('data-tab-id');
+      const tabContent = document.querySelector(`[data-tab-content="${tabId}"]`);
+      if (!tabContent) return;
+      
+      // Extract all command text, skipping comments
+      const commands = Array.from(tabContent.querySelectorAll('.font-mono > div'))
+        .map(div => {
+          const text = div.textContent || '';
+          // Skip comment lines
+          if (text.trim().startsWith('#')) return '';
+          return text;
+        })
+        .filter(cmd => cmd.trim())
+        .join('\n');
+      
+      const cleaned = stripPrompts(commands);
+      await navigator.clipboard.writeText(cleaned);
+      
+      const copyIcon = this.querySelector('.copy-icon');
+      const checkIcon = this.querySelector('.check-icon');
+      
+      copyIcon?.classList.add('hidden');
+      checkIcon?.classList.remove('hidden');
+      
+      setTimeout(() => {
+        copyIcon?.classList.remove('hidden');
+        checkIcon?.classList.add('hidden');
+      }, 2000);
+    });
+  });
+
+  // Copy buttons for code examples
+  document.querySelectorAll('.copy-code-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const codeBlock = this.closest('.bg-slate-900');
+      if (!codeBlock) return;
+      
+      // Extract all command lines (lines with prompts)
+      const commands = Array.from(codeBlock.querySelectorAll('.text-green-400'))
+        .map(el => {
+          const parent = el.parentElement;
+          if (!parent) return '';
+          // Get the command part (everything after the prompt)
+          const cmdSpan = parent.querySelector('.text-white');
+          return cmdSpan ? cmdSpan.textContent || '' : '';
+        })
+        .filter(cmd => cmd.trim())
+        .join('\n');
+      
+      const cleaned = stripPrompts(commands);
+      await navigator.clipboard.writeText(cleaned);
+      
+      const copyIcon = this.querySelector('.copy-icon');
+      const checkIcon = this.querySelector('.check-icon');
+      
+      copyIcon?.classList.add('hidden');
+      checkIcon?.classList.remove('hidden');
+      
+      setTimeout(() => {
+        copyIcon?.classList.remove('hidden');
+        checkIcon?.classList.add('hidden');
+      }, 2000);
+    });
+  });
+
+  // Copy buttons for HTML content code blocks
+  document.querySelectorAll('.copy-content-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const target = this.getAttribute('data-copy-target');
+      const container = this.closest('.relative');
+      if (!container) return;
+      
+      const codeBlock = container.querySelector('.bg-slate-900');
+      if (!codeBlock) return;
+      
+      // Extract text content, skipping comments
+      const lines = Array.from(codeBlock.querySelectorAll('div'))
+        .map(div => {
+          const text = div.textContent || '';
+          // For PowerShell, extract the actual command part
+          if (text.includes('$env:')) {
+            return text.replace(/.*?\$env:/, '$env:').trim();
+          }
+          return text.trim();
+        })
+        .filter(line => {
+          const trimmed = line.trim();
+          return trimmed && !trimmed.startsWith('#');
+        });
+      
+      const commands = lines.join('\n');
+      const cleaned = stripPrompts(commands);
+      await navigator.clipboard.writeText(cleaned);
+      
+      const copyIcon = this.querySelector('.copy-icon');
+      const checkIcon = this.querySelector('.check-icon');
+      
+      copyIcon?.classList.add('hidden');
+      checkIcon?.classList.remove('hidden');
+      
+      setTimeout(() => {
+        copyIcon?.classList.remove('hidden');
+        checkIcon?.classList.add('hidden');
+      }, 2000);
     });
   });
 </script>
