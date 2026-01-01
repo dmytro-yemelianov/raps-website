@@ -46,6 +46,16 @@ icon: "📖"
 - 14+ tools for natural language APS operations
 - Works with Claude, Cursor, and other MCP clients
 
+## Architecture
+
+RAPS follows a **microkernel architecture** that separates core functionality from extended features:
+
+- **Kernel**: Minimal trusted foundation (Auth, HTTP client, Configuration, Error handling)
+- **Service Crates**: Independent modules for APS APIs (OSS, Derivative, Data Management, SSA)
+- **Application Layer**: User interfaces (CLI, MCP Server, TUI) and extended features
+
+See the [Architecture Guide](/docs/architecture) for detailed information.
+
 ## Quick Start
 
 ```bash
