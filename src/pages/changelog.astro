@@ -4,6 +4,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '3.4.0',
+    date: '2026-01-02',
+    highlights: ['Version Display Fix', 'OAuth Callback Improvements', 'Windows Compatibility'],
+    type: 'minor',
+    changes: {
+      added: [
+        'Automatic port fallback system for OAuth callback server with RAPS-themed ports (12495, 7495, 9247)',
+        'Intelligent port selection with helpful error messages when ports are unavailable',
+      ],
+      changed: [
+        'OAuth callback server binding changed from 0.0.0.0 to 127.0.0.1 for better Windows localhost support',
+        'Updated logo reference in README from PNG to WebP format',
+      ],
+      fixed: [
+        'Version display now automatically syncs with Cargo.toml using env!("CARGO_PKG_VERSION")',
+        'Windows compatibility for OAuth callback server',
+      ],
+    },
+  },
+  {
     version: '3.1.0',
     date: '2025-12-29',
     highlights: ['Rust 2024 Edition', 'CI Speedups', 'Command Dispatch Fix'],
@@ -17,7 +37,7 @@ const releases = [
       ],
       changed: [
         'Migrated to Rust 2024 Edition',
-        'Updated MSRV to Rust 1.85',
+        'Updated MSRV to Rust 1.88',
         'Wrapped `std::env::set_var/remove_var` in `unsafe` blocks (Rust 2024 requirement)',
         'Use `div_ceil` instead of manual ceiling division',
       ],

@@ -207,7 +207,7 @@ const steps = [
   }
 }</code></pre>
         </div>
-        <p class="text-sm text-slate-500 mt-4">After configuration, ask your AI assistant: "Show me all my APS buckets" 🤖</p>
+        <p class="text-sm text-slate-500 mt-4">After configuration, ask your AI assistant: "Show me all my APS buckets" <span class="emoji">🤖</span></p>
       </div>
     `,
   },
@@ -217,7 +217,7 @@ const nextSteps = [
   { href: '/docs/cli/commands', label: 'Command Reference', icon: '📖' },
   { href: '/docs/guides/cicd', label: 'CI/CD Integration', icon: '🔄' },
   { href: '/docs/guides/pipelines', label: 'Pipeline Automation', icon: '⚡' },
-  { href: '/blog', label: 'Tutorials & Guides', icon: '📝' },
+  { href: '/docs/guides/tutorials', label: 'Tutorials & Guides', icon: '📝' },
 ];
 ---
 
@@ -278,7 +278,7 @@ const nextSteps = [
                           ]}
                           data-tab={tab.id}
                         >
-                          <span>{tab.icon}</span>
+                          <span class="emoji">{tab.icon}</span>
                           {tab.label}
                         </button>
                       ))}
@@ -381,7 +381,7 @@ const nextSteps = [
               href={item.href}
               class="flex items-center gap-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 hover:bg-slate-900 transition-all group"
             >
-              <span class="text-2xl">{item.icon}</span>
+              <span class="text-2xl emoji">{item.icon}</span>
               <span class="text-white font-medium group-hover:text-primary-400 transition-colors">{item.label}</span>
               <svg class="w-4 h-4 text-slate-500 group-hover:text-primary-400 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

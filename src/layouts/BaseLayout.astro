@@ -74,6 +74,98 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         "downloadUrl": "https://github.com/dmytro-yemelianov/raps/releases"
       }
     </script>
+    
+    <!-- Theme initialization script (runs before page renders to avoid flash) -->
+    <script is:inline>
+      // Initialize theme
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.classList.toggle('light', theme === 'light');
+      
+      // Initialize emoji visibility
+      const showEmoji = localStorage.getItem('showEmoji') !== 'false'; // default true
+      if (!showEmoji) {
+        document.documentElement.classList.add('hide-emoji');
+      }
+    </script>
+    
+    <style is:global>
+      /* Light theme styles - using CSS custom properties to avoid @apply circular dependencies */
+      html.light {
+        color-scheme: light;
+      }
+      
+      html.light body {
+        background-color: rgb(248 250 252); /* slate-50 */
+        color: rgb(15 23 42); /* slate-900 */
+      }
+      
+      html.light header {
+        background-color: rgba(255, 255, 255, 0.8);
+        border-color: rgb(226 232 240); /* slate-200 */
+      }
+      
+      html.light .text-white {
+        color: rgb(15 23 42); /* slate-900 */
+      }
+      
+      html.light .text-slate-400 {
+        color: rgb(71 85 105); /* slate-600 */
+      }
+      
+      html.light .text-slate-500 {
+        color: rgb(100 116 139); /* slate-500 */
+      }
+      
+      html.light .text-slate-300 {
+        color: rgb(51 65 85); /* slate-700 */
+      }
+      
+      html.light .bg-slate-950 {
+        background-color: rgb(248 250 252); /* slate-50 */
+      }
+      
+      html.light .bg-slate-900\/50,
+      html.light .bg-slate-900\/30 {
+        background-color: rgb(241 245 249); /* slate-100 */
+      }
+      
+      html.light .bg-slate-900 {
+        background-color: rgb(241 245 249); /* slate-100 */
+      }
+      
+      html.light .bg-slate-800 {
+        background-color: rgb(226 232 240); /* slate-200 */
+      }
+      
+      html.light .bg-slate-800\/50 {
+        background-color: rgb(241 245 249); /* slate-100 */
+      }
+      
+      html.light .border-slate-800 {
+        border-color: rgb(226 232 240); /* slate-200 */
+      }
+      
+      html.light .border-slate-700 {
+        border-color: rgb(203 213 225); /* slate-300 */
+      }
+      
+      html.light .hover\:bg-slate-700:hover {
+        background-color: rgb(203 213 225); /* slate-300 */
+      }
+      
+      html.light .hover\:bg-slate-800\/50:hover {
+        background-color: rgb(226 232 240); /* slate-200 */
+      }
+      
+      html.light .hover\:bg-slate-900\/30:hover {
+        background-color: rgb(226 232 240); /* slate-200 */
+      }
+      
+      /* Emoji visibility toggle */
+      html.hide-emoji .emoji {
+        display: none;
+      }
+    </style>
   </head>
   <body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
     <Header />
