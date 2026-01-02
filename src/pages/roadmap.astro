@@ -1,0 +1,385 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Roadmap data organized by version/milestone
+const roadmap = [
+  {
+    version: '3.5.0',
+    status: 'planned',
+    quarter: 'Q1 2026',
+    theme: 'Enhanced MCP & AI Integration',
+    features: [
+      {
+        title: 'Expanded MCP Tool Coverage',
+        description: 'Add more MCP tools for Data Management (folders, items, versions), ACC modules (RFIs, submittals, assets), and Design Automation.',
+        priority: 'high',
+        category: 'mcp',
+      },
+      {
+        title: 'MCP Streaming Responses',
+        description: 'Support streaming for long-running operations like translation jobs and file uploads with real-time progress updates.',
+        priority: 'high',
+        category: 'mcp',
+      },
+      {
+        title: 'AI Conversation Context',
+        description: 'Enable MCP tools to maintain context across multiple operations (e.g., "translate that file" after listing objects).',
+        priority: 'medium',
+        category: 'mcp',
+      },
+      {
+        title: 'GitHub Copilot Extension',
+        description: 'Native integration with GitHub Copilot for VS Code to enable APS operations directly from the IDE.',
+        priority: 'medium',
+        category: 'integrations',
+      },
+    ],
+  },
+  {
+    version: '4.0.0',
+    status: 'planned',
+    quarter: 'Q2 2026',
+    theme: 'Collaboration & Team Features',
+    features: [
+      {
+        title: 'Multi-User Profile Management',
+        description: 'Support team-wide configuration profiles with role-based access controls and credential sharing.',
+        priority: 'high',
+        category: 'auth',
+      },
+      {
+        title: 'Webhook Event Processing',
+        description: 'Built-in webhook server with event routing, filtering, and custom handlers for real-time APS notifications.',
+        priority: 'high',
+        category: 'webhooks',
+      },
+      {
+        title: 'Audit Logging',
+        description: 'Comprehensive logging of all APS operations with timestamps, user attribution, and export capabilities.',
+        priority: 'medium',
+        category: 'monitoring',
+      },
+      {
+        title: 'Team Dashboard',
+        description: 'Web-based dashboard for monitoring team APS usage, quotas, and operation history.',
+        priority: 'medium',
+        category: 'monitoring',
+      },
+      {
+        title: 'Shared Cache Layer',
+        description: 'Redis/Memcached support for sharing translation results and API responses across team members.',
+        priority: 'low',
+        category: 'performance',
+      },
+    ],
+  },
+  {
+    version: '4.5.0',
+    status: 'research',
+    quarter: 'Q3 2026',
+    theme: 'Advanced Automation & Workflows',
+    features: [
+      {
+        title: 'Visual Pipeline Designer',
+        description: 'GUI tool for creating and editing YAML/JSON pipeline definitions with drag-and-drop.',
+        priority: 'high',
+        category: 'pipelines',
+      },
+      {
+        title: 'Workflow Triggers',
+        description: 'Automatic pipeline execution based on file system events, webhooks, schedules, or manual triggers.',
+        priority: 'high',
+        category: 'pipelines',
+      },
+      {
+        title: 'Pipeline Templates Marketplace',
+        description: 'Community-contributed pipeline templates for common AEC/manufacturing workflows.',
+        priority: 'medium',
+        category: 'pipelines',
+      },
+      {
+        title: 'Conditional Pipeline Steps',
+        description: 'Support for if/else logic, loops, and dynamic parameter substitution in pipelines.',
+        priority: 'medium',
+        category: 'pipelines',
+      },
+      {
+        title: 'Integration with CI/CD Platforms',
+        description: 'Native GitHub Actions, GitLab CI, Jenkins, and Azure DevOps integrations with pre-built workflows.',
+        priority: 'medium',
+        category: 'integrations',
+      },
+    ],
+  },
+  {
+    version: '5.0.0',
+    status: 'research',
+    quarter: 'Q4 2026',
+    theme: 'Enterprise & Scale',
+    features: [
+      {
+        title: 'Multi-Cloud Storage Support',
+        description: 'Direct integration with AWS S3, Azure Blob, Google Cloud Storage as alternatives to OSS.',
+        priority: 'high',
+        category: 'storage',
+      },
+      {
+        title: 'Distributed Processing',
+        description: 'Horizontal scaling with job queues and worker pools for massive batch operations.',
+        priority: 'high',
+        category: 'performance',
+      },
+      {
+        title: 'Enterprise SSO Integration',
+        description: 'Support for SAML, Azure AD, Okta, and other enterprise identity providers.',
+        priority: 'high',
+        category: 'auth',
+      },
+      {
+        title: 'Cost Monitoring & Optimization',
+        description: 'Track APS API usage costs with budget alerts and optimization recommendations.',
+        priority: 'medium',
+        category: 'monitoring',
+      },
+      {
+        title: 'Compliance & Governance',
+        description: 'SOC 2, GDPR, and industry-specific compliance features with data residency controls.',
+        priority: 'medium',
+        category: 'enterprise',
+      },
+      {
+        title: 'High Availability Mode',
+        description: 'Failover, redundancy, and disaster recovery features for mission-critical deployments.',
+        priority: 'low',
+        category: 'enterprise',
+      },
+    ],
+  },
+  {
+    version: 'Future',
+    status: 'ideas',
+    quarter: 'Beyond 2026',
+    theme: 'Innovation & Exploration',
+    features: [
+      {
+        title: 'GraphQL API Layer',
+        description: 'Expose RAPS capabilities through a GraphQL API for custom integrations and frontends.',
+        priority: 'medium',
+        category: 'api',
+      },
+      {
+        title: 'Machine Learning Model Management',
+        description: 'Store and version ML models alongside CAD files, integrate with MLOps platforms.',
+        priority: 'low',
+        category: 'ml',
+      },
+      {
+        title: 'AR/VR Viewer Integration',
+        description: 'Direct export and streaming to AR/VR platforms (HoloLens, Quest, etc.).',
+        priority: 'low',
+        category: 'visualization',
+      },
+      {
+        title: 'Blockchain Asset Tracking',
+        description: 'Immutable audit trails and provenance tracking using blockchain technology.',
+        priority: 'low',
+        category: 'experimental',
+      },
+      {
+        title: 'Natural Language Pipelines',
+        description: 'Define entire automation workflows using natural language with LLM assistance.',
+        priority: 'medium',
+        category: 'ai',
+      },
+      {
+        title: 'Mobile Companion App',
+        description: 'iOS/Android app for monitoring pipelines, viewing models, and approving operations on the go.',
+        priority: 'low',
+        category: 'mobile',
+      },
+    ],
+  },
+];
+
+const categories = {
+  mcp: { label: 'MCP Server', color: 'purple' },
+  integrations: { label: 'Integrations', color: 'blue' },
+  auth: { label: 'Authentication', color: 'emerald' },
+  webhooks: { label: 'Webhooks', color: 'cyan' },
+  monitoring: { label: 'Monitoring', color: 'amber' },
+  performance: { label: 'Performance', color: 'red' },
+  pipelines: { label: 'Pipelines', color: 'indigo' },
+  storage: { label: 'Storage', color: 'teal' },
+  enterprise: { label: 'Enterprise', color: 'slate' },
+  api: { label: 'API', color: 'violet' },
+  ml: { label: 'Machine Learning', color: 'pink' },
+  visualization: { label: 'Visualization', color: 'orange' },
+  experimental: { label: 'Experimental', color: 'fuchsia' },
+  ai: { label: 'AI', color: 'purple' },
+  mobile: { label: 'Mobile', color: 'sky' },
+};
+
+const statusLabels = {
+  planned: { label: 'Planned', color: 'emerald', icon: '📋' },
+  research: { label: 'Research', color: 'amber', icon: '🔬' },
+  ideas: { label: 'Ideas', color: 'slate', icon: '💡' },
+};
+
+const priorityLabels = {
+  high: { label: 'High', color: 'red' },
+  medium: { label: 'Medium', color: 'amber' },
+  low: { label: 'Low', color: 'slate' },
+};
+---
+
+<BaseLayout title="Roadmap" description="RAPS development roadmap and planned features for future releases.">
+  <section class="py-12 sm:py-16 lg:py-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      
+      <!-- Header -->
+      <div class="mb-12 sm:mb-16">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
+          Roadmap
+        </h1>
+        <p class="text-base sm:text-lg text-slate-400 max-w-2xl mb-6">
+          Future features and improvements planned for RAPS. This roadmap is subject to change based on community feedback and priorities.
+        </p>
+        <a
+          href="https://github.com/dmytro-yemelianov/raps/discussions"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          Have ideas? Join the discussion
+        </a>
+      </div>
+
+      <!-- Legend -->
+      <div class="mb-8 p-4 sm:p-6 bg-slate-900/30 border border-slate-800 rounded-lg">
+        <h3 class="text-sm font-semibold text-white mb-3">Status Legend</h3>
+        <div class="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
+          {Object.entries(statusLabels).map(([key, value]) => (
+            <div class="flex items-center gap-2">
+              <span class="emoji text-base">{value.icon}</span>
+              <span class={`text-${value.color}-400`}>{value.label}</span>
+              <span class="text-slate-500">—</span>
+              <span class="text-slate-500">
+                {key === 'planned' && 'Committed for upcoming release'}
+                {key === 'research' && 'Under investigation & design'}
+                {key === 'ideas' && 'Exploring possibilities'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Milestones -->
+      <div class="space-y-8 sm:space-y-12">
+        {roadmap.map((milestone, index) => (
+          <div class="relative">
+            {/* Timeline connector */}
+            {index < roadmap.length - 1 && (
+              <div class="absolute left-3 sm:left-4 top-12 bottom-0 w-0.5 bg-slate-800 hidden sm:block"></div>
+            )}
+
+            <div class="border border-slate-800 rounded-lg overflow-hidden">
+              <!-- Milestone Header -->
+              <div class="px-4 sm:px-6 py-4 sm:py-5 bg-slate-900/50 border-b border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <div class="flex items-center gap-3">
+                    <span class="emoji text-2xl sm:text-3xl">{statusLabels[milestone.status].icon}</span>
+                    <div>
+                      <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+                        <span>v{milestone.version}</span>
+                        <span class={`px-2 py-0.5 text-xs font-medium rounded bg-${statusLabels[milestone.status].color}-500/10 text-${statusLabels[milestone.status].color}-400`}>
+                          {statusLabels[milestone.status].label}
+                        </span>
+                      </h2>
+                      <p class="text-sm sm:text-base text-slate-400 mt-1">{milestone.theme}</p>
+                    </div>
+                  </div>
+                  <div class="text-sm text-slate-500 sm:ml-auto">
+                    {milestone.quarter}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Features -->
+              <div class="divide-y divide-slate-800/50">
+                {milestone.features.map((feature) => (
+                  <div class="px-4 sm:px-6 py-4 hover:bg-slate-900/30 transition-colors">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                          <h3 class="text-base sm:text-lg font-semibold text-white">{feature.title}</h3>
+                          <span class={`px-2 py-0.5 text-xs font-medium rounded bg-${categories[feature.category].color}-500/10 text-${categories[feature.category].color}-400`}>
+                            {categories[feature.category].label}
+                          </span>
+                        </div>
+                        <p class="text-sm sm:text-base text-slate-400">{feature.description}</p>
+                      </div>
+                      <div class="flex items-center gap-2 sm:shrink-0">
+                        <span class={`px-2 py-1 text-xs font-medium rounded bg-${priorityLabels[feature.priority].color}-500/10 text-${priorityLabels[feature.priority].color}-400`}>
+                          {priorityLabels[feature.priority].label} Priority
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Call to Action -->
+      <div class="mt-12 sm:mt-16 p-6 sm:p-8 bg-gradient-to-br from-rapeseed-500/10 to-slate-900/50 border border-rapeseed-500/20 rounded-lg">
+        <h3 class="text-xl sm:text-2xl font-bold text-white mb-3">
+          <span class="emoji">💬</span> Help Shape the Future
+        </h3>
+        <p class="text-sm sm:text-base text-slate-300 mb-6">
+          This roadmap is community-driven. Your feedback and feature requests help prioritize development.
+          Vote on existing proposals or suggest new features on GitHub Discussions.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/discussions/new?category=ideas"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-rapeseed-600 hover:bg-rapeseed-500 text-white text-sm sm:text-base font-medium rounded-lg transition-colors"
+          >
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+            </svg>
+            Suggest a Feature
+          </a>
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/discussions"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-slate-800 hover:bg-slate-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors"
+          >
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z"/>
+            </svg>
+            View Discussions
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer Note -->
+      <div class="mt-8 text-center">
+        <p class="text-xs sm:text-sm text-slate-500">
+          Release dates and features are estimates and may change. 
+          <a href="/changelog" class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
+            View past releases
+          </a>
+        </p>
+      </div>
+
+    </div>
+  </section>
+</BaseLayout>

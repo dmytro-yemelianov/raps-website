@@ -4,6 +4,7 @@ const navItems = [
   { href: '/docs', label: 'Docs' },
   { href: '/api-coverage', label: 'API Coverage' },
   { href: '/quickstart', label: 'Quick Start' },
+  { href: '/roadmap', label: 'Roadmap' },
   { href: '/changelog', label: 'Changelog' },
   { href: '/about', label: 'About' },
 ];
@@ -23,7 +24,7 @@ const isActive = (href: string) => {
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-3 group">
-        <span class="text-2xl group-hover:scale-110 transition-transform">🌼</span>
+        <span class="text-2xl group-hover:scale-110 transition-transform emoji">🌼</span>
         <span class="font-display font-bold text-lg text-white group-hover:text-rapeseed-400 transition-colors">
           RAPS
         </span>
@@ -42,6 +43,7 @@ const isActive = (href: string) => {
               item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400 hover:text-rapeseed-300',
               item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400 hover:text-emerald-300',
               item.label === 'API Coverage' && !isActive(item.href) && 'text-purple-400 hover:text-purple-300',
+              item.label === 'Roadmap' && !isActive(item.href) && 'text-cyan-400 hover:text-cyan-300',
             ]}
           >
             {item.label}
@@ -51,6 +53,34 @@ const isActive = (href: string) => {
       
       <!-- CTA Buttons -->
       <div class="flex items-center gap-3">
+        <!-- Theme Toggle -->
+        <button
+          type="button"
+          id="theme-toggle"
+          class="p-2 text-slate-400 hover:text-white transition-colors"
+          aria-label="Toggle theme"
+          title="Toggle light/dark theme"
+        >
+          <svg class="w-5 h-5 dark-icon" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <svg class="w-5 h-5 light-icon hidden" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+        </button>
+        
+        <!-- Emoji Toggle -->
+        <button
+          type="button"
+          id="emoji-toggle"
+          class="p-2 text-slate-400 hover:text-white transition-colors text-lg"
+          aria-label="Toggle emoji visibility"
+          title="Show/hide emoji"
+        >
+          <span class="emoji-on">🌼</span>
+          <span class="emoji-off hidden">◻️</span>
+        </button>
+        
         <a
           href="https://github.com/dmytro-yemelianov/raps"
           target="_blank"
@@ -98,6 +128,7 @@ const isActive = (href: string) => {
             item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400',
             item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400',
             item.label === 'API Coverage' && !isActive(item.href) && 'text-purple-400',
+            item.label === 'Roadmap' && !isActive(item.href) && 'text-cyan-400',
           ]}
         >
           {item.label}
@@ -114,6 +145,59 @@ const isActive = (href: string) => {
   button?.addEventListener('click', () => {
     menu?.classList.toggle('hidden');
   });
+  
+  // Theme toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  const html = document.documentElement;
+  
+  function updateThemeIcon() {
+    const isDark = !html.classList.contains('light');
+    const darkIcon = themeToggle?.querySelector('.dark-icon');
+    const lightIcon = themeToggle?.querySelector('.light-icon');
+    
+    if (isDark) {
+      darkIcon?.classList.remove('hidden');
+      lightIcon?.classList.add('hidden');
+    } else {
+      darkIcon?.classList.add('hidden');
+      lightIcon?.classList.remove('hidden');
+    }
+  }
+  
+  themeToggle?.addEventListener('click', () => {
+    html.classList.toggle('light');
+    const theme = html.classList.contains('light') ? 'light' : 'dark';
+    localStorage.setItem('theme', theme);
+    updateThemeIcon();
+  });
+  
+  updateThemeIcon();
+  
+  // Emoji toggle
+  const emojiToggle = document.getElementById('emoji-toggle');
+  
+  function updateEmojiIcon() {
+    const hideEmoji = html.classList.contains('hide-emoji');
+    const emojiOn = emojiToggle?.querySelector('.emoji-on');
+    const emojiOff = emojiToggle?.querySelector('.emoji-off');
+    
+    if (hideEmoji) {
+      emojiOn?.classList.add('hidden');
+      emojiOff?.classList.remove('hidden');
+    } else {
+      emojiOn?.classList.remove('hidden');
+      emojiOff?.classList.add('hidden');
+    }
+  }
+  
+  emojiToggle?.addEventListener('click', () => {
+    html.classList.toggle('hide-emoji');
+    const showEmoji = !html.classList.contains('hide-emoji');
+    localStorage.setItem('showEmoji', showEmoji.toString());
+    updateEmojiIcon();
+  });
+  
+  updateEmojiIcon();
 </script>
 
 <!-- Spacer for fixed header -->

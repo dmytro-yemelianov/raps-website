@@ -528,23 +528,63 @@ const sectionContainsCurrent = (sectionId: string) => {
           copyBtn.addEventListener('click', async () => {
             let code = pre.querySelector('code')?.textContent || pre.textContent || '';
             
-            // Strip prompt characters for shell/bash/powershell/cmd code blocks
-            const shellLanguages = ['bash', 'sh', 'shell', 'zsh', 'fish', 'powershell', 'ps1', 'ps', 'cmd', 'bat'];
+            // Strip prompt characters and filter output for shell/bash/powershell/cmd code blocks
+            const shellLanguages = ['bash', 'sh', 'shell', 'zsh', 'fish', 'powershell', 'ps1', 'ps', 'cmd', 'bat', 'terminal', 'console'];
             if (shellLanguages.includes(lang.toLowerCase())) {
-              code = code.split('\n').map(line => {
-                // Remove common prompt patterns:
-                // $ , # , > , PS> , PS C:\> , C:\> , >>> , ...
-                return line
-                  .replace(/^\s*\$+\s+/, '')           // $ or $$
-                  .replace(/^\s*#+\s+/, '')             // # (root prompt)
-                  .replace(/^\s*>\s+/, '')              // > (continuation)
-                  .replace(/^\s*PS\s*>\s*/, '')        // PS>
-                  .replace(/^\s*PS\s+[A-Z]:\\.*?>\s*/, '') // PS C:\...>
-                  .replace(/^\s*[A-Z]:\\.*?>\s*/, '')   // C:\...>
-                  .replace(/^\s*>>>\s+/, '')            // Python >>>
-                  .replace(/^\s*\.\.\.\s+/, '')         // ... continuation
-                  .replace(/^\s*\+\s+/, '');            // + continuation
-              }).join('\n');
+              code = code.split('\n')
+                .map(line => {
+                  // Remove common prompt patterns:
+                  // $ , # , > , PS> , PS C:\> , C:\> , >>> , ...
+                  return line
+                    .replace(/^\s*\$+\s+/, '')           // $ or $$
+                    .replace(/^\s*#+\s+/, '')            // # (root prompt) - but keep comments
+                    .replace(/^\s*>\s+/, '')             // > (continuation)
+                    .replace(/^\s*PS\s*>\s*/, '')        // PS>
+                    .replace(/^\s*PS\s+[A-Z]:\\.*?>\s*/, '') // PS C:\...>
+                    .replace(/^\s*[A-Z]:\\.*?>\s*/, '')  // C:\...>
+                    .replace(/^\s*>>>\s+/, '')           // Python >>>
+                    .replace(/^\s*\.\.\.\s+/, '')        // ... continuation
+                    .replace(/^\s*\+\s+/, '');           // + continuation
+                })
+                .filter(line => {
+                  const trimmed = line.trim();
+                  // Skip empty lines within output blocks
+                  if (!trimmed) return true; // Keep empty lines for formatting
+                  
+                  // Skip lines that look like output (common patterns)
+                  // JSON output
+                  if (/^\s*[\{\}\[\]]/.test(trimmed) && !trimmed.includes('=')) return false;
+                  if (/^\s*"[^"]+"\s*:/.test(trimmed)) return false; // JSON key-value
+                  
+                  // Table-like output (lines starting with │ ├ └ ┌ ┐ ─ etc)
+                  if (/^[│├└┌┐┘┬┴┼─|+\-]/.test(trimmed)) return false;
+                  
+                  // Output lines starting with common prefixes
+                  if (/^(OK|ERROR|WARN|INFO|DEBUG|SUCCESS|FAILED|✓|✗|→|⟹|==>|-->)[\s:]/i.test(trimmed)) return false;
+                  
+                  // Lines that are clearly output (all caps status, timestamps, etc)
+                  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return false; // Timestamps
+                  if (/^\s*\d+\s+(bytes|files|items|objects|buckets)/i.test(trimmed)) return false; // Counts
+                  
+                  // Skip lines that look like command output (indented non-command text)
+                  // But keep comments (lines starting with #)
+                  if (line.startsWith('  ') && !trimmed.startsWith('#') && !trimmed.startsWith('raps ') && 
+                      !trimmed.startsWith('cargo ') && !trimmed.startsWith('brew ') && 
+                      !trimmed.startsWith('scoop ') && !trimmed.startsWith('docker ') &&
+                      !trimmed.startsWith('npm ') && !trimmed.startsWith('curl ') &&
+                      !trimmed.startsWith('wget ') && !trimmed.startsWith('git ') &&
+                      !trimmed.startsWith('cd ') && !trimmed.startsWith('mkdir ') &&
+                      !trimmed.startsWith('export ') && !trimmed.startsWith('set ') &&
+                      !trimmed.startsWith('$env:') && !trimmed.startsWith('echo ') &&
+                      !/^[a-z_][a-z0-9_]*=/i.test(trimmed)) {
+                    return false;
+                  }
+                  
+                  return true;
+                })
+                .join('\n')
+                .replace(/\n{3,}/g, '\n\n') // Collapse multiple empty lines
+                .trim();
             }
             
             await navigator.clipboard.writeText(code);
