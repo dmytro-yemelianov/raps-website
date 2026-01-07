@@ -50,7 +50,7 @@ export APS_CLIENT_SECRET="your_client_secret_here"
 | `APS_DA_NICKNAME` | Design Automation nickname | - |
 | `RAPS_TIMEOUT` | Request timeout in seconds | `120` |
 | `RAPS_CONCURRENCY` | Max parallel operations | `5` |
-| `RAPS_USE_KEYCHAIN` | Store tokens in OS keychain | `false` |
+| `RAPS_USE_FILE_STORAGE` | Use plaintext file storage (insecure) | `false` |
 
 ## Using .env File
 
@@ -94,6 +94,28 @@ raps config profile import ./prod-profile.json --name backup
 - **Windows**: `%APPDATA%\raps\profiles.json`
 - **macOS**: `~/Library/Application Support/raps/profiles.json`
 - **Linux**: `~/.config/raps/profiles.json`
+
+### Secure Token Storage (v3.7.0+)
+
+RAPS now defaults to secure OS keychain storage for authentication tokens instead of plaintext files.
+
+```bash
+# Enable/disable keychain storage per profile
+raps config set use_keychain true   # Default: true (secure)
+raps config set use_keychain false  # Use plaintext files (insecure)
+
+# Migrate existing tokens to keychain
+raps config migrate-tokens
+```
+
+**Token Storage Locations:**
+- **Keychain (Secure)**: OS-managed secure storage
+  - **Windows**: Windows Credential Manager
+  - **macOS**: macOS Keychain
+  - **Linux**: Secret Service (gnome-keyring, kwallet)
+- **File (Insecure)**: `~/.config/raps/tokens.json` (⚠️ plaintext)
+
+> **🔐 Security Best Practice**: Use keychain storage (default). File storage stores tokens in plaintext and should only be used in secure environments.
 
 ## Shell Completions
 

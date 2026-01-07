@@ -1,0 +1,248 @@
+---
+title: "Interactive Shell"
+description: "Use RAPS interactive shell with TAB completion and parameter hints"
+section: "getting-started"
+order: 5
+icon: "🚀"
+---
+
+# Interactive Shell
+
+RAPS includes a powerful interactive shell with advanced features like TAB completion, parameter hints, and command history.
+
+## Starting the Shell
+
+```bash
+raps shell
+```
+
+You'll see a welcome message with usage tips:
+
+```
+Welcome to the RAPS interactive shell!
+Type 'help' for a list of commands, 'exit' to quit.
+Use TAB for command completion, hints show required parameters.
+
+raps> 
+```
+
+## ⭐ Key Features
+
+### 🔥 TAB Completion
+
+Press **TAB** to auto-complete commands, subcommands, and flags:
+
+```bash
+raps> bu[TAB]
+bucket               Bucket operations (OSS)
+
+raps> bucket cr[TAB]  
+create               Create a new bucket
+
+raps> bucket create --[TAB]
+--retention <transient|temporary|persistent>   --force
+```
+
+**Smart completion includes:**
+- **Commands**: `auth`, `bucket`, `object`, `translate`, etc.
+- **Subcommands**: Context-aware based on the current command
+- **Flags**: Shows available options with descriptions
+- **Parameter types**: Displays expected value formats
+
+### 💡 Parameter Hints
+
+Gray text hints show required parameters as you type:
+
+```bash
+raps> bucket create <BUCKET_KEY>
+                    ↑ gray hint
+
+raps> bucket create my-bucket [--retention <transient|temporary|persistent>]
+                              ↑ optional flags shown
+
+raps> object upload <BUCKET_KEY> <FILE_PATH>
+                    ↑ shows multiple required parameters
+
+raps> translate start <URN> [--format <svf|svf2>]
+                      ↑ required  ↑ optional
+```
+
+**Hint behavior:**
+- **Required parameters**: Shown in `<angle_brackets>`
+- **Optional flags**: Shown in `[square_brackets]`
+- **Multiple options**: Shown as `<option1|option2|option3>`
+- **Dynamic updates**: Hints change as you add parameters
+
+### 📝 Command History
+
+Navigate through previous commands:
+- **↑ Arrow**: Previous command
+- **↓ Arrow**: Next command
+- **Ctrl+R**: Search command history
+- **Auto-save**: History persists between sessions
+
+### 🎨 Enhanced Experience
+
+```bash
+# Colored prompt
+raps> auth status
+
+# Built-in help command
+raps> help
+Available commands:
+  auth             Authentication (login, logout, status, test, whoami)
+  bucket           Bucket operations (list, create, get, delete)
+  object           Object operations (list, upload, download, delete)
+  translate        Model Derivative (start, status, manifest, metadata)
+  ...
+
+Tips:
+  • Press TAB for command completion
+  • Gray text hints show required parameters
+  • Use <command> --help or <command> -h for command help
+```
+
+## 🔧 Usage Examples
+
+### Interactive Authentication Flow
+
+```bash
+raps> auth status
+❌ Not authenticated
+
+raps> auth login --3lo
+🔐 Opening browser for 3-legged OAuth authentication...
+✓ Authentication successful!
+
+raps> auth whoami
+User: john.doe@company.com
+```
+
+### Bucket and Object Operations
+
+```bash
+# Create a bucket with hints
+raps> bucket create <BUCKET_KEY>
+raps> bucket create my-project-files
+
+# Upload with tab completion
+raps> object upload my-project-files ./model.rvt
+Uploading model.rvt...
+████████████████████████████████████████ 100%
+✓ Upload complete!
+
+# Get URN for translation  
+raps> object urn my-project-files model.rvt
+URN: dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6...
+```
+
+### Model Translation Workflow
+
+```bash
+# Start translation with format hints
+raps> translate start <URN>
+raps> translate start dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6... --format svf2
+
+# Check status
+raps> translate status dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6...
+Status: success
+Progress: 100%
+```
+
+## ⌨️ Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| **TAB** | Auto-complete commands/parameters |
+| **↑/↓** | Navigate command history |
+| **Ctrl+C** | Interrupt current operation |
+| **Ctrl+D** | Exit shell |
+| **Ctrl+L** | Clear screen |
+| **Ctrl+R** | Search command history |
+
+## 🔄 Shell Commands
+
+Special commands available in interactive mode:
+
+```bash
+# Show command overview
+raps> help
+
+# Regular RAPS commands work normally
+raps> bucket list
+raps> auth test  
+raps> object upload my-bucket file.dwg
+
+# Exit the shell
+raps> exit
+# or
+raps> quit
+```
+
+## 💡 Pro Tips
+
+### 1. **Use Hints for Learning**
+The parameter hints are perfect for discovering command syntax:
+```bash
+raps> webhook create <SYSTEM> <EVENT> <CALLBACK_URL>
+# Shows you exactly what parameters are needed
+```
+
+### 2. **Tab Through Options**
+Use TAB to explore available subcommands:
+```bash
+raps> auth [TAB]
+login    logout   status   test     whoami   inspect-token
+```
+
+### 3. **Combine with Command Help**
+Use shell completion to discover commands, then get detailed help:
+```bash
+raps> translate [TAB]  # See available subcommands
+raps> translate start --help  # Get detailed help
+```
+
+### 4. **Scripting Integration**
+Test commands interactively, then copy to scripts:
+```bash
+raps> bucket create my-bucket --retention persistent
+# Works great, now add to your script:
+# #!/bin/bash
+# raps bucket create my-bucket --retention persistent
+```
+
+## 🚨 Troubleshooting
+
+### Tab Completion Not Working
+
+If TAB completion doesn't work:
+
+1. **Check Terminal**: Ensure your terminal supports readline
+2. **Update RAPS**: Make sure you're using v3.8.0 or later
+3. **Terminal Settings**: Some terminals may interfere with TAB handling
+
+### Hints Not Displaying
+
+Gray parameter hints should appear automatically. If not:
+
+1. **Color Support**: Ensure your terminal supports ANSI colors
+2. **Shell Settings**: Check if hints are being overridden by terminal settings
+
+### History Issues
+
+Command history is saved to `.raps_history` in your current directory:
+
+```bash
+# Check history file
+ls -la .raps_history
+
+# Clear history if needed
+rm .raps_history
+```
+
+## 🔗 Related Documentation
+
+- [Configuration](/docs/configuration) - Setting up RAPS
+- [Authentication](/docs/auth) - Auth commands and workflows
+- [Bucket Commands](/docs/buckets) - OSS bucket operations
+- [Object Commands](/docs/objects) - File upload/download

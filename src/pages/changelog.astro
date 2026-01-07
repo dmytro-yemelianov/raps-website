@@ -4,6 +4,41 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '3.7.0',
+    date: '2026-01-07',
+    highlights: ['Major Security Improvements', 'Performance Boost', 'Parallel Uploads', 'Secure Token Storage'],
+    type: 'minor',
+    changes: {
+      added: [
+        'Parallel multipart uploads with 3-10x speed improvement for large files',
+        'Secure token storage with OS keychain as default',
+        'Comprehensive security tests for plugin system',
+        'Token migration helper for moving to secure storage',
+        'JSON/YAML/CSV output support for issue commands',
+        'Streaming file operations to reduce memory usage',
+      ],
+      changed: [
+        'Keychain storage is now the default instead of plaintext files',
+        'Plugin hooks now use command whitelisting for security',
+        'Consistent retry logic applied across all HTTP operations',
+        'Enhanced configuration with profile-based keychain settings',
+      ],
+      fixed: [
+        'Critical: Command injection vulnerability in plugin hooks',
+        'Critical: Plaintext token storage replaced with encrypted keychain',
+        'Output format bug in issue list command now supports all formats',
+        'Unsafe environment variable manipulation replaced with safe alternatives',
+        'Memory buffering issues with large file uploads',
+      ],
+      security: [
+        'Fixed command injection vulnerability in plugin system',
+        'Implemented secure token storage with OS keychain integration',
+        'Added command validation and whitelisting for plugin hooks',
+        'Replaced unsafe environment variable manipulation',
+      ],
+    },
+  },
+  {
     version: '3.4.0',
     date: '2026-01-02',
     highlights: ['Version Display Fix', 'OAuth Callback Improvements', 'Windows Compatibility'],

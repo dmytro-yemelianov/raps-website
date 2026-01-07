@@ -10,6 +10,36 @@ icon: "💡"
 
 Common workflows and use cases for RAPS CLI.
 
+## Interactive Shell Mode
+
+For learning and experimentation, use the interactive shell with TAB completion:
+
+```bash
+# Start interactive mode
+raps shell
+
+# Use TAB completion to discover commands
+raps> bucket [TAB]
+create    delete    get       list
+
+raps> bucket create <BUCKET_KEY>
+raps> bucket create my-project
+
+raps> object upload my-project [TAB completion shows file picker]
+raps> object upload my-project ./building.rvt
+
+# Exit when done
+raps> exit
+```
+
+**Benefits of interactive mode:**
+- **TAB completion** for all commands and parameters
+- **Parameter hints** show required arguments
+- **Command history** with arrow key navigation
+- **Learning-friendly** with built-in help
+
+See [Interactive Shell](/docs/interactive-shell) for full details.
+
 ## Upload and Translate a Model
 
 The most common RAPS workflow: upload a CAD file and translate it for viewing.

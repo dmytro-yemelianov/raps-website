@@ -149,17 +149,24 @@ Used for operations requiring user context.
 - Managing issues
 - User-specific data
 
-## Token Management
+## Token Management (v3.7.0+)
 
 RAPS automatically:
-- Stores tokens securely in platform-specific directories
+- Stores tokens securely using OS keychain (default) or file storage
 - Refreshes tokens when they expire
 - Uses the appropriate token type for each operation
 
-**Token Storage:**
-- **Windows**: `%APPDATA%\raps\`
-- **macOS**: `~/Library/Application Support/raps/`
-- **Linux**: `~/.local/share/raps/`
+**Secure Token Storage (Default):**
+- **Windows**: Windows Credential Manager
+- **macOS**: macOS Keychain
+- **Linux**: Secret Service (gnome-keyring, kwallet)
+
+**Fallback File Storage:**
+- **Windows**: `%APPDATA%\raps\tokens.json`
+- **macOS**: `~/Library/Application Support/raps/tokens.json`
+- **Linux**: `~/.local/share/raps/tokens.json`
+
+> **🔐 Security**: Keychain storage encrypts tokens. File storage stores tokens in plaintext and should only be used in secure environments.
 
 ## Troubleshooting
 

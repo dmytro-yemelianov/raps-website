@@ -28,6 +28,12 @@ Common fixes for installation, authentication, and runtime problems when working
 - **ACC/BIM 360 access** — ensure the APS app is added to the BIM 360 account with the right role. Without admin approval, folder or issue queries will return empty lists.
 - **Region mismatches** — list your buckets with `raps bucket list --region us` or `--region emea` to ensure uploads and translations happen in the correct region.
 
+## Security and token storage (v3.7.0+)
+
+- **Keychain access errors** — if you get "access denied" errors with keychain storage, run `raps config set use_keychain false` to temporarily use file storage while diagnosing keychain issues.
+- **Token migration** — when upgrading from v3.6.x or earlier, run `raps config migrate-tokens` to move existing tokens from file storage to secure keychain storage.
+- **Headless environments** — in Docker containers or CI environments without keychain support, use `RAPS_USE_FILE_STORAGE=true` environment variable to enable file-based token storage.
+
 ## Workflow reliability
 
 - **Large uploads** — switch to multipart uploads with `raps object upload my-bucket model.rvt --multipart --chunk-size 16MB` to avoid timeouts over slow networks.
