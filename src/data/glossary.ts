@@ -5,6 +5,8 @@ export interface GlossaryTerm {
   fullDef: string;
   category: 'aps' | 'cad' | 'devops' | 'cli';
   related?: string[];
+  icon?: string; // Emoji icon for visual identification
+  wiki?: string; // Wikipedia URL for external reference
 }
 
 export const categories = {
@@ -25,6 +27,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Autodesk Platform Services (formerly Forge) is a collection of cloud-based APIs that enable developers to build applications integrating with Autodesk products. It includes services for authentication, file storage, model translation, data management, and more.',
     category: 'aps',
     related: ['Forge', 'OAuth', 'OSS'],
+    icon: '☁️',
+    wiki: 'https://en.wikipedia.org/wiki/Autodesk',
   },
   {
     term: 'Forge',
@@ -32,6 +36,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Forge was the original branding for Autodesk\'s cloud platform APIs, rebranded to Autodesk Platform Services (APS) in 2022. Many older documentation, tutorials, and code samples still reference Forge.',
     category: 'aps',
     related: ['APS'],
+    icon: '🔥',
   },
   {
     term: 'OAuth',
@@ -40,6 +45,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'OAuth 2.0 is the authorization framework used by APS to grant applications access to user data without sharing passwords. APS supports multiple OAuth flows including 2-legged (client credentials) and 3-legged (authorization code) authentication.',
     category: 'aps',
     related: ['2-legged auth', '3-legged auth', 'Token'],
+    icon: '🔐',
+    wiki: 'https://en.wikipedia.org/wiki/OAuth',
   },
   {
     term: '2-legged auth',
@@ -48,6 +55,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: '2-legged OAuth (Client Credentials flow) authenticates your application directly with APS without requiring user interaction. Used for server-side operations, CI/CD pipelines, and accessing application-owned resources like OSS buckets.',
     category: 'aps',
     related: ['OAuth', '3-legged auth', 'Token'],
+    icon: '🤖',
   },
   {
     term: '3-legged auth',
@@ -56,6 +64,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: '3-legged OAuth (Authorization Code flow) requires user interaction to grant your application access to their data. The user logs in via browser, approves permissions, and your app receives tokens to act on their behalf. Required for accessing user-specific data in ACC, BIM 360, and Fusion.',
     category: 'aps',
     related: ['OAuth', '2-legged auth', 'Token'],
+    icon: '👤',
   },
   {
     term: 'OSS',
@@ -64,6 +73,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Object Storage Service is APS\'s cloud file storage system. Files are organized in buckets and identified by object keys. OSS is commonly used to store source CAD files before translation and to host translated derivatives.',
     category: 'aps',
     related: ['Bucket', 'URN', 'Model Derivative'],
+    icon: '📦',
+    wiki: 'https://en.wikipedia.org/wiki/Object_storage',
   },
   {
     term: 'Bucket',
@@ -71,6 +82,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A bucket is a named container in Object Storage Service that holds files (objects). Buckets have retention policies (transient, temporary, persistent) that determine how long files are stored. Bucket names must be globally unique across all APS applications.',
     category: 'aps',
     related: ['OSS', 'URN'],
+    icon: '🪣',
   },
   {
     term: 'URN',
@@ -79,6 +91,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A Uniform Resource Name uniquely identifies an object in APS. URNs are base64-encoded strings derived from bucket and object keys. They\'re used extensively in Model Derivative API calls and must be URL-safe encoded when passed as parameters.',
     category: 'aps',
     related: ['OSS', 'Bucket', 'Model Derivative'],
+    icon: '🔗',
+    wiki: 'https://en.wikipedia.org/wiki/Uniform_Resource_Name',
   },
   {
     term: 'Model Derivative',
@@ -87,6 +101,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Model Derivative API converts CAD files into viewable formats (SVF/SVF2) and extracts metadata, geometry, and properties. It supports 60+ input formats and can output to formats like OBJ, STL, STEP, and IGES.',
     category: 'aps',
     related: ['Translation Job', 'SVF2', 'Manifest', 'Derivative'],
+    icon: '🔄',
   },
   {
     term: 'Translation Job',
@@ -95,6 +110,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A translation job is an asynchronous process that converts source CAD files into derivatives. Jobs are started via the Model Derivative API and progress through states: pending, inprogress, success, or failed. Use manifest endpoint to check status.',
     category: 'aps',
     related: ['Model Derivative', 'Manifest', 'Derivative'],
+    icon: '⚙️',
   },
   {
     term: 'Manifest',
@@ -102,6 +118,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'The manifest describes a translated model\'s structure, available derivatives, and translation status. It lists all generated outputs (viewables, thumbnails, extracted data) and their download URNs. Check the manifest to monitor translation progress.',
     category: 'aps',
     related: ['Model Derivative', 'Translation Job', 'Derivative'],
+    icon: '📋',
   },
   {
     term: 'Data Management',
@@ -110,6 +127,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Data Management API provides access to files stored in Autodesk cloud products (ACC, BIM 360, Fusion Team). It exposes a hierarchical structure of hubs, projects, folders, items, and versions. Requires 3-legged authentication.',
     category: 'aps',
     related: ['Hub', 'Project', 'ACC', 'BIM 360'],
+    icon: '📂',
   },
   {
     term: 'Hub',
@@ -117,6 +135,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A hub represents a company or account in Autodesk\'s cloud products. BIM 360 and ACC accounts appear as hubs with different hub types. Hubs contain projects, which contain folders and files.',
     category: 'aps',
     related: ['Data Management', 'Project', 'ACC'],
+    icon: '🏢',
   },
   {
     term: 'Project',
@@ -124,6 +143,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A project is a collection of folders and files within a hub. In ACC/BIM 360, projects correspond to construction or design projects. Projects have their own folder structure, permissions, and settings.',
     category: 'aps',
     related: ['Hub', 'Data Management', 'Folder'],
+    icon: '📁',
   },
   {
     term: 'ACC',
@@ -132,6 +152,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Autodesk Construction Cloud is a unified platform for construction project management, including document management, design collaboration, issue tracking, RFIs, submittals, and field management. Successor to BIM 360.',
     category: 'aps',
     related: ['BIM 360', 'Data Management', 'Hub'],
+    icon: '🏗️',
   },
   {
     term: 'BIM 360',
@@ -140,6 +161,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'BIM 360 was Autodesk\'s original cloud-based construction management platform. While largely replaced by ACC, many existing projects and APIs still use BIM 360. Includes Docs, Design, Build, and other modules.',
     category: 'aps',
     related: ['ACC', 'Data Management', 'Hub'],
+    icon: '🔵',
   },
   {
     term: 'Webhooks',
@@ -148,6 +170,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Webhooks deliver real-time notifications when events occur in APS services. Instead of polling for changes, your application registers callback URLs to receive HTTP POST requests when files are uploaded, translations complete, or other events happen.',
     category: 'aps',
     related: ['APS'],
+    icon: '🪝',
+    wiki: 'https://en.wikipedia.org/wiki/Webhook',
   },
   {
     term: 'Design Automation',
@@ -156,6 +180,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Design Automation API executes Autodesk desktop application engines (AutoCAD, Revit, Inventor, 3ds Max) in the cloud without user interaction. Used for batch processing, automated drawing generation, and custom automation workflows.',
     category: 'aps',
     related: ['APS', 'AppBundle', 'Activity'],
+    icon: '🤖',
   },
   {
     term: 'AppBundle',
@@ -163,6 +188,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'An AppBundle is a ZIP package containing your custom code (plugin, script, or add-in) that runs within a Design Automation engine. AppBundles are uploaded to APS and referenced by Activities to extend engine capabilities.',
     category: 'aps',
     related: ['Design Automation', 'Activity'],
+    icon: '📦',
   },
   {
     term: 'Activity',
@@ -170,6 +196,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'An Activity defines what a Design Automation job does: which engine to use, which AppBundles to load, input/output parameters, and execution settings. Work items reference Activities to run actual jobs.',
     category: 'aps',
     related: ['Design Automation', 'AppBundle', 'Work Item'],
+    icon: '📝',
   },
   {
     term: 'Work Item',
@@ -177,6 +204,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A Work Item is a request to execute an Activity with specific inputs. It\'s an asynchronous job that processes files through the specified engine and AppBundles, producing outputs that can be downloaded or stored in OSS.',
     category: 'aps',
     related: ['Design Automation', 'Activity'],
+    icon: '⚡',
   },
 
   // ============================================
@@ -189,6 +217,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Computer-Aided Design encompasses software tools for creating, modifying, and analyzing designs. CAD software ranges from 2D drafting (AutoCAD) to 3D modeling (Inventor, Fusion) to building design (Revit).',
     category: 'cad',
     related: ['BIM', 'AutoCAD', 'Revit'],
+    icon: '📐',
+    wiki: 'https://en.wikipedia.org/wiki/Computer-aided_design',
   },
   {
     term: 'BIM',
@@ -197,6 +227,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Building Information Modeling is a process using intelligent 3D models for planning, design, construction, and operation of buildings. BIM models contain geometry plus rich metadata about building components, materials, and relationships.',
     category: 'cad',
     related: ['CAD', 'Revit', 'IFC'],
+    icon: '🏛️',
+    wiki: 'https://en.wikipedia.org/wiki/Building_information_modeling',
   },
   {
     term: 'Revit',
@@ -205,6 +237,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Revit is Autodesk\'s flagship BIM application for architects, engineers, and contractors. It creates parametric 3D models with embedded intelligence about building components. Native file format is RVT.',
     category: 'cad',
     related: ['BIM', 'RVT', 'IFC'],
+    icon: '🏠',
+    wiki: 'https://en.wikipedia.org/wiki/Autodesk_Revit',
   },
   {
     term: 'AutoCAD',
@@ -212,6 +246,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'AutoCAD is Autodesk\'s foundational CAD software for 2D drafting and 3D modeling. Used across industries for technical drawings, documentation, and design. Native file format is DWG.',
     category: 'cad',
     related: ['CAD', 'DWG'],
+    icon: '✏️',
+    wiki: 'https://en.wikipedia.org/wiki/AutoCAD',
   },
   {
     term: 'DWG',
@@ -219,6 +255,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'DWG (drawing) is the proprietary binary file format used by AutoCAD and other Autodesk products. It\'s the most widely used CAD file format, containing 2D/3D design data, layers, and metadata.',
     category: 'cad',
     related: ['AutoCAD', 'DXF'],
+    icon: '📄',
+    wiki: 'https://en.wikipedia.org/wiki/.dwg',
   },
   {
     term: 'DXF',
@@ -227,6 +265,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Drawing Exchange Format is an open ASCII/binary format for CAD data interchange. Created by Autodesk as a DWG alternative for sharing drawings between different CAD applications.',
     category: 'cad',
     related: ['DWG', 'AutoCAD'],
+    icon: '🔀',
+    wiki: 'https://en.wikipedia.org/wiki/AutoCAD_DXF',
   },
   {
     term: 'RVT',
@@ -234,6 +274,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'RVT is Revit\'s proprietary file format containing the complete BIM model: 3D geometry, 2D views, schedules, and all embedded building data. RVT files can be quite large due to their comprehensive data.',
     category: 'cad',
     related: ['Revit', 'BIM', 'RFA'],
+    icon: '📊',
   },
   {
     term: 'RFA',
@@ -242,6 +283,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'RFA (Revit Family) files contain reusable building components like doors, windows, furniture, and equipment. Families define parametric geometry and behavior that can be placed multiple times in projects.',
     category: 'cad',
     related: ['Revit', 'RVT'],
+    icon: '🚪',
   },
   {
     term: 'NWD',
@@ -250,6 +292,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'NWD is a published Navisworks file format for sharing models for review. It contains flattened geometry from various source formats, making it ideal for coordination and clash detection without exposing original CAD data.',
     category: 'cad',
     related: ['NWC', 'Navisworks'],
+    icon: '👁️',
+    wiki: 'https://en.wikipedia.org/wiki/Navisworks',
   },
   {
     term: 'IFC',
@@ -258,6 +302,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Industry Foundation Classes is an ISO standard (ISO 16739) for open BIM data exchange. IFC enables interoperability between different BIM software by defining a common schema for building elements and properties.',
     category: 'cad',
     related: ['BIM', 'Revit', 'openBIM'],
+    icon: '🌐',
+    wiki: 'https://en.wikipedia.org/wiki/Industry_Foundation_Classes',
   },
   {
     term: 'STEP',
@@ -266,6 +312,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'STEP (Standard for the Exchange of Product Data) is an ISO standard (ISO 10303) for representing 3D CAD models. Widely used in manufacturing for exchanging geometry between different CAD systems.',
     category: 'cad',
     related: ['IGES', 'OBJ'],
+    icon: '🔧',
+    wiki: 'https://en.wikipedia.org/wiki/ISO_10303',
   },
   {
     term: 'IGES',
@@ -274,6 +322,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Initial Graphics Exchange Specification is an older vendor-neutral format for CAD data exchange. While largely superseded by STEP, IGES is still used for compatibility with legacy systems.',
     category: 'cad',
     related: ['STEP', 'DXF'],
+    icon: '📜',
+    wiki: 'https://en.wikipedia.org/wiki/IGES',
   },
   {
     term: 'OBJ',
@@ -282,6 +332,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'OBJ is a simple, widely-supported 3D geometry format storing vertices, faces, and texture coordinates. Common for 3D printing, game development, and web visualization. Does not preserve CAD-specific data.',
     category: 'cad',
     related: ['STL', 'FBX'],
+    icon: '🎲',
+    wiki: 'https://en.wikipedia.org/wiki/Wavefront_.obj_file',
   },
   {
     term: 'STL',
@@ -290,6 +342,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'STL (Stereolithography) is a file format describing surface geometry as triangular meshes. Standard format for 3D printing and rapid prototyping. Does not include color, texture, or material information.',
     category: 'cad',
     related: ['OBJ', '3D Printing'],
+    icon: '🖨️',
+    wiki: 'https://en.wikipedia.org/wiki/STL_(file_format)',
   },
   {
     term: 'FBX',
@@ -297,6 +351,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'FBX is Autodesk\'s format for 3D content exchange, supporting geometry, materials, textures, animations, and rigging. Widely used in game development and visual effects pipelines.',
     category: 'cad',
     related: ['OBJ', '3ds Max', 'Maya'],
+    icon: '🎬',
+    wiki: 'https://en.wikipedia.org/wiki/FBX',
   },
   {
     term: 'SVF',
@@ -305,6 +361,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Simple Vector Format was APS\'s original output format for web viewing. Contains optimized geometry, materials, and metadata for browser-based rendering. Superseded by SVF2.',
     category: 'cad',
     related: ['SVF2', 'Model Derivative', 'Viewable'],
+    icon: '👀',
   },
   {
     term: 'SVF2',
@@ -312,6 +369,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'SVF2 is the current-generation viewing format for APS, offering improved loading performance, smaller file sizes, and better rendering quality than SVF. Recommended for all new translations.',
     category: 'cad',
     related: ['SVF', 'Model Derivative', 'Viewable'],
+    icon: '🚀',
   },
   {
     term: 'Viewable',
@@ -319,6 +377,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A viewable is a Model Derivative output optimized for display in the Autodesk Viewer. Viewables include geometry, materials, and metadata in formats (SVF/SVF2) that browsers can render efficiently.',
     category: 'cad',
     related: ['SVF2', 'Model Derivative', 'Derivative'],
+    icon: '🖥️',
   },
   {
     term: 'Derivative',
@@ -326,6 +385,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A derivative is any file generated by the Model Derivative API from a source model. This includes viewables (SVF2), geometry exports (OBJ, STL), metadata extracts, and thumbnails.',
     category: 'cad',
     related: ['Model Derivative', 'Viewable', 'Manifest'],
+    icon: '📤',
   },
 
   // ============================================
@@ -338,6 +398,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Continuous Integration/Continuous Delivery automates software building, testing, and deployment. CI merges code changes frequently with automated tests; CD automatically deploys validated changes. RAPS enables CI/CD for CAD workflows.',
     category: 'devops',
     related: ['Pipeline', 'GitHub Actions', 'Automation'],
+    icon: '🔁',
+    wiki: 'https://en.wikipedia.org/wiki/CI/CD',
   },
   {
     term: 'Pipeline',
@@ -346,6 +408,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A pipeline is an automated workflow that processes code or data through defined stages. In CI/CD, pipelines typically include build, test, and deploy stages. RAPS integrates into pipelines to automate APS operations.',
     category: 'devops',
     related: ['CI/CD', 'GitHub Actions', 'Workflow'],
+    icon: '⛓️',
   },
   {
     term: 'GitHub Actions',
@@ -354,6 +417,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'GitHub Actions is GitHub\'s automation platform for CI/CD workflows. Workflows are defined in YAML files and triggered by events (push, PR, schedule). RAPS provides a GitHub Action for easy integration.',
     category: 'devops',
     related: ['CI/CD', 'Pipeline', 'Workflow'],
+    icon: '🐙',
+    wiki: 'https://en.wikipedia.org/wiki/GitHub#GitHub_Actions',
   },
   {
     term: 'Workflow',
@@ -361,6 +426,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A workflow is an automated process defined in a configuration file (e.g., GitHub Actions YAML). Workflows specify triggers, jobs, steps, and environments for automated tasks.',
     category: 'devops',
     related: ['Pipeline', 'GitHub Actions'],
+    icon: '📈',
+    wiki: 'https://en.wikipedia.org/wiki/Workflow',
   },
   {
     term: 'Environment Variable',
@@ -369,6 +436,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Environment variables are key-value pairs that configure application behavior without hardcoding values. RAPS uses env vars (APS_CLIENT_ID, APS_CLIENT_SECRET) for secure credential management in CI/CD.',
     category: 'devops',
     related: ['Secret', 'Configuration'],
+    icon: '🌍',
+    wiki: 'https://en.wikipedia.org/wiki/Environment_variable',
   },
   {
     term: 'Secret',
@@ -377,6 +446,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Secrets are encrypted environment variables for sensitive data like API keys and passwords. CI/CD platforms store secrets securely and inject them at runtime without exposing values in logs.',
     category: 'devops',
     related: ['Environment Variable', 'Token'],
+    icon: '🔒',
   },
   {
     term: 'Token',
@@ -385,6 +455,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'An access token is a credential issued after authentication that grants API access. APS tokens are JWTs with encoded scopes and expiration. RAPS handles token acquisition, refresh, and secure storage.',
     category: 'devops',
     related: ['OAuth', 'Secret', '2-legged auth'],
+    icon: '🎟️',
+    wiki: 'https://en.wikipedia.org/wiki/Access_token',
   },
   {
     term: 'Exit Code',
@@ -393,6 +465,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Exit codes indicate command success (0) or failure (non-zero). RAPS uses standardized exit codes for CI/CD integration: 0=success, 1=general error, 2=auth failure, etc. Pipelines use exit codes to control flow.',
     category: 'devops',
     related: ['CLI', 'Pipeline'],
+    icon: '🚦',
+    wiki: 'https://en.wikipedia.org/wiki/Exit_status',
   },
   {
     term: 'Artifact',
@@ -401,6 +475,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'An artifact is a file produced during a pipeline run, such as compiled binaries, translated models, or reports. CI/CD platforms can store, share, and deploy artifacts between jobs and workflows.',
     category: 'devops',
     related: ['Pipeline', 'CI/CD'],
+    icon: '📦',
   },
   {
     term: 'Docker',
@@ -409,6 +484,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Docker packages applications with their dependencies into containers that run consistently anywhere. RAPS provides official Docker images for containerized deployments and CI/CD environments.',
     category: 'devops',
     related: ['Container', 'CI/CD'],
+    icon: '🐳',
+    wiki: 'https://en.wikipedia.org/wiki/Docker_(software)',
   },
   {
     term: 'Container',
@@ -416,6 +493,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A container is a lightweight, standalone package containing code and dependencies. Containers provide consistent environments across development, testing, and production. RAPS runs in Docker containers.',
     category: 'devops',
     related: ['Docker', 'CI/CD'],
+    icon: '📦',
+    wiki: 'https://en.wikipedia.org/wiki/Containerization_(computing)',
   },
   {
     term: 'Automation',
@@ -423,6 +502,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Automation eliminates repetitive manual tasks through software. RAPS automates APS operations (uploads, translations, queries) that would otherwise require clicking through web interfaces.',
     category: 'devops',
     related: ['CI/CD', 'Pipeline', 'CLI'],
+    icon: '🤖',
+    wiki: 'https://en.wikipedia.org/wiki/Automation',
   },
 
   // ============================================
@@ -435,6 +516,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A Command Line Interface accepts text commands for program interaction. CLIs are essential for automation, scripting, and CI/CD integration. RAPS is a CLI tool for APS.',
     category: 'cli',
     related: ['RAPS', 'Command', 'Terminal'],
+    icon: '💻',
+    wiki: 'https://en.wikipedia.org/wiki/Command-line_interface',
   },
   {
     term: 'RAPS',
@@ -443,6 +526,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'RAPS (Rust APS CLI) is a command-line tool for interacting with Autodesk Platform Services. It provides commands for authentication, file storage, model translation, and data management, optimized for CI/CD pipelines.',
     category: 'cli',
     related: ['CLI', 'APS', 'MCP'],
+    icon: '🌼',
   },
   {
     term: 'MCP',
@@ -451,6 +535,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Model Context Protocol is a standard for connecting AI assistants to external tools. RAPS includes an MCP server that exposes APS operations to AI assistants like Claude, enabling natural language interaction with APS.',
     category: 'cli',
     related: ['RAPS', 'AI'],
+    icon: '🧠',
   },
   {
     term: 'Command',
@@ -459,6 +544,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A command is an instruction given to a CLI tool. RAPS commands are organized hierarchically: `raps bucket list`, `raps auth test`, etc. Commands accept flags and arguments to customize behavior.',
     category: 'cli',
     related: ['CLI', 'Flag', 'Argument'],
+    icon: '▶️',
   },
   {
     term: 'Flag',
@@ -467,6 +553,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A flag is a command-line option that modifies command behavior. Flags start with dashes: `-o json` (short) or `--output json` (long). Boolean flags toggle features: `--verbose`, `--quiet`.',
     category: 'cli',
     related: ['Command', 'Argument'],
+    icon: '🚩',
   },
   {
     term: 'Argument',
@@ -475,6 +562,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'An argument is a value passed to a command, typically required for the command to execute. Unlike flags, arguments don\'t have names: `raps bucket delete my-bucket` (my-bucket is the argument).',
     category: 'cli',
     related: ['Command', 'Flag'],
+    icon: '📥',
   },
   {
     term: 'Profile',
@@ -483,6 +571,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A profile is a named configuration set containing credentials and settings. RAPS supports multiple profiles for different APS applications or environments: `raps --profile production auth test`.',
     category: 'cli',
     related: ['Configuration', 'Environment Variable'],
+    icon: '👤',
   },
   {
     term: 'Configuration',
@@ -491,6 +580,7 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'Configuration includes settings like credentials, defaults, and preferences. RAPS reads configuration from environment variables, config files, and command-line flags (in order of precedence).',
     category: 'cli',
     related: ['Profile', 'Environment Variable'],
+    icon: '⚙️',
   },
   {
     term: 'Keychain',
@@ -499,6 +589,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'The keychain is the operating system\'s secure credential storage (macOS Keychain, Windows Credential Manager, Linux Secret Service). RAPS stores OAuth tokens in the keychain rather than plain text files.',
     category: 'cli',
     related: ['Token', 'Secret'],
+    icon: '🔑',
+    wiki: 'https://en.wikipedia.org/wiki/Keychain_(software)',
   },
   {
     term: 'JSON',
@@ -507,6 +599,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'JSON (JavaScript Object Notation) is a lightweight data format used for API responses and configuration. RAPS can output results in JSON format (`--output json`) for easy parsing in scripts.',
     category: 'cli',
     related: ['YAML', 'CSV'],
+    icon: '📋',
+    wiki: 'https://en.wikipedia.org/wiki/JSON',
   },
   {
     term: 'YAML',
@@ -515,6 +609,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'YAML is a human-readable data format commonly used for configuration files. GitHub Actions workflows use YAML. RAPS can output results in YAML format (`--output yaml`).',
     category: 'cli',
     related: ['JSON', 'Configuration'],
+    icon: '📝',
+    wiki: 'https://en.wikipedia.org/wiki/YAML',
   },
   {
     term: 'CSV',
@@ -523,6 +619,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'CSV is a simple format for tabular data, easily imported into spreadsheets and databases. RAPS can output results in CSV format (`--output csv`) for reporting and analysis.',
     category: 'cli',
     related: ['JSON', 'YAML'],
+    icon: '📊',
+    wiki: 'https://en.wikipedia.org/wiki/Comma-separated_values',
   },
   {
     term: 'Terminal',
@@ -531,6 +629,8 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'A terminal is an application that provides access to the command line. Examples include macOS Terminal, Windows Terminal, and iTerm2. RAPS\'s interactive shell runs within a terminal.',
     category: 'cli',
     related: ['CLI', 'Command'],
+    icon: '🖥️',
+    wiki: 'https://en.wikipedia.org/wiki/Terminal_emulator',
   },
   {
     term: 'Interactive Shell',
@@ -539,6 +639,67 @@ export const glossary: GlossaryTerm[] = [
     fullDef: 'RAPS\'s interactive shell provides a REPL (Read-Eval-Print Loop) for executing commands without retyping `raps` each time. Features include tab completion, command history, and parameter hints.',
     category: 'cli',
     related: ['CLI', 'RAPS', 'Terminal'],
+    icon: '🐚',
+    wiki: 'https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop',
+  },
+  {
+    term: 'API',
+    aliases: ['Application Programming Interface'],
+    shortDef: 'Interface for software components to communicate.',
+    fullDef: 'An Application Programming Interface defines how software components interact. APS provides REST APIs for cloud operations. RAPS wraps these APIs in CLI commands for easier scripting and automation.',
+    category: 'cli',
+    related: ['APS', 'REST'],
+    icon: '🔌',
+    wiki: 'https://en.wikipedia.org/wiki/API',
+  },
+  {
+    term: 'REST',
+    aliases: ['REST API', 'RESTful'],
+    shortDef: 'Web service architecture style using HTTP.',
+    fullDef: 'Representational State Transfer is an architectural style for web services using HTTP methods (GET, POST, PUT, DELETE). APS uses REST APIs that RAPS calls to perform operations.',
+    category: 'cli',
+    related: ['API', 'HTTP'],
+    icon: '🌐',
+    wiki: 'https://en.wikipedia.org/wiki/REST',
+  },
+  {
+    term: 'HTTP',
+    aliases: ['HTTPS'],
+    shortDef: 'Protocol for web communication.',
+    fullDef: 'Hypertext Transfer Protocol is the foundation of data communication on the web. HTTPS is the secure version using TLS encryption. All APS API calls use HTTPS.',
+    category: 'cli',
+    related: ['API', 'REST'],
+    icon: '🔗',
+    wiki: 'https://en.wikipedia.org/wiki/HTTP',
+  },
+  {
+    term: 'JWT',
+    aliases: ['JSON Web Token'],
+    shortDef: 'Compact token format for authentication.',
+    fullDef: 'JSON Web Tokens are a compact, URL-safe means of representing claims. APS access tokens are JWTs containing the client ID, scopes, and expiration. They can be decoded to inspect permissions.',
+    category: 'cli',
+    related: ['Token', 'OAuth'],
+    icon: '🎫',
+    wiki: 'https://en.wikipedia.org/wiki/JSON_Web_Token',
+  },
+  {
+    term: 'SDK',
+    aliases: ['Software Development Kit'],
+    shortDef: 'Library for building applications on a platform.',
+    fullDef: 'A Software Development Kit provides libraries, tools, and documentation for building on a platform. Autodesk provides SDKs for various languages, but RAPS offers a CLI alternative for scripting.',
+    category: 'cli',
+    related: ['API', 'CLI'],
+    icon: '🧰',
+    wiki: 'https://en.wikipedia.org/wiki/Software_development_kit',
+  },
+  {
+    term: 'Rust',
+    shortDef: 'Systems programming language known for safety.',
+    fullDef: 'Rust is a systems programming language emphasizing safety, speed, and concurrency. RAPS is written in Rust, providing a fast, single-binary CLI with no runtime dependencies.',
+    category: 'cli',
+    related: ['CLI', 'RAPS'],
+    icon: '🦀',
+    wiki: 'https://en.wikipedia.org/wiki/Rust_(programming_language)',
   },
 ];
 

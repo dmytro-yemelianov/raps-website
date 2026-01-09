@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import GlossaryText from '../components/GlossaryText.astro';
 import { getCollection } from 'astro:content';
 
 interface Props {
@@ -421,7 +422,9 @@ const sectionContainsCurrent = (sectionId: string) => {
       <!-- Main content -->
       <main class="flex-1 lg:ml-64 min-h-screen">
         <div class="max-w-4xl mx-auto px-6 py-12">
-          <slot />
+          <GlossaryText>
+            <slot />
+          </GlossaryText>
         </div>
       </main>
     </div>

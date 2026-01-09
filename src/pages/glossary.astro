@@ -31,6 +31,8 @@ const graphData = {
     category: t.category,
     aliases: t.aliases || [],
     related: t.related || [],
+    icon: t.icon || '',
+    wiki: t.wiki || '',
   })),
   categories: categories,
 };
@@ -196,12 +198,28 @@ const graphData = {
                     data-related={term.related?.join(',') || ''}
                   >
                     <div class="flex flex-wrap items-start justify-between gap-4 mb-3">
-                      <h3 class="term-title text-xl font-semibold text-white">
+                      <h3 class="term-title text-xl font-semibold text-white flex items-center gap-2">
+                        {term.icon && <span class="text-2xl" role="img" aria-hidden="true">{term.icon}</span>}
                         {term.term}
                       </h3>
-                      <span class={`term-category px-2 py-1 text-xs font-medium rounded border ${categoryColors[term.category]}`}>
-                        {categories[term.category].label}
-                      </span>
+                      <div class="flex items-center gap-2">
+                        {term.wiki && (
+                          <a
+                            href={term.wiki}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-slate-500 hover:text-blue-400 transition-colors"
+                            title="View on Wikipedia"
+                          >
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12.09 13.119c-.936 1.932-2.217 4.548-2.853 5.728-.616 1.074-1.127.931-1.532.029-1.406-3.321-4.293-9.144-5.651-12.409-.251-.601-.441-.987-.619-1.139-.181-.15-.554-.24-1.122-.271C.103 5.033 0 4.982 0 4.898v-.455l.052-.045c.924-.005 5.401 0 5.401 0l.051.045v.434c0 .119-.075.176-.225.176l-.564.031c-.485.029-.727.164-.727.436 0 .135.053.33.166.601 1.082 2.646 4.818 10.521 4.818 10.521l.136.046 2.411-4.81-.482-1.067-1.658-3.264c-.189-.36-.368-.592-.537-.703-.169-.11-.503-.166-1.001-.166-.152 0-.228-.058-.228-.175v-.455l.051-.045c.915-.005 5.13 0 5.13 0l.051.045v.434c0 .119-.074.176-.225.176l-.564.031c-.485.029-.727.164-.727.436 0 .076.018.171.054.284.036.113.082.23.136.351l1.408 2.979 1.336-2.64c.111-.222.197-.406.255-.555.058-.148.087-.264.087-.347 0-.272-.242-.407-.727-.436l-.564-.031c-.15 0-.225-.057-.225-.176v-.434l.051-.045s4.215-.005 5.131 0l.051.045v.455c0 .117-.077.175-.229.175-.57.031-.946.121-1.127.27-.178.152-.368.538-.619 1.14L18.05 11.79l-2.412 4.822-.136-.045s-3.735-8.175-4.817-10.521c-.113-.271-.166-.466-.166-.601 0-.272.242-.407.727-.436l.564-.031c.151 0 .226-.057.226-.176v-.434l-.052-.045s-4.476-.005-5.4 0l-.052.045v.455c0 .084.103.135.335.159.568.031.941.121 1.122.27.178.152.368.538.619 1.14 1.358 3.265 4.245 9.088 5.651 12.409.405.902.916 1.045 1.532-.029.636-1.18 1.917-3.796 2.853-5.728.936-1.932 1.896-3.864 2.852-5.793.112-.221.196-.406.255-.555.058-.148.087-.264.087-.347 0-.272-.242-.407-.727-.436l-.564-.031c-.151 0-.226-.057-.226-.176v-.434l.052-.045s4.215-.005 5.131 0l.051.045v.455c0 .117-.077.175-.229.175-.57.031-.946.121-1.127.27-.178.152-.368.538-.619 1.14-.955 1.929-1.916 3.861-2.851 5.793z"/>
+                            </svg>
+                          </a>
+                        )}
+                        <span class={`term-category px-2 py-1 text-xs font-medium rounded border ${categoryColors[term.category]}`}>
+                          {categories[term.category].label}
+                        </span>
+                      </div>
                     </div>
 
                     <div class="term-aliases mb-3 flex flex-wrap gap-2" data-has-aliases={term.aliases && term.aliases.length > 0 ? 'true' : 'false'}>
@@ -216,21 +234,36 @@ const graphData = {
                       {term.fullDef}
                     </p>
 
-                    <div class="term-related pt-3 border-t border-slate-800" data-has-related={term.related && term.related.length > 0 ? 'true' : 'false'}>
-                      {term.related && term.related.length > 0 && (
-                        <>
-                          <span class="text-xs text-slate-500 mr-2">Related:</span>
-                          <span class="inline-flex flex-wrap gap-2">
-                            {term.related.map((rel) => (
-                              <a
-                                href={`#${rel.toLowerCase().replace(/\s+/g, '-')}`}
-                                class="text-xs text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
-                              >
-                                {rel}
-                              </a>
-                            ))}
-                          </span>
-                        </>
+                    <div class="term-related pt-3 border-t border-slate-800 flex items-center justify-between" data-has-related={term.related && term.related.length > 0 ? 'true' : 'false'}>
+                      <div>
+                        {term.related && term.related.length > 0 && (
+                          <>
+                            <span class="text-xs text-slate-500 mr-2">Related:</span>
+                            <span class="inline-flex flex-wrap gap-2">
+                              {term.related.map((rel) => (
+                                <a
+                                  href={`#${rel.toLowerCase().replace(/\s+/g, '-')}`}
+                                  class="text-xs text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
+                                >
+                                  {rel}
+                                </a>
+                              ))}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {term.wiki && (
+                        <a
+                          href={term.wiki}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="text-xs text-slate-500 hover:text-blue-400 transition-colors flex items-center gap-1"
+                        >
+                          <span>Wikipedia</span>
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
                       )}
                     </div>
                   </article>
@@ -262,7 +295,15 @@ const graphData = {
                     data-target-id={term.term.toLowerCase().replace(/\s+/g, '-')}
                   >
                     <td class="px-4 py-3">
-                      <div class="font-medium text-white">{term.term}</div>
+                      <div class="font-medium text-white flex items-center gap-2">
+                        {term.icon && <span role="img" aria-hidden="true">{term.icon}</span>}
+                        {term.term}
+                        {term.wiki && (
+                          <a href={term.wiki} target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-blue-400 ml-1" title="Wikipedia">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                          </a>
+                        )}
+                      </div>
                       {term.aliases && term.aliases.length > 0 && (
                         <div class="text-xs text-slate-500 mt-0.5">{term.aliases.join(', ')}</div>
                       )}
@@ -308,7 +349,8 @@ const graphData = {
                 data-target-id={term.term.toLowerCase().replace(/\s+/g, '-')}
               >
                 <div class="flex items-center justify-between gap-2">
-                  <span class="font-medium text-white text-sm group-hover:text-rapeseed-400 transition-colors truncate">
+                  <span class="font-medium text-white text-sm group-hover:text-rapeseed-400 transition-colors truncate flex items-center gap-1.5">
+                    {term.icon && <span class="text-base" role="img" aria-hidden="true">{term.icon}</span>}
                     {term.term}
                   </span>
                   <span class={`flex-shrink-0 w-2 h-2 rounded-full ${
@@ -381,7 +423,10 @@ const graphData = {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <div id="tooltip-category" class="inline-block px-2 py-0.5 text-xs font-medium rounded border mb-2"></div>
+            <div class="flex items-center gap-2 mb-2">
+              <span id="tooltip-icon" class="text-2xl"></span>
+              <div id="tooltip-category" class="inline-block px-2 py-0.5 text-xs font-medium rounded border"></div>
+            </div>
             <h3 id="tooltip-term" class="text-lg font-semibold text-white mb-1"></h3>
             <div id="tooltip-aliases" class="text-xs text-slate-500 mb-2 hidden"></div>
             <p id="tooltip-def" class="text-sm text-slate-300 leading-relaxed mb-3"></p>
@@ -389,16 +434,30 @@ const graphData = {
               <span class="text-xs text-slate-500">Related: </span>
               <span id="tooltip-related-list" class="text-xs text-rapeseed-400"></span>
             </div>
-            <a
-              id="tooltip-link"
-              href="#"
-              class="inline-flex items-center gap-1 mt-3 text-xs text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
-            >
-              View in list
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
+            <div class="flex items-center justify-between mt-3">
+              <a
+                id="tooltip-link"
+                href="#"
+                class="inline-flex items-center gap-1 text-xs text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
+              >
+                View in list
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+              <a
+                id="tooltip-wiki"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hidden items-center gap-1 text-xs text-slate-500 hover:text-blue-400 transition-colors"
+              >
+                Wikipedia
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -874,6 +933,7 @@ const graphData = {
 
   function showTooltip(node: GraphNode, x: number, y: number) {
     const tooltip = document.getElementById('graph-tooltip');
+    const iconEl = document.getElementById('tooltip-icon');
     const termEl = document.getElementById('tooltip-term');
     const categoryEl = document.getElementById('tooltip-category');
     const aliasesEl = document.getElementById('tooltip-aliases');
@@ -881,14 +941,21 @@ const graphData = {
     const relatedEl = document.getElementById('tooltip-related');
     const relatedListEl = document.getElementById('tooltip-related-list');
     const linkEl = document.getElementById('tooltip-link');
+    const wikiEl = document.getElementById('tooltip-wiki');
 
     if (!tooltip || !termEl || !categoryEl || !defEl) return;
+
+    // Icon
+    if (iconEl) {
+      iconEl.textContent = (node as any).icon || '';
+      iconEl.style.display = (node as any).icon ? 'inline' : 'none';
+    }
 
     termEl.textContent = node.term;
 
     const catData = (window as any).glossaryGraphData.categories[node.category];
     categoryEl.textContent = catData?.label || node.category;
-    categoryEl.className = `inline-block px-2 py-0.5 text-xs font-medium rounded border mb-2 ${categoryBadgeColors[node.category] || ''}`;
+    categoryEl.className = `inline-block px-2 py-0.5 text-xs font-medium rounded border ${categoryBadgeColors[node.category] || ''}`;
 
     if (node.aliases.length > 0 && aliasesEl) {
       aliasesEl.textContent = `aka: ${node.aliases.join(', ')}`;
@@ -904,6 +971,19 @@ const graphData = {
       relatedEl.classList.remove('hidden');
     } else if (relatedEl) {
       relatedEl.classList.add('hidden');
+    }
+
+    // Wikipedia link
+    if (wikiEl) {
+      const wikiUrl = (node as any).wiki;
+      if (wikiUrl) {
+        wikiEl.setAttribute('href', wikiUrl);
+        wikiEl.classList.remove('hidden');
+        wikiEl.classList.add('inline-flex');
+      } else {
+        wikiEl.classList.add('hidden');
+        wikiEl.classList.remove('inline-flex');
+      }
     }
 
     if (linkEl) {

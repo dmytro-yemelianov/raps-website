@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import GlossaryText from '../components/GlossaryText.astro';
 
 interface Props {
   frontmatter: {
@@ -115,7 +116,9 @@ const relatedPosts = allPosts
         prose-li:marker:text-slate-500
         prose-img:rounded-xl prose-img:border prose-img:border-slate-800
       ">
-        <slot />
+        <GlossaryText>
+          <slot />
+        </GlossaryText>
       </div>
       
       <!-- Article Footer -->
