@@ -1,0 +1,124 @@
+/* RAPS Custom Styling for Starlight */
+
+/* Import fonts */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,900&f[]=general-sans@400,500,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* RAPS Brand Colors */
+  --sl-color-accent: 202 138 4; /* rapeseed-600 */
+  --sl-color-accent-low: 254 252 232; /* rapeseed-50 */
+  --sl-color-accent-high: 133 77 14; /* rapeseed-700 */
+  
+  /* Primary colors */
+  --sl-color-blue: 59 130 246; /* blue-500 */
+  --sl-color-blue-low: 239 246 255; /* blue-50 */
+  --sl-color-blue-high: 29 78 216; /* blue-700 */
+  
+  /* Typography */
+  --sl-font: 'General Sans', system-ui, sans-serif;
+  --sl-font-headings: 'Satoshi', system-ui, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Custom logo styling */
+.sl-flex [data-type="logo"] {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--sl-font-headings);
+}
+
+/* Rapeseed accent color */
+.sl-theme-toggle {
+  color: rgb(var(--sl-color-accent));
+}
+
+/* Custom button styling */
+.sl-link-button {
+  background: linear-gradient(135deg, rgb(var(--sl-color-accent)), rgb(var(--sl-color-accent-high)));
+  border: none;
+  transition: transform 0.2s ease;
+}
+
+.sl-link-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--sl-color-accent), 0.25);
+}
+
+/* Code block improvements */
+.astro-code {
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--sl-color-gray-6));
+}
+
+/* Navigation improvements */
+.sl-sidebar-item[aria-current="page"] {
+  background: linear-gradient(135deg, rgba(var(--sl-color-accent), 0.1), rgba(var(--sl-color-accent), 0.05));
+  border-left: 3px solid rgb(var(--sl-color-accent));
+}
+
+/* Custom scrollbar */
+.sl-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sl-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sl-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(var(--sl-color-accent), 0.3);
+  border-radius: 3px;
+}
+
+.sl-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--sl-color-accent), 0.5);
+}
+
+/* Hero section styling for home page */
+.sl-hero {
+  background: linear-gradient(135deg, 
+    rgba(var(--sl-color-accent), 0.05), 
+    rgba(var(--sl-color-blue), 0.05)
+  );
+}
+
+/* Table styling */
+table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgb(var(--sl-color-gray-6));
+}
+
+/* Mermaid diagram fixes for theme switching */
+.mermaid {
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Ensure proper theme switching for code blocks */
+[data-theme="light"] .astro-code {
+  background-color: rgb(248 250 252) !important;
+}
+
+[data-theme="dark"] .astro-code {
+  background-color: rgb(15 23 42) !important;
+}
+
+/* Custom animation for theme toggle */
+.sl-theme-select {
+  transition: all 0.3s ease;
+}
+
+/* Footer customization */
+.sl-footer {
+  border-top: 1px solid rgba(var(--sl-color-accent), 0.2);
+}
+
+/* Highlight current page in sidebar */
+.sl-sidebar-item[aria-current="page"] a {
+  color: rgb(var(--sl-color-accent)) !important;
+  font-weight: 600;
+}

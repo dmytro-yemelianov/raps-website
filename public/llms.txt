@@ -1,0 +1,111 @@
+# RAPS - Rust Autodesk Platform Services CLI
+
+> RAPS is a comprehensive command-line interface for Autodesk Platform Services (APS), designed for high-performance CI/CD pipelines and AI agents. Written in Rust, it provides fast, reliable access to all major APS APIs.
+
+RAPS (rapscli.xyz) brings modern DevOps practices to Autodesk Platform Services. It's a single-binary CLI tool with no runtime dependencies, supporting 15+ APS APIs and 100+ commands. Key features include MCP server integration for AI assistants, interactive shell mode, secure OS keychain token storage, and CI/CD-ready output formats.
+
+## Documentation
+
+- [Introduction](https://rapscli.xyz/docs/introduction): Overview of RAPS capabilities and architecture
+- [Installation](https://rapscli.xyz/docs/installation): Install via Cargo, Homebrew, Scoop, Docker, or direct download
+- [Configuration](https://rapscli.xyz/docs/configuration): Set up APS credentials via environment variables or config profiles
+- [Authentication](https://rapscli.xyz/docs/auth): 2-legged OAuth, 3-legged OAuth, device code flow, and token management
+- [Quick Start](https://rapscli.xyz/quickstart): Step-by-step guide to get running in minutes
+- [Architecture](https://rapscli.xyz/docs/architecture): Microkernel architecture with workspace crates
+
+## Core Features
+
+- [Buckets (OSS)](https://rapscli.xyz/docs/buckets): Create, list, and manage Object Storage Service buckets
+- [Objects (OSS)](https://rapscli.xyz/docs/objects): Upload, download, and manage objects with resumable multipart uploads
+- [Translation](https://rapscli.xyz/docs/translation): Translate CAD files to SVF2, OBJ, STL, STEP, and other formats
+- [Data Management](https://rapscli.xyz/docs/data-management): Browse hubs, projects, folders, items, and versions
+- [MCP Server](https://rapscli.xyz/docs/mcp-server): AI assistant integration via Model Context Protocol (14+ tools)
+- [Interactive Shell](https://rapscli.xyz/docs/interactive-shell): TAB completion, command history, and REPL mode
+- [Pipelines](https://rapscli.xyz/docs/pipelines): CI/CD integration with standardized exit codes
+- [Exit Codes](https://rapscli.xyz/docs/exit-codes): Scripting-friendly exit codes for automation
+- [Troubleshooting](https://rapscli.xyz/docs/troubleshooting): Common issues and solutions
+
+## Cookbooks & Recipes
+
+### AEC (Architecture, Engineering, Construction)
+- [ACC Navigation](https://rapscli.xyz/docs/cookbook-acc-navigation): Browse Autodesk Construction Cloud projects
+- [ACC Documents](https://rapscli.xyz/docs/cookbook-acc-documents): Document management in ACC
+- [ACC Issues](https://rapscli.xyz/docs/cookbook-acc-issues): Issue tracking workflows
+- [ACC Checklists](https://rapscli.xyz/docs/cookbook-acc-checklists): Quality checklist automation
+- [ACC Daily Log](https://rapscli.xyz/docs/cookbook-acc-dailylog): Daily log entries
+- [ACC Quality](https://rapscli.xyz/docs/cookbook-acc-quality): Quality management workflows
+- [ACC Reporting](https://rapscli.xyz/docs/cookbook-acc-reporting): Generate reports from ACC data
+- [ACC Submittals](https://rapscli.xyz/docs/cookbook-acc-submittals): Submittal package workflows
+- [AEC Coordination](https://rapscli.xyz/docs/cookbook-aec-coordination): Model coordination workflows
+- [AEC IFC](https://rapscli.xyz/docs/cookbook-aec-ifc): IFC import/export workflows
+- [AEC Metadata](https://rapscli.xyz/docs/cookbook-aec-metadata): Extract and manage BIM metadata
+- [AEC Rooms](https://rapscli.xyz/docs/cookbook-aec-rooms): Room and space data extraction
+- [AEC Versioning](https://rapscli.xyz/docs/cookbook-aec-versioning): Version control for design files
+- [AEC ACC Sync](https://rapscli.xyz/docs/cookbook-aec-acc-sync): Sync workflows with ACC
+
+### Manufacturing
+- [MFG Batch Processing](https://rapscli.xyz/docs/cookbook-mfg-batch): Batch file operations
+- [MFG Bill of Materials](https://rapscli.xyz/docs/cookbook-mfg-bom): BOM extraction and management
+- [MFG Catalog](https://rapscli.xyz/docs/cookbook-mfg-catalog): Part catalog workflows
+- [MFG Drawings](https://rapscli.xyz/docs/cookbook-mfg-drawings): Drawing generation and export
+- [MFG Iterations](https://rapscli.xyz/docs/cookbook-mfg-iterations): Design iteration tracking
+- [MFG Supplier](https://rapscli.xyz/docs/cookbook-mfg-supplier): Supplier collaboration workflows
+- [MFG Translation](https://rapscli.xyz/docs/cookbook-mfg-translation): CAD format conversions
+
+### Media & Entertainment
+- [Media Animation](https://rapscli.xyz/docs/cookbook-media-animation): Animation file workflows
+- [Media Catalog](https://rapscli.xyz/docs/cookbook-media-catalog): Asset catalog management
+- [Media Materials](https://rapscli.xyz/docs/cookbook-media-materials): Material library workflows
+- [Media Photogrammetry](https://rapscli.xyz/docs/cookbook-media-photogrammetry): Reality capture workflows
+- [Media Review](https://rapscli.xyz/docs/cookbook-media-review): Review and approval processes
+- [Media Site Capture](https://rapscli.xyz/docs/cookbook-media-sitecapture): Site scanning workflows
+- [Media Translation](https://rapscli.xyz/docs/cookbook-media-translation): Media format conversions
+- [Media Versioning](https://rapscli.xyz/docs/cookbook-media-versioning): Asset version control
+
+## Interactive Tools
+
+- [OAuth Scope Builder](https://rapscli.xyz/tools/scope-builder): Build and validate APS OAuth scope combinations
+- [JWT Token Decoder](https://rapscli.xyz/tools/token-decoder): Decode and analyze APS authentication tokens
+- [Token Cost Estimator](https://rapscli.xyz/tools/token-estimator): Estimate API costs
+- [Translation Debugger](https://rapscli.xyz/tools/translation-debugger): Debug Model Derivative translations
+- [URN Encoder/Decoder](https://rapscli.xyz/tools/urn-encoder): Encode and decode APS URNs
+
+## Resources
+
+- [APS Cheat Sheet](https://rapscli.xyz/resources/aps-cheatsheet): Complete single-page reference for APS development
+- [API Decision Tree](https://rapscli.xyz/resources/api-decision-tree): Interactive guide to choose the right APS APIs
+- [Examples](https://rapscli.xyz/docs/examples): Common workflow examples with code
+
+## Additional Information
+
+- [About](https://rapscli.xyz/about): Project background and author information
+- [Roadmap](https://rapscli.xyz/roadmap): Planned features and development timeline
+- [Changelog](https://rapscli.xyz/changelog): Version history and release notes
+- [API Coverage](https://rapscli.xyz/api-coverage): Supported APS APIs and endpoints
+- [Blog](https://rapscli.xyz/blog): Articles on CI/CD for APS and automation tutorials
+
+## Quick Start
+
+```bash
+# Install via Cargo
+cargo install raps
+
+# Configure credentials
+export APS_CLIENT_ID="your_client_id"
+export APS_CLIENT_SECRET="your_client_secret"
+
+# Test authentication
+raps auth test
+
+# List buckets
+raps bucket list
+
+# Upload and translate a model
+raps dm upload ./model.dwg --translate --formats svf2
+```
+
+## Links
+
+- GitHub: https://github.com/dmytro-yemelianov/raps
+- Documentation: https://rapscli.xyz/docs
+- Releases: https://github.com/dmytro-yemelianov/raps/releases
