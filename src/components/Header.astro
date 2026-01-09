@@ -14,6 +14,7 @@ const navItems = [
       { href: '/docs', label: 'Documentation', icon: '📚', description: 'Complete CLI reference' },
       { href: '/tools', label: 'Interactive Tools', icon: '🛠️', description: 'OAuth, URN, token helpers' },
       { href: '/resources', label: 'Developer Resources', icon: '📖', description: 'Cheat sheets, guides, examples' },
+      { href: '/glossary', label: 'Glossary', icon: '📗', description: 'APS, CAD & DevOps terminology' },
       { href: '/api-coverage', label: 'API Coverage', icon: '🔌', description: 'Supported APS endpoints' },
     ]
   },
@@ -35,6 +36,7 @@ const isActive = (href: string) => {
   if (href === '/docs') return currentPath.startsWith('/docs');
   if (href === '/tools') return currentPath.startsWith('/tools');
   if (href === '/resources') return currentPath.startsWith('/resources');
+  if (href === '/glossary') return currentPath.startsWith('/glossary');
   if (href === '/blog') return currentPath.startsWith('/blog');
   return currentPath === href || currentPath === href + '/';
 };

@@ -1,0 +1,1119 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { glossary, categories, getSortedTerms, getAlphabeticalIndex, type GlossaryTerm } from '../data/glossary';
+
+const sortedTerms = getSortedTerms();
+const alphabetIndex = getAlphabeticalIndex();
+
+// Group terms by first letter
+const termsByLetter = sortedTerms.reduce((acc, term) => {
+  const letter = term.term[0].toUpperCase();
+  if (!acc[letter]) acc[letter] = [];
+  acc[letter].push(term);
+  return acc;
+}, {} as Record<string, GlossaryTerm[]>);
+
+// Category colors for badges
+const categoryColors = {
+  aps: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  cad: 'bg-green-500/10 text-green-400 border-green-500/30',
+  devops: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+  cli: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+} as const;
+
+// Prepare graph data for client-side
+const graphData = {
+  nodes: glossary.map(t => ({
+    id: t.term.toLowerCase().replace(/\s+/g, '-'),
+    term: t.term,
+    shortDef: t.shortDef,
+    fullDef: t.fullDef,
+    category: t.category,
+    aliases: t.aliases || [],
+    related: t.related || [],
+  })),
+  categories: categories,
+};
+---
+
+<BaseLayout
+  title="Glossary"
+  description="Comprehensive glossary of APS, CAD/BIM, DevOps, and CLI terms. Essential vocabulary for developers working with Autodesk Platform Services."
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <h1 class="text-4xl sm:text-5xl font-display font-black text-white">
+            Glossary
+          </h1>
+
+          <!-- Main View Toggle (List vs Graph) -->
+          <div class="flex items-center gap-2 bg-slate-900/50 border border-slate-800 rounded-lg p-1">
+            <button
+              id="view-list"
+              class="view-toggle px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 active"
+              aria-pressed="true"
+              title="List View"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <span class="hidden sm:inline">List</span>
+            </button>
+            <button
+              id="view-graph"
+              class="view-toggle px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2"
+              aria-pressed="false"
+              title="Graph View"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span class="hidden sm:inline">Graph</span>
+            </button>
+          </div>
+        </div>
+        <p class="text-lg text-slate-400 max-w-3xl">
+          Essential vocabulary for developers, engineers, and architects working with
+          Autodesk Platform Services. Bridging the gap between software development,
+          CAD/BIM, and DevOps terminology.
+        </p>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="mb-6 space-y-4">
+        <!-- Search -->
+        <div class="relative">
+          <input
+            type="text"
+            id="glossary-search"
+            placeholder="Search terms..."
+            class="w-full px-4 py-3 pl-12 bg-slate-900/50 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rapeseed-500/50 focus:ring-1 focus:ring-rapeseed-500/50 transition-all"
+          />
+          <svg
+            class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+
+        <!-- Category Filters + List Style Toggle -->
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap gap-2">
+            <button
+              class="category-filter px-4 py-2 text-sm font-medium rounded-lg border transition-all active"
+              data-category="all"
+            >
+              All ({glossary.length})
+            </button>
+            {Object.entries(categories).map(([key, cat]) => (
+              <button
+                class={`category-filter px-4 py-2 text-sm font-medium rounded-lg border transition-all ${categoryColors[key as keyof typeof categoryColors]}`}
+                data-category={key}
+              >
+                {cat.label} ({glossary.filter(t => t.category === key).length})
+              </button>
+            ))}
+          </div>
+
+          <!-- List Style Toggle (only visible in list view) -->
+          <div id="list-style-toggle" class="flex items-center gap-1 bg-slate-900/50 border border-slate-800 rounded-lg p-1">
+            <button
+              class="list-style-btn p-2 rounded transition-all active"
+              data-style="cards"
+              title="Cards (Wide)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              </svg>
+            </button>
+            <button
+              class="list-style-btn p-2 rounded transition-all"
+              data-style="table"
+              title="Table (Compact)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <button
+              class="list-style-btn p-2 rounded transition-all"
+              data-style="compact"
+              title="Compact (Narrow)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIST VIEW -->
+      <div id="list-view">
+        <!-- Alphabetical Navigation -->
+        <nav class="mb-6 sticky top-16 z-40 py-3 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
+          <div class="flex flex-wrap gap-1 justify-center">
+            {alphabetIndex.map((letter) => (
+              <a
+                href={`#letter-${letter}`}
+                class="alpha-link w-8 h-8 flex items-center justify-center text-sm font-medium text-slate-400 hover:text-rapeseed-400 hover:bg-slate-800 rounded transition-colors"
+                data-letter={letter}
+              >
+                {letter}
+              </a>
+            ))}
+          </div>
+        </nav>
+
+        <!-- CARDS VIEW (Wide - Default) -->
+        <div id="cards-view" class="space-y-12">
+          {Object.entries(termsByLetter).map(([letter, terms]) => (
+            <section id={`letter-${letter}`} data-letter={letter} class="letter-section scroll-mt-32">
+              <h2 class="text-2xl font-display font-bold text-rapeseed-400 mb-6 pb-2 border-b border-slate-800 letter-header">
+                {letter}
+              </h2>
+              <div class="grid gap-4">
+                {terms.map((term) => (
+                  <article
+                    id={term.term.toLowerCase().replace(/\s+/g, '-')}
+                    class="term-card card-style p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors scroll-mt-32"
+                    data-term={term.term.toLowerCase()}
+                    data-category={term.category}
+                    data-aliases={term.aliases?.join(',').toLowerCase() || ''}
+                    data-short-def={term.shortDef}
+                    data-full-def={term.fullDef}
+                    data-related={term.related?.join(',') || ''}
+                  >
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-3">
+                      <h3 class="term-title text-xl font-semibold text-white">
+                        {term.term}
+                      </h3>
+                      <span class={`term-category px-2 py-1 text-xs font-medium rounded border ${categoryColors[term.category]}`}>
+                        {categories[term.category].label}
+                      </span>
+                    </div>
+
+                    <div class="term-aliases mb-3 flex flex-wrap gap-2" data-has-aliases={term.aliases && term.aliases.length > 0 ? 'true' : 'false'}>
+                      {term.aliases && term.aliases.length > 0 && term.aliases.map((alias) => (
+                        <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">
+                          aka: {alias}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p class="term-def text-slate-300 leading-relaxed mb-4">
+                      {term.fullDef}
+                    </p>
+
+                    <div class="term-related pt-3 border-t border-slate-800" data-has-related={term.related && term.related.length > 0 ? 'true' : 'false'}>
+                      {term.related && term.related.length > 0 && (
+                        <>
+                          <span class="text-xs text-slate-500 mr-2">Related:</span>
+                          <span class="inline-flex flex-wrap gap-2">
+                            {term.related.map((rel) => (
+                              <a
+                                href={`#${rel.toLowerCase().replace(/\s+/g, '-')}`}
+                                class="text-xs text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
+                              >
+                                {rel}
+                              </a>
+                            ))}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <!-- TABLE VIEW (Compact) -->
+        <div id="table-view" class="hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-slate-900/50 border-b border-slate-800">
+                <tr>
+                  <th class="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Term</th>
+                  <th class="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Category</th>
+                  <th class="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Definition</th>
+                  <th class="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Related</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                {sortedTerms.map((term) => (
+                  <tr
+                    class="term-row hover:bg-slate-900/50 transition-colors cursor-pointer"
+                    data-term={term.term.toLowerCase()}
+                    data-category={term.category}
+                    data-aliases={term.aliases?.join(',').toLowerCase() || ''}
+                    data-target-id={term.term.toLowerCase().replace(/\s+/g, '-')}
+                  >
+                    <td class="px-4 py-3">
+                      <div class="font-medium text-white">{term.term}</div>
+                      {term.aliases && term.aliases.length > 0 && (
+                        <div class="text-xs text-slate-500 mt-0.5">{term.aliases.join(', ')}</div>
+                      )}
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class={`px-2 py-0.5 text-xs font-medium rounded border ${categoryColors[term.category]}`}>
+                        {categories[term.category].label}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 hidden md:table-cell">
+                      <p class="text-sm text-slate-400 line-clamp-2">{term.shortDef}</p>
+                    </td>
+                    <td class="px-4 py-3 hidden lg:table-cell">
+                      {term.related && term.related.length > 0 ? (
+                        <div class="flex flex-wrap gap-1">
+                          {term.related.slice(0, 3).map((rel) => (
+                            <span class="text-xs text-rapeseed-400">{rel}</span>
+                          ))}
+                          {term.related.length > 3 && (
+                            <span class="text-xs text-slate-500">+{term.related.length - 3}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span class="text-xs text-slate-600">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- COMPACT VIEW (Narrow) -->
+        <div id="compact-view" class="hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sortedTerms.map((term) => (
+              <div
+                class="term-compact group p-3 bg-slate-900/30 border border-slate-800 rounded-lg hover:border-slate-700 hover:bg-slate-900/50 transition-all cursor-pointer"
+                data-term={term.term.toLowerCase()}
+                data-category={term.category}
+                data-aliases={term.aliases?.join(',').toLowerCase() || ''}
+                data-target-id={term.term.toLowerCase().replace(/\s+/g, '-')}
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-medium text-white text-sm group-hover:text-rapeseed-400 transition-colors truncate">
+                    {term.term}
+                  </span>
+                  <span class={`flex-shrink-0 w-2 h-2 rounded-full ${
+                    term.category === 'aps' ? 'bg-blue-500' :
+                    term.category === 'cad' ? 'bg-green-500' :
+                    term.category === 'devops' ? 'bg-purple-500' :
+                    'bg-yellow-500'
+                  }`} title={categories[term.category].label}></span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1 line-clamp-1">{term.shortDef}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="no-results" class="hidden text-center py-16">
+          <div class="text-4xl mb-4">🔍</div>
+          <h3 class="text-xl font-semibold text-white mb-2">No terms found</h3>
+          <p class="text-slate-400">Try a different search term or category filter.</p>
+        </div>
+      </div>
+
+      <!-- GRAPH VIEW -->
+      <div id="graph-view" class="hidden">
+        <!-- Graph Controls -->
+        <div class="mb-4 flex flex-wrap items-center gap-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-slate-400">Zoom:</label>
+            <input
+              type="range"
+              id="graph-zoom"
+              min="0.3"
+              max="2"
+              step="0.1"
+              value="1"
+              class="w-24 accent-rapeseed-500"
+            />
+          </div>
+          <button
+            id="graph-reset"
+            class="px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+          >
+            Reset View
+          </button>
+          <div class="flex-1"></div>
+          <div class="text-xs text-slate-500">
+            Click nodes to see details. Drag to pan.
+          </div>
+        </div>
+
+        <!-- Graph Canvas Container -->
+        <div
+          id="graph-container"
+          class="relative w-full h-[600px] bg-slate-900/30 border border-slate-800 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
+        >
+          <canvas id="graph-canvas" class="w-full h-full"></canvas>
+
+          <!-- Node Tooltip (click to show) -->
+          <div
+            id="graph-tooltip"
+            class="absolute hidden max-w-sm p-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 pointer-events-auto"
+          >
+            <button
+              id="tooltip-close"
+              class="absolute top-2 right-2 text-slate-500 hover:text-white transition-colors"
+              aria-label="Close"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div id="tooltip-category" class="inline-block px-2 py-0.5 text-xs font-medium rounded border mb-2"></div>
+            <h3 id="tooltip-term" class="text-lg font-semibold text-white mb-1"></h3>
+            <div id="tooltip-aliases" class="text-xs text-slate-500 mb-2 hidden"></div>
+            <p id="tooltip-def" class="text-sm text-slate-300 leading-relaxed mb-3"></p>
+            <div id="tooltip-related" class="pt-2 border-t border-slate-700 hidden">
+              <span class="text-xs text-slate-500">Related: </span>
+              <span id="tooltip-related-list" class="text-xs text-rapeseed-400"></span>
+            </div>
+            <a
+              id="tooltip-link"
+              href="#"
+              class="inline-flex items-center gap-1 mt-3 text-xs text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
+            >
+              View in list
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Graph Legend -->
+        <div class="mt-4 flex flex-wrap justify-center gap-4">
+          {Object.entries(categories).map(([key, cat]) => (
+            <div class="flex items-center gap-2">
+              <span
+                class={`w-3 h-3 rounded-full ${
+                  key === 'aps' ? 'bg-blue-500' :
+                  key === 'cad' ? 'bg-green-500' :
+                  key === 'devops' ? 'bg-purple-500' :
+                  'bg-yellow-500'
+                }`}
+              ></span>
+              <span class="text-xs text-slate-400">{cat.label}</span>
+            </div>
+          ))}
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-0.5 bg-slate-600"></span>
+            <span class="text-xs text-slate-400">Related</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="mt-16 pt-8 border-t border-slate-800">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div>
+            <div class="text-3xl font-display font-bold text-white">{glossary.length}</div>
+            <div class="text-sm text-slate-500">Total Terms</div>
+          </div>
+          {Object.entries(categories).map(([key, cat]) => (
+            <div>
+              <div class="text-3xl font-display font-bold text-white">
+                {glossary.filter(t => t.category === key).length}
+              </div>
+              <div class="text-sm text-slate-500">{cat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<!-- Pass data to client-side script -->
+<script define:vars={{ graphData }}>
+  window.glossaryGraphData = graphData;
+</script>
+
+<script>
+  // ============================================
+  // VIEW TOGGLE (List vs Graph)
+  // ============================================
+  const viewListBtn = document.getElementById('view-list');
+  const viewGraphBtn = document.getElementById('view-graph');
+  const listView = document.getElementById('list-view');
+  const graphView = document.getElementById('graph-view');
+  const listStyleToggle = document.getElementById('list-style-toggle');
+
+  function setMainView(view: 'list' | 'graph') {
+    if (view === 'list') {
+      listView?.classList.remove('hidden');
+      graphView?.classList.add('hidden');
+      listStyleToggle?.classList.remove('hidden');
+      viewListBtn?.classList.add('active');
+      viewGraphBtn?.classList.remove('active');
+      viewListBtn?.setAttribute('aria-pressed', 'true');
+      viewGraphBtn?.setAttribute('aria-pressed', 'false');
+    } else {
+      listView?.classList.add('hidden');
+      graphView?.classList.remove('hidden');
+      listStyleToggle?.classList.add('hidden');
+      viewListBtn?.classList.remove('active');
+      viewGraphBtn?.classList.add('active');
+      viewListBtn?.setAttribute('aria-pressed', 'false');
+      viewGraphBtn?.setAttribute('aria-pressed', 'true');
+      initGraph();
+    }
+  }
+
+  viewListBtn?.addEventListener('click', () => setMainView('list'));
+  viewGraphBtn?.addEventListener('click', () => setMainView('graph'));
+
+  // ============================================
+  // LIST STYLE TOGGLE (Cards/Table/Compact)
+  // ============================================
+  const listStyleBtns = document.querySelectorAll('.list-style-btn');
+  const cardsView = document.getElementById('cards-view');
+  const tableView = document.getElementById('table-view');
+  const compactView = document.getElementById('compact-view');
+
+  let currentListStyle = 'cards';
+
+  function setListStyle(style: 'cards' | 'table' | 'compact') {
+    currentListStyle = style;
+
+    // Update buttons
+    listStyleBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-style') === style);
+    });
+
+    // Update views
+    cardsView?.classList.toggle('hidden', style !== 'cards');
+    tableView?.classList.toggle('hidden', style !== 'table');
+    compactView?.classList.toggle('hidden', style !== 'compact');
+  }
+
+  listStyleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const style = btn.getAttribute('data-style') as 'cards' | 'table' | 'compact';
+      if (style) setListStyle(style);
+    });
+  });
+
+  // Click on table row or compact card to navigate to full card
+  document.querySelectorAll('.term-row, .term-compact').forEach(el => {
+    el.addEventListener('click', () => {
+      const targetId = el.getAttribute('data-target-id');
+      if (targetId) {
+        setListStyle('cards');
+        setTimeout(() => {
+          const target = document.getElementById(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            target.classList.add('ring-2', 'ring-rapeseed-500/50');
+            setTimeout(() => target.classList.remove('ring-2', 'ring-rapeseed-500/50'), 2000);
+          }
+        }, 100);
+      }
+    });
+  });
+
+  // ============================================
+  // SEARCH & FILTER
+  // ============================================
+  const searchInput = document.getElementById('glossary-search') as HTMLInputElement;
+  const categoryButtons = document.querySelectorAll('.category-filter');
+  const termCards = document.querySelectorAll('.term-card');
+  const termRows = document.querySelectorAll('.term-row');
+  const termCompacts = document.querySelectorAll('.term-compact');
+  const letterSections = document.querySelectorAll('.letter-section');
+  const alphaLinks = document.querySelectorAll('.alpha-link');
+  const noResults = document.getElementById('no-results');
+
+  let activeCategory = 'all';
+
+  function filterTerms() {
+    const searchTerm = searchInput?.value.toLowerCase() || '';
+    let visibleCount = 0;
+    const visibleLetters = new Set<string>();
+
+    // Filter cards view
+    termCards.forEach((card) => {
+      const term = card.getAttribute('data-term') || '';
+      const category = card.getAttribute('data-category') || '';
+      const aliases = card.getAttribute('data-aliases') || '';
+      const text = card.textContent?.toLowerCase() || '';
+
+      const matchesSearch = !searchTerm ||
+        term.includes(searchTerm) ||
+        aliases.includes(searchTerm) ||
+        text.includes(searchTerm);
+
+      const matchesCategory = activeCategory === 'all' || category === activeCategory;
+
+      const isVisible = matchesSearch && matchesCategory;
+      (card as HTMLElement).style.display = isVisible ? '' : 'none';
+
+      if (isVisible) {
+        visibleCount++;
+        const letter = term[0]?.toUpperCase();
+        if (letter) visibleLetters.add(letter);
+      }
+    });
+
+    // Filter table rows
+    termRows.forEach((row) => {
+      const term = row.getAttribute('data-term') || '';
+      const category = row.getAttribute('data-category') || '';
+      const aliases = row.getAttribute('data-aliases') || '';
+
+      const matchesSearch = !searchTerm ||
+        term.includes(searchTerm) ||
+        aliases.includes(searchTerm);
+
+      const matchesCategory = activeCategory === 'all' || category === activeCategory;
+
+      (row as HTMLElement).style.display = matchesSearch && matchesCategory ? '' : 'none';
+    });
+
+    // Filter compact cards
+    termCompacts.forEach((card) => {
+      const term = card.getAttribute('data-term') || '';
+      const category = card.getAttribute('data-category') || '';
+      const aliases = card.getAttribute('data-aliases') || '';
+
+      const matchesSearch = !searchTerm ||
+        term.includes(searchTerm) ||
+        aliases.includes(searchTerm);
+
+      const matchesCategory = activeCategory === 'all' || category === activeCategory;
+
+      (card as HTMLElement).style.display = matchesSearch && matchesCategory ? '' : 'none';
+    });
+
+    // Show/hide letter sections in cards view
+    letterSections.forEach((section) => {
+      const letter = section.getAttribute('data-letter');
+      const hasVisibleTerms = letter && visibleLetters.has(letter);
+      (section as HTMLElement).style.display = hasVisibleTerms ? '' : 'none';
+    });
+
+    // Update alpha links
+    alphaLinks.forEach((link) => {
+      const letter = link.getAttribute('data-letter');
+      const isActive = letter && visibleLetters.has(letter);
+      link.classList.toggle('opacity-30', !isActive);
+      link.classList.toggle('pointer-events-none', !isActive);
+    });
+
+    // Show no results message
+    if (noResults) {
+      noResults.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    // Also filter graph if visible
+    if (!graphView?.classList.contains('hidden')) {
+      filterGraph(searchTerm, activeCategory);
+    }
+  }
+
+  searchInput?.addEventListener('input', filterTerms);
+
+  categoryButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      categoryButtons.forEach((b) => b.classList.remove('active', 'bg-rapeseed-500/20', 'text-rapeseed-400', 'border-rapeseed-500/50'));
+      button.classList.add('active', 'bg-rapeseed-500/20', 'text-rapeseed-400', 'border-rapeseed-500/50');
+      activeCategory = button.getAttribute('data-category') || 'all';
+      filterTerms();
+    });
+  });
+
+  document.querySelector('.category-filter[data-category="all"]')?.classList.add('bg-rapeseed-500/20', 'text-rapeseed-400', 'border-rapeseed-500/50');
+
+  alphaLinks.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (currentListStyle !== 'cards') {
+        setListStyle('cards');
+      }
+      const letter = link.getAttribute('data-letter');
+      const target = document.getElementById(`letter-${letter}`);
+      if (target) {
+        setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    });
+  });
+
+  function highlightFromHash() {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const target = document.getElementById(hash);
+      if (target && target.classList.contains('term-card')) {
+        if (currentListStyle !== 'cards') {
+          setListStyle('cards');
+        }
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: 'smooth' });
+          target.classList.add('ring-2', 'ring-rapeseed-500/50');
+          setTimeout(() => target.classList.remove('ring-2', 'ring-rapeseed-500/50'), 2000);
+        }, 100);
+      }
+    }
+  }
+
+  highlightFromHash();
+  window.addEventListener('hashchange', highlightFromHash);
+
+  // ============================================
+  // GRAPH VIEW
+  // ============================================
+  interface GraphNode {
+    id: string;
+    term: string;
+    shortDef: string;
+    fullDef: string;
+    category: string;
+    aliases: string[];
+    related: string[];
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    visible: boolean;
+  }
+
+  interface GraphEdge {
+    source: string;
+    target: string;
+  }
+
+  let canvas: HTMLCanvasElement | null = null;
+  let ctx: CanvasRenderingContext2D | null = null;
+  let nodes: GraphNode[] = [];
+  let edges: GraphEdge[] = [];
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let graphInitialized = false;
+  let animationId: number | null = null;
+  let selectedNode: GraphNode | null = null;
+
+  const categoryNodeColors: Record<string, string> = {
+    aps: '#3b82f6',
+    cad: '#22c55e',
+    devops: '#a855f7',
+    cli: '#eab308',
+  };
+
+  const categoryBadgeColors: Record<string, string> = {
+    aps: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+    cad: 'bg-green-500/10 text-green-400 border-green-500/30',
+    devops: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+    cli: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+  };
+
+  function initGraph() {
+    if (graphInitialized) return;
+
+    canvas = document.getElementById('graph-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const container = document.getElementById('graph-container');
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+
+    ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    const data = (window as any).glossaryGraphData;
+    if (!data) return;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    nodes = data.nodes.map((n: any, i: number) => {
+      const angle = (i / data.nodes.length) * Math.PI * 2;
+      const radius = 200 + Math.random() * 100;
+      return {
+        ...n,
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+        vx: 0,
+        vy: 0,
+        visible: true,
+      };
+    });
+
+    edges = [];
+    const nodeMap = new Map(nodes.map(n => [n.term.toLowerCase(), n.id]));
+
+    nodes.forEach(node => {
+      node.related.forEach((rel: string) => {
+        const targetId = nodeMap.get(rel.toLowerCase());
+        if (targetId && targetId !== node.id) {
+          const exists = edges.some(e =>
+            (e.source === node.id && e.target === targetId) ||
+            (e.source === targetId && e.target === node.id)
+          );
+          if (!exists) {
+            edges.push({ source: node.id, target: targetId });
+          }
+        }
+      });
+    });
+
+    setupGraphEvents();
+    graphInitialized = true;
+    simulate();
+  }
+
+  function setupGraphEvents() {
+    if (!canvas) return;
+
+    const tooltip = document.getElementById('graph-tooltip');
+    const tooltipClose = document.getElementById('tooltip-close');
+    const zoomSlider = document.getElementById('graph-zoom') as HTMLInputElement;
+    const resetBtn = document.getElementById('graph-reset');
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.clientX - panX;
+      dragStartY = e.clientY - panY;
+      canvas!.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        panX = e.clientX - dragStartX;
+        panY = e.clientY - dragStartY;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      if (canvas) canvas.style.cursor = 'grab';
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (!canvas || !tooltip) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = (e.clientX - rect.left - panX) / zoom;
+      const mouseY = (e.clientY - rect.top - panY) / zoom;
+
+      let clickedNode: GraphNode | null = null;
+      for (const node of nodes) {
+        if (!node.visible) continue;
+        const dx = mouseX - node.x;
+        const dy = mouseY - node.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 20) {
+          clickedNode = node;
+          break;
+        }
+      }
+
+      if (clickedNode) {
+        selectedNode = clickedNode;
+        showTooltip(clickedNode, e.clientX, e.clientY);
+      } else {
+        hideTooltip();
+        selectedNode = null;
+      }
+    });
+
+    tooltipClose?.addEventListener('click', () => {
+      hideTooltip();
+      selectedNode = null;
+    });
+
+    zoomSlider?.addEventListener('input', () => {
+      zoom = parseFloat(zoomSlider.value);
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      zoom = 1;
+      panX = 0;
+      panY = 0;
+      if (zoomSlider) zoomSlider.value = '1';
+      selectedNode = null;
+      hideTooltip();
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      zoom = Math.max(0.3, Math.min(2, zoom + delta));
+      if (zoomSlider) zoomSlider.value = String(zoom);
+    });
+  }
+
+  function showTooltip(node: GraphNode, x: number, y: number) {
+    const tooltip = document.getElementById('graph-tooltip');
+    const termEl = document.getElementById('tooltip-term');
+    const categoryEl = document.getElementById('tooltip-category');
+    const aliasesEl = document.getElementById('tooltip-aliases');
+    const defEl = document.getElementById('tooltip-def');
+    const relatedEl = document.getElementById('tooltip-related');
+    const relatedListEl = document.getElementById('tooltip-related-list');
+    const linkEl = document.getElementById('tooltip-link');
+
+    if (!tooltip || !termEl || !categoryEl || !defEl) return;
+
+    termEl.textContent = node.term;
+
+    const catData = (window as any).glossaryGraphData.categories[node.category];
+    categoryEl.textContent = catData?.label || node.category;
+    categoryEl.className = `inline-block px-2 py-0.5 text-xs font-medium rounded border mb-2 ${categoryBadgeColors[node.category] || ''}`;
+
+    if (node.aliases.length > 0 && aliasesEl) {
+      aliasesEl.textContent = `aka: ${node.aliases.join(', ')}`;
+      aliasesEl.classList.remove('hidden');
+    } else if (aliasesEl) {
+      aliasesEl.classList.add('hidden');
+    }
+
+    defEl.textContent = node.shortDef;
+
+    if (node.related.length > 0 && relatedEl && relatedListEl) {
+      relatedListEl.textContent = node.related.join(', ');
+      relatedEl.classList.remove('hidden');
+    } else if (relatedEl) {
+      relatedEl.classList.add('hidden');
+    }
+
+    if (linkEl) {
+      linkEl.setAttribute('href', `#${node.id}`);
+      linkEl.onclick = (e) => {
+        e.preventDefault();
+        setMainView('list');
+        setListStyle('cards');
+        setTimeout(() => {
+          const target = document.getElementById(node.id);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            target.classList.add('ring-2', 'ring-rapeseed-500/50');
+            setTimeout(() => target.classList.remove('ring-2', 'ring-rapeseed-500/50'), 2000);
+          }
+        }, 100);
+      };
+    }
+
+    const container = document.getElementById('graph-container');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      let left = x - rect.left + 10;
+      let top = y - rect.top + 10;
+
+      if (left + 320 > rect.width) left = x - rect.left - 330;
+      if (top + 200 > rect.height) top = y - rect.top - 210;
+
+      tooltip.style.left = `${Math.max(10, left)}px`;
+      tooltip.style.top = `${Math.max(10, top)}px`;
+    }
+
+    tooltip.classList.remove('hidden');
+  }
+
+  function hideTooltip() {
+    const tooltip = document.getElementById('graph-tooltip');
+    if (tooltip) tooltip.classList.add('hidden');
+  }
+
+  function filterGraph(searchTerm: string, category: string) {
+    nodes.forEach(node => {
+      const matchesSearch = !searchTerm ||
+        node.term.toLowerCase().includes(searchTerm) ||
+        node.aliases.some(a => a.toLowerCase().includes(searchTerm)) ||
+        node.shortDef.toLowerCase().includes(searchTerm);
+
+      const matchesCategory = category === 'all' || node.category === category;
+
+      node.visible = matchesSearch && matchesCategory;
+    });
+  }
+
+  function simulate() {
+    if (!ctx || !canvas) return;
+
+    const container = document.getElementById('graph-container');
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    const visibleNodes = nodes.filter(n => n.visible);
+
+    for (let i = 0; i < visibleNodes.length; i++) {
+      for (let j = i + 1; j < visibleNodes.length; j++) {
+        const n1 = visibleNodes[i];
+        const n2 = visibleNodes[j];
+        const dx = n2.x - n1.x;
+        const dy = n2.y - n1.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const force = 500 / (dist * dist);
+
+        n1.vx -= (dx / dist) * force;
+        n1.vy -= (dy / dist) * force;
+        n2.vx += (dx / dist) * force;
+        n2.vy += (dy / dist) * force;
+      }
+    }
+
+    edges.forEach(edge => {
+      const source = nodes.find(n => n.id === edge.source);
+      const target = nodes.find(n => n.id === edge.target);
+      if (!source || !target || !source.visible || !target.visible) return;
+
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const force = (dist - 100) * 0.01;
+
+      source.vx += (dx / dist) * force;
+      source.vy += (dy / dist) * force;
+      target.vx -= (dx / dist) * force;
+      target.vy -= (dy / dist) * force;
+    });
+
+    visibleNodes.forEach(node => {
+      node.vx += (width / 2 - node.x) * 0.001;
+      node.vy += (height / 2 - node.y) * 0.001;
+    });
+
+    visibleNodes.forEach(node => {
+      node.vx *= 0.9;
+      node.vy *= 0.9;
+      node.x += node.vx;
+      node.y += node.vy;
+
+      node.x = Math.max(50, Math.min(width - 50, node.x));
+      node.y = Math.max(50, Math.min(height - 50, node.y));
+    });
+
+    draw(width, height);
+    animationId = requestAnimationFrame(simulate);
+  }
+
+  function draw(width: number, height: number) {
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoom, zoom);
+
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+    ctx.strokeStyle = 'rgba(100, 116, 139, 0.3)';
+    ctx.lineWidth = 1;
+    edges.forEach(edge => {
+      const source = nodeMap.get(edge.source);
+      const target = nodeMap.get(edge.target);
+      if (!source || !target || !source.visible || !target.visible) return;
+
+      ctx!.beginPath();
+      ctx!.moveTo(source.x, source.y);
+      ctx!.lineTo(target.x, target.y);
+      ctx!.stroke();
+    });
+
+    nodes.forEach(node => {
+      if (!node.visible) return;
+
+      const isSelected = selectedNode?.id === node.id;
+      const radius = isSelected ? 18 : 14;
+      const color = categoryNodeColors[node.category] || '#64748b';
+
+      ctx!.beginPath();
+      ctx!.arc(node.x, node.y, radius, 0, Math.PI * 2);
+      ctx!.fillStyle = isSelected ? color : `${color}cc`;
+      ctx!.fill();
+
+      if (isSelected) {
+        ctx!.strokeStyle = '#fff';
+        ctx!.lineWidth = 2;
+        ctx!.stroke();
+      }
+
+      ctx!.fillStyle = '#fff';
+      ctx!.font = `${isSelected ? 'bold ' : ''}11px system-ui, sans-serif`;
+      ctx!.textAlign = 'center';
+      ctx!.textBaseline = 'middle';
+
+      let label = node.term;
+      if (label.length > 12) label = label.substring(0, 10) + '...';
+
+      ctx!.fillText(label, node.x, node.y + radius + 12);
+    });
+
+    ctx.restore();
+  }
+
+  document.addEventListener('astro:before-swap', () => {
+    if (animationId) cancelAnimationFrame(animationId);
+  });
+</script>
+
+<style>
+  .category-filter {
+    @apply bg-slate-800/50 text-slate-400 border-slate-700;
+  }
+
+  .category-filter:hover {
+    @apply bg-slate-800 text-slate-300;
+  }
+
+  .category-filter.active {
+    @apply bg-rapeseed-500/20 text-rapeseed-400 border-rapeseed-500/50;
+  }
+
+  .view-toggle {
+    @apply text-slate-400;
+  }
+
+  .view-toggle:hover {
+    @apply bg-slate-800 text-slate-300;
+  }
+
+  .view-toggle.active {
+    @apply bg-rapeseed-500/20 text-rapeseed-400;
+  }
+
+  .list-style-btn {
+    @apply text-slate-500;
+  }
+
+  .list-style-btn:hover {
+    @apply bg-slate-800 text-slate-300;
+  }
+
+  .list-style-btn.active {
+    @apply bg-slate-800 text-rapeseed-400;
+  }
+</style>

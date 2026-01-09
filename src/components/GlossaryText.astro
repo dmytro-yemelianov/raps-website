@@ -1,0 +1,112 @@
+---
+/**
+ * GlossaryText - Auto-detects and wraps glossary terms with tooltips
+ *
+ * Usage:
+ *   <GlossaryText>
+ *     Upload your DWG files to OSS buckets for translation.
+ *   </GlossaryText>
+ *
+ * This will automatically add tooltips to "DWG", "OSS", and "buckets".
+ */
+
+import { glossary, type GlossaryTerm } from '../data/glossary';
+
+interface Props {
+  /** Only tooltip first occurrence of each term (default: true) */
+  firstOnly?: boolean;
+  /** Categories to include (default: all) */
+  categories?: ('aps' | 'cad' | 'devops' | 'cli')[];
+  /** Specific terms to exclude from auto-detection */
+  exclude?: string[];
+}
+
+const {
+  firstOnly = true,
+  categories,
+  exclude = []
+} = Astro.props;
+
+// Filter terms based on props
+let terms = glossary;
+if (categories?.length) {
+  terms = terms.filter(t => categories.includes(t.category));
+}
+
+// Build regex pattern for all terms and aliases
+const termPatterns: { pattern: RegExp; term: GlossaryTerm }[] = [];
+
+for (const term of terms) {
+  const allNames = [term.term, ...(term.aliases || [])];
+  for (const name of allNames) {
+    if (exclude.includes(name.toLowerCase())) continue;
+
+    // Create word-boundary regex (case insensitive)
+    // Escape special regex characters
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\b${escaped}\\b`, 'gi');
+    termPatterns.push({ pattern, term });
+  }
+}
+
+// Sort by length (longest first) to match longer terms before shorter ones
+termPatterns.sort((a, b) => b.pattern.source.length - a.pattern.source.length);
+
+// Get the raw text content
+const rawContent = await Astro.slots.render('default');
+
+// Process the content
+function processContent(html: string): string {
+  // Track which terms we've already tooltipped
+  const tooltippedTerms = new Set<string>();
+
+  // Simple approach: only process text outside of HTML tags
+  // This prevents breaking existing markup
+
+  let result = html;
+
+  for (const { pattern, term } of termPatterns) {
+    // Skip if we've already tooltipped this term and firstOnly is true
+    if (firstOnly && tooltippedTerms.has(term.term)) continue;
+
+    // Replace matches with tooltip markup
+    // Only replace text that's not already inside a tag or tooltip
+    result = result.replace(pattern, (match, offset) => {
+      // Check if we're inside a tag or already-processed tooltip
+      const before = result.substring(0, offset);
+      const openTags = (before.match(/<[^/][^>]*>/g) || []).length;
+      const closeTags = (before.match(/<\/[^>]*>/g) || []).length;
+
+      // Skip if inside unclosed tags (rough heuristic)
+      if (before.includes('tooltip-wrapper') && !before.includes('</span>')) {
+        return match;
+      }
+
+      // Skip if already tooltipped this term
+      if (firstOnly && tooltippedTerms.has(term.term)) {
+        return match;
+      }
+
+      tooltippedTerms.add(term.term);
+
+      // Return tooltip markup
+      const termId = term.term.toLowerCase().replace(/\s+/g, '-');
+      return `<span class="tooltip-wrapper group relative inline"><span class="tooltip-trigger cursor-help border-b border-dotted border-slate-500 hover:border-rapeseed-400 transition-colors" tabindex="0" role="button" aria-describedby="tooltip-${termId}">${match}</span><span id="tooltip-${termId}" role="tooltip" class="tooltip-content pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 sm:w-80 px-3 py-2 text-sm text-slate-200 bg-slate-800 border border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50"><span class="block font-semibold text-rapeseed-400 mb-1">${term.term}</span><span class="block text-slate-300 leading-relaxed">${term.shortDef}</span><a href="/glossary#${termId}" class="pointer-events-auto inline-flex items-center gap-1 mt-2 text-xs text-slate-400 hover:text-rapeseed-400 transition-colors">View in glossary<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></a><span class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></span></span></span>`;
+    });
+  }
+
+  return result;
+}
+
+const processedContent = processContent(rawContent);
+---
+
+<Fragment set:html={processedContent} />
+
+<style is:global>
+  /* Tooltip hover state */
+  .tooltip-wrapper:hover .tooltip-content,
+  .tooltip-wrapper:focus-within .tooltip-content {
+    pointer-events: auto;
+  }
+</style>

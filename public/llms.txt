@@ -72,6 +72,7 @@ RAPS (rapscli.xyz) brings modern DevOps practices to Autodesk Platform Services.
 
 ## Resources
 
+- [Glossary](https://rapscli.xyz/glossary): Comprehensive glossary of APS, CAD/BIM, DevOps, and CLI terminology (50+ terms)
 - [APS Cheat Sheet](https://rapscli.xyz/resources/aps-cheatsheet): Complete single-page reference for APS development
 - [API Decision Tree](https://rapscli.xyz/resources/api-decision-tree): Interactive guide to choose the right APS APIs
 - [Examples](https://rapscli.xyz/docs/examples): Common workflow examples with code
