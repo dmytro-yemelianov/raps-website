@@ -82,10 +82,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="format-info">
       <h4>📖 URN Format Guide</h4>
       <p><strong>Object Storage Service URN:</strong></p>
-      <p><code>urn:adsk.objects:os.object:{bucket}/{object}</code></p>
+      <p><code>urn:adsk.objects:os.object:{'<bucket>'}/<{'object'}></code></p>
       
       <p><strong>Data Management URN:</strong></p>
-      <p><code>urn:adsk.wipprod:dm.lineage:{item-id}</code></p>
+      <p><code>urn:adsk.wipprod:dm.lineage:<{'item-id'}></code></p>
       
       <p><strong>Base64 Encoding Rules:</strong></p>
       <ul>
