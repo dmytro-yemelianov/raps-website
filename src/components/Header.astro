@@ -1,12 +1,29 @@
 ---
+// Main navigation items with submenus
 const navItems = [
   { href: '/', label: 'Home' },
-  { href: '/docs', label: 'Docs' },
-  { href: '/api-coverage', label: 'API Coverage' },
-  { href: '/quickstart', label: 'Quick Start' },
-  { href: '/roadmap', label: 'Roadmap' },
-  { href: '/changelog', label: 'Changelog' },
-  { href: '/about', label: 'About' },
+  { 
+    href: '/quickstart', 
+    label: 'Quick Start',
+    color: 'rapeseed'
+  },
+  {
+    label: 'Developer',
+    submenu: [
+      { href: '/docs', label: 'Documentation', icon: '📚', description: 'Complete CLI reference' },
+      { href: '/tools', label: 'Interactive Tools', icon: '🛠️', description: 'OAuth, URN, token helpers' },
+      { href: '/resources', label: 'Developer Resources', icon: '📖', description: 'Cheat sheets, guides, examples' },
+      { href: '/api-coverage', label: 'API Coverage', icon: '🔌', description: 'Supported APS endpoints' },
+    ]
+  },
+  {
+    label: 'Project',
+    submenu: [
+      { href: '/roadmap', label: 'Roadmap', icon: '🗺️', description: 'Upcoming features' },
+      { href: '/changelog', label: 'Changelog', icon: '📋', description: 'Release history' },
+      { href: '/about', label: 'About', icon: 'ℹ️', description: 'Project background' },
+    ]
+  },
 ];
 
 const currentPath = Astro.url.pathname;
@@ -15,7 +32,14 @@ const currentPath = Astro.url.pathname;
 const isActive = (href: string) => {
   if (href === '/') return currentPath === '/';
   if (href === '/docs') return currentPath.startsWith('/docs');
+  if (href === '/tools') return currentPath.startsWith('/tools');
+  if (href === '/resources') return currentPath.startsWith('/resources');
   return currentPath === href || currentPath === href + '/';
+};
+
+// Helper to check if submenu contains active item
+const isSubmenuActive = (submenu: any[]) => {
+  return submenu.some(item => isActive(item.href));
 };
 ---
 
@@ -32,23 +56,67 @@ const isActive = (href: string) => {
       
       <!-- Desktop Navigation -->
       <nav class="hidden md:flex items-center gap-1">
-        {navItems.map((item) => (
-          <a
-            href={item.href}
-            class:list={[
-              'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-              isActive(item.href)
-                ? 'bg-slate-800 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
-              item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400 hover:text-rapeseed-300',
-              item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400 hover:text-emerald-300',
-              item.label === 'API Coverage' && !isActive(item.href) && 'text-purple-400 hover:text-purple-300',
-              item.label === 'Roadmap' && !isActive(item.href) && 'text-cyan-400 hover:text-cyan-300',
-            ]}
-          >
-            {item.label}
-          </a>
-        ))}
+        {navItems.map((item) => {
+          if (item.submenu) {
+            // Dropdown menu item
+            return (
+              <div class="relative group">
+                <button
+                  class:list={[
+                    'flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                    isSubmenuActive(item.submenu)
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
+                    item.label === 'Developer' && !isSubmenuActive(item.submenu) && 'text-emerald-400 hover:text-emerald-300',
+                    item.label === 'Project' && !isSubmenuActive(item.submenu) && 'text-blue-400 hover:text-blue-300',
+                  ]}
+                >
+                  {item.label}
+                  <svg class="w-4 h-4 transition-transform group-hover:rotate-180" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <div class="absolute top-full left-0 mt-2 w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div class="p-2">
+                    {item.submenu.map((subitem) => (
+                      <a
+                        href={subitem.href}
+                        class:list={[
+                          'flex items-start gap-3 px-3 py-3 rounded-lg transition-all hover:bg-slate-800/50',
+                          isActive(subitem.href) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white'
+                        ]}
+                      >
+                        <span class="text-lg mt-0.5 emoji">{subitem.icon}</span>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-white">{subitem.label}</div>
+                          <div class="text-xs text-slate-400 mt-0.5">{subitem.description}</div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          } else {
+            // Regular menu item
+            return (
+              <a
+                href={item.href}
+                class:list={[
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                  isActive(item.href)
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
+                  item.color === 'rapeseed' && !isActive(item.href) && 'text-rapeseed-400 hover:text-rapeseed-300',
+                ]}
+              >
+                {item.label}
+              </a>
+            );
+          }
+        })}
       </nav>
       
       <!-- CTA Buttons -->
@@ -116,24 +184,53 @@ const isActive = (href: string) => {
   
   <!-- Mobile Navigation -->
   <div class="hidden md:hidden border-t border-slate-800" id="mobile-menu">
-    <nav class="px-4 py-3 space-y-1">
-      {navItems.map((item) => (
-        <a
-          href={item.href}
-          class:list={[
-            'block px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-            isActive(item.href)
-              ? 'bg-slate-800 text-white'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
-            item.label === 'Quick Start' && !isActive(item.href) && 'text-rapeseed-400',
-            item.label === 'Docs' && !isActive(item.href) && 'text-emerald-400',
-            item.label === 'API Coverage' && !isActive(item.href) && 'text-purple-400',
-            item.label === 'Roadmap' && !isActive(item.href) && 'text-cyan-400',
-          ]}
-        >
-          {item.label}
-        </a>
-      ))}
+    <nav class="px-4 py-3 space-y-2">
+      {navItems.map((item) => {
+        if (item.submenu) {
+          // Mobile submenu section
+          return (
+            <div class="space-y-1">
+              <div class:list={[
+                'px-4 py-2 text-xs font-semibold uppercase tracking-wider',
+                item.label === 'Developer' && 'text-emerald-400',
+                item.label === 'Project' && 'text-blue-400',
+              ]}>
+                {item.label}
+              </div>
+              {item.submenu.map((subitem) => (
+                <a
+                  href={subitem.href}
+                  class:list={[
+                    'flex items-center gap-3 px-6 py-2 rounded-lg text-sm font-medium transition-colors',
+                    isActive(subitem.href)
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  ]}
+                >
+                  <span class="text-base emoji">{subitem.icon}</span>
+                  {subitem.label}
+                </a>
+              ))}
+            </div>
+          );
+        } else {
+          // Regular mobile menu item
+          return (
+            <a
+              href={item.href}
+              class:list={[
+                'block px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive(item.href)
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
+                item.color === 'rapeseed' && !isActive(item.href) && 'text-rapeseed-400',
+              ]}
+            >
+              {item.label}
+            </a>
+          );
+        }
+      })}
     </nav>
   </div>
 </header>
@@ -202,3 +299,37 @@ const isActive = (href: string) => {
 
 <!-- Spacer for fixed header -->
 <div class="h-16"></div>
+
+<style>
+  /* Enhanced dropdown hover states */
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1;
+  }
+  .group:hover .group-hover\:visible {
+    visibility: visible;
+  }
+  .group:hover .group-hover\:rotate-180 {
+    transform: rotate(180deg);
+  }
+  
+  /* Ensure dropdown doesn't interfere with other elements */
+  nav .group {
+    position: relative;
+  }
+  
+  /* Smooth transitions for dropdowns */
+  nav .group > div[class*="absolute"] {
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    transform-origin: top;
+  }
+  
+  /* Mobile menu spacing improvements */
+  #mobile-menu nav > * + * {
+    margin-top: 0.5rem;
+  }
+  
+  /* Better emoji handling in submenus */
+  .emoji {
+    font-style: normal;
+  }
+</style>

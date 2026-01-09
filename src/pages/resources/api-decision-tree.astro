@@ -1,0 +1,552 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="Which APS API Do I Need? - Decision Tree" 
+  description="Interactive decision tree to help developers choose the right Autodesk Platform Services API for their project. Covers authentication, use cases, and workflows."
+>
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-display font-bold text-white mb-4">Which APS API Do I Need?</h1>
+      <p class="text-lg text-slate-300 mb-6">Interactive decision tree to help you choose the right Autodesk Platform Services API for your project</p>
+      
+      <div class="bg-blue-950/30 border border-blue-800/30 rounded-lg p-4">
+        <p class="text-blue-200 mb-2">
+          <strong>💡 Quick Start:</strong> Answer a few questions below to get personalized API recommendations with RAPS CLI commands.
+        </p>
+        <p class="text-blue-200">
+          Don't want to go through the questions? Jump to <a href="#common-scenarios" class="text-blue-300 underline">Common Use Case Scenarios</a> instead.
+        </p>
+      </div>
+    </div>
+
+    <!-- Interactive Decision Tool -->
+    <div class="mb-12">
+      <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+        <h2 class="text-2xl font-bold text-white mb-6">🎯 Interactive API Selector</h2>
+        
+        <div id="decision-tree">
+          <!-- Question 1 -->
+          <div class="question-block active" id="q1">
+            <h3 class="text-lg font-semibold text-white mb-4">Need to display 3D models in a web browser?</h3>
+            <div class="flex gap-4">
+              <button class="answer-btn bg-green-600 hover:bg-green-500" onclick="goToResult('viewer')">
+                Yes, 3D web viewer
+              </button>
+              <button class="answer-btn bg-slate-700 hover:bg-slate-600" onclick="showQuestion('q2')">
+                No, different need
+              </button>
+            </div>
+          </div>
+
+          <!-- Question 2 -->
+          <div class="question-block" id="q2">
+            <h3 class="text-lg font-semibold text-white mb-4">Need to store/manage files in the cloud?</h3>
+            <div class="flex gap-4">
+              <button class="answer-btn bg-blue-600 hover:bg-blue-500" onclick="showQuestion('q3')">
+                Yes, file management
+              </button>
+              <button class="answer-btn bg-slate-700 hover:bg-slate-600" onclick="showQuestion('q5')">
+                No, other purpose
+              </button>
+            </div>
+          </div>
+
+          <!-- Question 3 -->
+          <div class="question-block" id="q3">
+            <h3 class="text-lg font-semibold text-white mb-4">Working with BIM 360/ACC projects?</h3>
+            <div class="flex gap-4">
+              <button class="answer-btn bg-green-600 hover:bg-green-500" onclick="goToResult('bim360')">
+                Yes, BIM 360/ACC
+              </button>
+              <button class="answer-btn bg-yellow-600 hover:bg-yellow-500" onclick="goToResult('oss')">
+                No, just simple storage
+              </button>
+            </div>
+          </div>
+
+          <!-- Question 5 -->
+          <div class="question-block" id="q5">
+            <h3 class="text-lg font-semibold text-white mb-4">Need to convert file formats?</h3>
+            <div class="flex gap-4">
+              <button class="answer-btn bg-purple-600 hover:bg-purple-500" onclick="goToResult('translate')">
+                Yes, format conversion
+              </button>
+              <button class="answer-btn bg-slate-700 hover:bg-slate-600" onclick="showQuestion('q8')">
+                No, different need
+              </button>
+            </div>
+          </div>
+
+          <!-- Question 8 -->
+          <div class="question-block" id="q8">
+            <h3 class="text-lg font-semibold text-white mb-4">Need to automate CAD software operations?</h3>
+            <div class="flex gap-4">
+              <button class="answer-btn bg-cyan-600 hover:bg-cyan-500" onclick="goToResult('automation')">
+                Yes, CAD automation
+              </button>
+              <button class="answer-btn bg-orange-600 hover:bg-orange-500" onclick="goToResult('auth')">
+                No, just authentication
+              </button>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="result-block" id="viewer">
+            <h3 class="text-xl font-semibold text-green-300 mb-4">🎯 3D Web Viewer Solution</h3>
+            <div class="bg-green-950/20 border border-green-600/30 rounded-lg p-4 mb-4">
+              <p class="text-slate-300 mb-3">You need to display 3D models in web browsers. Here's your tech stack:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-green-300">•</span>
+                  <strong class="text-white">Viewer SDK</strong> - 3D model display in browser
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-green-300">•</span>
+                  <strong class="text-white">Model Derivative API</strong> - Convert files to web formats
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-green-300">•</span>
+                  <strong class="text-white">Object Storage Service</strong> - Store original files
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-4 mb-4">
+              <h4 class="text-white font-semibold mb-2">RAPS Workflow:</h4>
+              <pre class="text-green-300 text-sm"><code>raps auth login
+raps oss upload model.rvt mybucket
+raps translate $(raps urn encode "urn:adsk.objects:os.object:mybucket:model.rvt") --wait
+raps view $(raps urn encode "urn:adsk.objects:os.object:mybucket:model.rvt")</code></pre>
+            </div>
+            <div class="text-sm text-slate-400">
+              <strong>Auth:</strong> 2-legged OAuth | <strong>Scopes:</strong> data:read, viewables:read, bucket:read
+            </div>
+          </div>
+
+          <div class="result-block" id="bim360">
+            <h3 class="text-xl font-semibold text-blue-300 mb-4">🏢 BIM 360/ACC File Management</h3>
+            <div class="bg-blue-950/20 border border-blue-600/30 rounded-lg p-4 mb-4">
+              <p class="text-slate-300 mb-3">You need access to BIM 360 or Autodesk Construction Cloud projects:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-blue-300">•</span>
+                  <strong class="text-white">Data Management API</strong> - Project files & folders
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-blue-300">•</span>
+                  <strong class="text-white">Authentication API</strong> - User authorization (3-legged)
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-4 mb-4">
+              <h4 class="text-white font-semibold mb-2">RAPS Workflow:</h4>
+              <pre class="text-blue-300 text-sm"><code>raps auth login --3legged --scopes account:read,data:read
+raps dm projects
+raps dm folders &lt;project-id&gt;
+raps dm download &lt;item-id&gt; ./local-file.rvt</code></pre>
+            </div>
+            <div class="text-sm text-slate-400">
+              <strong>Auth:</strong> 3-legged OAuth (user must have project access) | <strong>Scopes:</strong> account:read, data:read
+            </div>
+          </div>
+
+          <div class="result-block" id="oss">
+            <h3 class="text-xl font-semibold text-yellow-300 mb-4">🗄️ Simple File Storage</h3>
+            <div class="bg-yellow-950/20 border border-yellow-600/30 rounded-lg p-4 mb-4">
+              <p class="text-slate-300 mb-3">You need basic cloud file storage for your application:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-yellow-300">•</span>
+                  <strong class="text-white">Object Storage Service</strong> - Upload/download files
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-4 mb-4">
+              <h4 class="text-white font-semibold mb-2">RAPS Workflow:</h4>
+              <pre class="text-yellow-300 text-sm"><code>raps auth login
+raps bucket create my-app-files
+raps oss upload document.pdf my-app-files
+raps oss download my-app-files document.pdf</code></pre>
+            </div>
+            <div class="text-sm text-slate-400">
+              <strong>Auth:</strong> 2-legged OAuth | <strong>Scopes:</strong> bucket:read, bucket:create
+            </div>
+          </div>
+
+          <div class="result-block" id="translate">
+            <h3 class="text-xl font-semibold text-purple-300 mb-4">🔄 File Format Conversion</h3>
+            <div class="bg-purple-950/20 border border-purple-600/30 rounded-lg p-4 mb-4">
+              <p class="text-slate-300 mb-3">You need to convert CAD files to different formats:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-purple-300">•</span>
+                  <strong class="text-white">Model Derivative API</strong> - File format conversion
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-purple-300">•</span>
+                  <strong class="text-white">Object Storage Service</strong> - Input/output storage
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-4 mb-4">
+              <h4 class="text-white font-semibold mb-2">RAPS Workflow:</h4>
+              <pre class="text-purple-300 text-sm"><code>raps bucket create batch-processing
+raps oss upload-batch *.dwg --bucket batch-processing
+raps translate-batch --bucket batch-processing --formats pdf,svf2 --parallel 5</code></pre>
+            </div>
+            <div class="text-sm text-slate-400">
+              <strong>Auth:</strong> 2-legged OAuth | <strong>Scopes:</strong> bucket:read, bucket:create, data:read
+            </div>
+          </div>
+
+          <div class="result-block" id="automation">
+            <h3 class="text-xl font-semibold text-cyan-300 mb-4">🤖 CAD Automation</h3>
+            <div class="bg-cyan-950/20 border border-cyan-600/30 rounded-lg p-4 mb-4">
+              <p class="text-slate-300 mb-3">You need to automate CAD software operations in the cloud:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-cyan-300">•</span>
+                  <strong class="text-white">Design Automation API</strong> - Cloud CAD engines
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-cyan-300">•</span>
+                  <strong class="text-white">Object Storage Service</strong> - Input/output files
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-4 mb-4">
+              <h4 class="text-white font-semibold mb-2">RAPS Workflow:</h4>
+              <pre class="text-cyan-300 text-sm"><code>raps da engines --filter autocad
+raps da create-activity MyProcessor --engine Autodesk.AutoCAD+24
+raps da submit-workitem MyProcessor --input drawing.dwg --script process.scr</code></pre>
+            </div>
+            <div class="text-sm text-slate-400">
+              <strong>Auth:</strong> 2-legged OAuth | <strong>Scopes:</strong> code:all, bucket:read, bucket:create
+            </div>
+          </div>
+
+          <div class="result-block" id="auth">
+            <h3 class="text-xl font-semibold text-orange-300 mb-4">🔑 Authentication Only</h3>
+            <div class="bg-orange-950/20 border border-orange-600/30 rounded-lg p-4 mb-4">
+              <p class="text-slate-300 mb-3">You just need to authenticate and get access tokens:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-orange-300">•</span>
+                  <strong class="text-white">Authentication API</strong> - OAuth token management
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-4 mb-4">
+              <h4 class="text-white font-semibold mb-2">RAPS Workflow:</h4>
+              <pre class="text-orange-300 text-sm"><code>raps auth login
+raps auth status
+raps auth refresh  # When token expires</code></pre>
+            </div>
+            <div class="text-sm text-slate-400">
+              <strong>Auth:</strong> 2-legged or 3-legged OAuth | <strong>Scopes:</strong> Depends on intended use
+            </div>
+          </div>
+        </div>
+
+        <button id="restart-btn" class="mt-6 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition-colors" onclick="restartDecisionTree()" style="display: none;">
+          🔄 Start Over
+        </button>
+      </div>
+    </div>
+
+    <!-- Common Use Case Scenarios -->
+    <section id="common-scenarios" class="mb-12">
+      <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-2">🌐 Common Use Case Scenarios</h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Web-Based 3D Viewer -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+          <h3 class="text-xl font-semibold text-green-300 mb-4">🌐 Web-Based 3D Model Viewer</h3>
+          <p class="text-slate-300 mb-4 italic">"I want users to view 3D models in my web application"</p>
+          
+          <div class="mb-4">
+            <h4 class="font-semibold text-white mb-2">APIs Needed:</h4>
+            <ul class="text-sm text-slate-300 space-y-1">
+              <li>• <strong>Model Derivative API</strong> → Convert files to web-viewable formats</li>
+              <li>• <strong>Viewer SDK</strong> → Display models in browser</li>
+              <li>• <strong>Object Storage Service</strong> → Store original files</li>
+            </ul>
+          </div>
+
+          <div class="bg-slate-900 rounded-lg p-3 mb-4">
+            <pre class="text-green-300 text-xs"><code># Manual: 5+ API calls, complex geometry handling
+# With RAPS:
+raps auth login
+raps oss upload model.rvt mybucket
+raps translate $(raps urn encode "urn:adsk.objects:os.object:mybucket:model.rvt") --wait
+raps view $(raps urn encode "urn:adsk.objects:os.object:mybucket:model.rvt")</code></pre>
+          </div>
+
+          <div class="text-xs text-slate-400">
+            <strong>Auth:</strong> 2-legged OAuth (server apps) or 3-legged (user apps)<br/>
+            <strong>Scopes:</strong> data:read, viewables:read, bucket:read
+          </div>
+        </div>
+
+        <!-- BIM 360/ACC File Management -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+          <h3 class="text-xl font-semibold text-blue-300 mb-4">📁 BIM 360/ACC File Management</h3>
+          <p class="text-slate-300 mb-4 italic">"I need to access files from BIM 360 or Autodesk Construction Cloud projects"</p>
+          
+          <div class="mb-4">
+            <h4 class="font-semibold text-white mb-2">APIs Needed:</h4>
+            <ul class="text-sm text-slate-300 space-y-1">
+              <li>• <strong>Data Management API</strong> → Access project files and folders</li>
+              <li>• <strong>Authentication API</strong> → User authorization (3-legged OAuth)</li>
+            </ul>
+          </div>
+
+          <div class="bg-slate-900 rounded-lg p-3 mb-4">
+            <pre class="text-blue-300 text-xs"><code># Manual: Complex hub/project hierarchy navigation
+# With RAPS:
+raps auth login --3legged --scopes account:read,data:read
+raps dm projects
+raps dm folders &lt;project-id&gt;
+raps dm download &lt;item-id&gt; ./local-file.rvt</code></pre>
+          </div>
+
+          <div class="text-xs text-slate-400">
+            <strong>Auth:</strong> 3-legged OAuth (user must have project access)<br/>
+            <strong>Scopes:</strong> account:read, data:read, data:write (if uploading)
+          </div>
+        </div>
+
+        <!-- Batch File Processing -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+          <h3 class="text-xl font-semibold text-purple-300 mb-4">🔄 Batch File Processing</h3>
+          <p class="text-slate-300 mb-4 italic">"I need to convert hundreds of CAD files to different formats"</p>
+          
+          <div class="mb-4">
+            <h4 class="font-semibold text-white mb-2">APIs Needed:</h4>
+            <ul class="text-sm text-slate-300 space-y-1">
+              <li>• <strong>Object Storage Service</strong> → Upload source files</li>
+              <li>• <strong>Model Derivative API</strong> → Batch translation jobs</li>
+              <li>• <strong>Webhooks</strong> (optional) → Get notified when complete</li>
+            </ul>
+          </div>
+
+          <div class="bg-slate-900 rounded-lg p-3 mb-4">
+            <pre class="text-purple-300 text-xs"><code># Manual: Complex job queuing, polling, error handling
+# With RAPS:
+raps bucket create batch-processing
+raps oss upload-batch *.dwg --bucket batch-processing
+raps translate-batch --bucket batch-processing --formats pdf,svf2 --parallel 5</code></pre>
+          </div>
+
+          <div class="text-xs text-slate-400">
+            <strong>Auth:</strong> 2-legged OAuth<br/>
+            <strong>Scopes:</strong> bucket:create, bucket:read, data:read
+          </div>
+        </div>
+
+        <!-- CAD Automation -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+          <h3 class="text-xl font-semibold text-cyan-300 mb-4">🤖 CAD Automation & Scripting</h3>
+          <p class="text-slate-300 mb-4 italic">"I want to automate repetitive tasks in AutoCAD/Revit/Inventor"</p>
+          
+          <div class="mb-4">
+            <h4 class="font-semibold text-white mb-2">APIs Needed:</h4>
+            <ul class="text-sm text-slate-300 space-y-1">
+              <li>• <strong>Design Automation API</strong> → Cloud-hosted CAD engines</li>
+              <li>• <strong>Object Storage Service</strong> → Input/output file storage</li>
+            </ul>
+          </div>
+
+          <div class="bg-slate-900 rounded-lg p-3 mb-4">
+            <pre class="text-cyan-300 text-xs"><code># Manual: Complex AppBundle/Activity setup, WorkItem management  
+# With RAPS:
+raps da engines --filter autocad
+raps da create-activity MyDrawingProcessor --engine Autodesk.AutoCAD+24
+raps da submit-workitem MyDrawingProcessor --input drawing.dwg --script process.scr</code></pre>
+          </div>
+
+          <div class="text-xs text-slate-400">
+            <strong>Auth:</strong> 2-legged OAuth<br/>
+            <strong>Scopes:</strong> code:all, bucket:read, bucket:create
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API Comparison Matrix -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-2">📊 API Comparison Matrix</h2>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+          <thead class="bg-slate-800">
+            <tr class="text-left">
+              <th class="px-4 py-3 text-white font-semibold">Use Case</th>
+              <th class="px-4 py-3 text-white font-semibold">Primary API</th>
+              <th class="px-4 py-3 text-white font-semibold">RAPS Commands</th>
+              <th class="px-4 py-3 text-white font-semibold">Auth Type</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">3D Web Viewer</td>
+              <td class="px-4 py-3 text-green-300">Model Derivative</td>
+              <td class="px-4 py-3 text-slate-300 font-mono">raps view, raps translate</td>
+              <td class="px-4 py-3 text-slate-300">2-legged or 3-legged</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">BIM 360 Files</td>
+              <td class="px-4 py-3 text-blue-300">Data Management</td>
+              <td class="px-4 py-3 text-slate-300 font-mono">raps dm projects, raps dm download</td>
+              <td class="px-4 py-3 text-slate-300">3-legged only</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">Simple File Storage</td>
+              <td class="px-4 py-3 text-yellow-300">Object Storage</td>
+              <td class="px-4 py-3 text-slate-300 font-mono">raps oss upload, raps bucket create</td>
+              <td class="px-4 py-3 text-slate-300">2-legged</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">Format Conversion</td>
+              <td class="px-4 py-3 text-purple-300">Model Derivative</td>
+              <td class="px-4 py-3 text-slate-300 font-mono">raps translate --formats</td>
+              <td class="px-4 py-3 text-slate-300">2-legged</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">CAD Automation</td>
+              <td class="px-4 py-3 text-cyan-300">Design Automation</td>
+              <td class="px-4 py-3 text-slate-300 font-mono">raps da submit-workitem</td>
+              <td class="px-4 py-3 text-slate-300">2-legged</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Next Steps -->
+    <div class="bg-gradient-to-r from-rapeseed-600/20 to-yellow-600/20 border border-rapeseed-500/30 rounded-xl p-6">
+      <h3 class="text-xl font-semibold text-rapeseed-300 mb-4">🚀 Next Steps</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-semibold text-white mb-2">Once You Know Your API:</h4>
+          <ol class="text-slate-300 space-y-1 text-sm list-decimal list-inside">
+            <li>Set up authentication with required scopes</li>
+            <li>Test basic connectivity</li>
+            <li>Start with RAPS examples</li>
+            <li>Review detailed documentation</li>
+          </ol>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-2">Still Not Sure?</h4>
+          <ul class="text-slate-300 space-y-1 text-sm">
+            <li><strong>Simple file viewer:</strong> OSS + Model Derivative + Viewer</li>
+            <li><strong>BIM 360 integration:</strong> Data Management + Model Derivative</li>
+            <li><strong>Batch processing:</strong> OSS + Design Automation</li>
+            <li><strong>Full workflow:</strong> All APIs</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flex gap-4 mt-6">
+        <a href="/resources/aps-cheatsheet" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors">
+          View APS Cheat Sheet
+        </a>
+        <a href="/docs" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded-lg transition-colors">
+          Browse Documentation
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .question-block {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .question-block.active {
+    display: block;
+  }
+  
+  .result-block {
+    display: none;
+    animation: slideUp 0.4s ease-out;
+  }
+  
+  .result-block.show {
+    display: block;
+  }
+  
+  .answer-btn {
+    @apply text-white px-6 py-3 rounded-lg font-medium transition-all cursor-pointer;
+  }
+  
+  .answer-btn:hover {
+    @apply transform translate-y-px shadow-lg;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script is:inline>
+  // Global functions for the decision tree
+  window.showQuestion = function(questionId) {
+    // Hide all questions and results
+    document.querySelectorAll('.question-block').forEach(q => {
+      q.classList.remove('active');
+    });
+    document.querySelectorAll('.result-block').forEach(r => {
+      r.classList.remove('show');
+    });
+    
+    // Show selected question
+    document.getElementById(questionId).classList.add('active');
+    
+    // Hide restart button
+    document.getElementById('restart-btn').style.display = 'none';
+  };
+
+  window.goToResult = function(resultId) {
+    // Hide all questions
+    document.querySelectorAll('.question-block').forEach(q => {
+      q.classList.remove('active');
+    });
+    
+    // Hide all results
+    document.querySelectorAll('.result-block').forEach(r => {
+      r.classList.remove('show');
+    });
+    
+    // Show selected result
+    document.getElementById(resultId).classList.add('show');
+    
+    // Show restart button
+    document.getElementById('restart-btn').style.display = 'block';
+  };
+
+  window.restartDecisionTree = function() {
+    // Hide all results
+    document.querySelectorAll('.result-block').forEach(r => {
+      r.classList.remove('show');
+    });
+    
+    // Show first question
+    showQuestion('q1');
+  };
+
+  // Initialize with first question
+  document.addEventListener('DOMContentLoaded', () => {
+    showQuestion('q1');
+  });
+</script>
+</BaseLayout>

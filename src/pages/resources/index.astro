@@ -1,0 +1,305 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="Developer Resources" 
+  description="Comprehensive developer resources for APS and cross-platform CAD/PLM development. Cheat sheets, guides, error references, and workflow recipes."
+>
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-12">
+      <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+        Developer Resources Hub
+      </h1>
+      <p class="text-xl text-slate-300 max-w-3xl">
+        Everything you need for APS development and beyond. From quick references to comprehensive guides, 
+        troubleshooting resources to cross-platform solutions.
+      </p>
+    </div>
+
+    <!-- Quick Access Section -->
+    <div class="mb-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <a href="/tools" class="bg-yellow-950/20 border border-yellow-600/30 rounded-lg p-4 hover:border-yellow-500 transition-all group">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🛠️</span>
+          <div>
+            <h3 class="font-semibold text-yellow-300 group-hover:text-yellow-200">Interactive Tools</h3>
+            <p class="text-sm text-slate-400">URN encoder, token decoder, and more</p>
+          </div>
+        </div>
+      </a>
+      
+      <a href="#cheatsheets" class="bg-green-950/20 border border-green-600/30 rounded-lg p-4 hover:border-green-500 transition-all group">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">📋</span>
+          <div>
+            <h3 class="font-semibold text-green-300 group-hover:text-green-200">Cheat Sheets</h3>
+            <p class="text-sm text-slate-400">Quick reference guides</p>
+          </div>
+        </div>
+      </a>
+      
+      <a href="#troubleshooting" class="bg-red-950/20 border border-red-600/30 rounded-lg p-4 hover:border-red-500 transition-all group">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🚨</span>
+          <div>
+            <h3 class="font-semibold text-red-300 group-hover:text-red-200">Troubleshooting</h3>
+            <p class="text-sm text-slate-400">Error codes and solutions</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Essential References Section -->
+    <section class="mb-12" id="cheatsheets">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <span>📚</span> Essential References
+      </h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- APS Cheat Sheet -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-rapeseed-400/30 transition-all">
+          <h3 class="text-xl font-semibold text-white mb-3">APS Complete Cheat Sheet</h3>
+          <p class="text-slate-300 mb-4">
+            The ultimate single-page reference for APS development. OAuth flows, API endpoints, 
+            URN formats, rate limits, and RAPS command equivalents.
+          </p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="bg-blue-400/10 text-blue-400 px-2 py-1 rounded text-xs">OAuth</span>
+            <span class="bg-green-400/10 text-green-400 px-2 py-1 rounded text-xs">APIs</span>
+            <span class="bg-yellow-400/10 text-yellow-400 px-2 py-1 rounded text-xs">URNs</span>
+            <span class="bg-purple-400/10 text-purple-400 px-2 py-1 rounded text-xs">Rate Limits</span>
+          </div>
+          <div class="flex gap-3">
+            <a href="/resources/aps-cheatsheet" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors">
+              View Cheat Sheet
+            </a>
+            <a href="/resources/aps-cheatsheet.pdf" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded-lg transition-colors">
+              📄 Download PDF
+            </a>
+          </div>
+        </div>
+
+        <!-- API Decision Tree -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-rapeseed-400/30 transition-all">
+          <h3 class="text-xl font-semibold text-white mb-3">Which API Do I Need?</h3>
+          <p class="text-slate-300 mb-4">
+            Interactive decision tree to help you choose the right APS APIs for your use case. 
+            Covers authentication, file operations, viewing, and automation.
+          </p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="bg-cyan-400/10 text-cyan-400 px-2 py-1 rounded text-xs">Decision Tree</span>
+            <span class="bg-orange-400/10 text-orange-400 px-2 py-1 rounded text-xs">Use Cases</span>
+            <span class="bg-pink-400/10 text-pink-400 px-2 py-1 rounded text-xs">Workflows</span>
+          </div>
+          <a href="/resources/api-decision-tree" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors inline-block">
+            Start Decision Tree
+          </a>
+        </div>
+
+        <!-- OAuth Scopes Guide -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-rapeseed-400/30 transition-all">
+          <h3 class="text-xl font-semibold text-white mb-3">OAuth Scopes Deep Dive</h3>
+          <p class="text-slate-300 mb-4">
+            Complete guide to OAuth scopes with real-world combinations, 2-legged vs 3-legged 
+            comparison, and permission matrices for all APS services.
+          </p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="bg-yellow-400/10 text-yellow-400 px-2 py-1 rounded text-xs">Permissions</span>
+            <span class="bg-green-400/10 text-green-400 px-2 py-1 rounded text-xs">Authentication</span>
+            <span class="bg-blue-400/10 text-blue-400 px-2 py-1 rounded text-xs">Security</span>
+          </div>
+          <a href="/resources/oauth-scopes-guide" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors inline-block">
+            Read Guide
+          </a>
+        </div>
+
+        <!-- Workflow Recipes -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-rapeseed-400/30 transition-all">
+          <h3 class="text-xl font-semibold text-white mb-3">Workflow Recipes</h3>
+          <p class="text-slate-300 mb-4">
+            Copy-paste ready workflows for common scenarios: upload-translate-view, 
+            property extraction, batch processing, and ACC project automation.
+          </p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="bg-purple-400/10 text-purple-400 px-2 py-1 rounded text-xs">Patterns</span>
+            <span class="bg-cyan-400/10 text-cyan-400 px-2 py-1 rounded text-xs">Examples</span>
+            <span class="bg-green-400/10 text-green-400 px-2 py-1 rounded text-xs">Scripts</span>
+          </div>
+          <a href="/resources/workflow-recipes" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors inline-block">
+            Browse Recipes
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Troubleshooting Section -->
+    <section class="mb-12" id="troubleshooting">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <span>🔧</span> Troubleshooting & Debugging
+      </h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Error Codes Reference -->
+        <div class="bg-red-950/20 border border-red-600/30 rounded-xl p-6">
+          <h3 class="text-xl font-semibold text-red-300 mb-3">Complete Error Codes Reference</h3>
+          <p class="text-slate-300 mb-4">
+            Every APS error code explained with causes, solutions, and RAPS commands to prevent them. 
+            Includes translation failures, authentication errors, and rate limit issues.
+          </p>
+          <ul class="text-sm text-slate-400 space-y-1 mb-4">
+            <li>• TranslationWorker-InternalFailure decoded</li>
+            <li>• OAuth token expiration handling</li>
+            <li>• Rate limit recovery strategies</li>
+            <li>• Region mismatch solutions</li>
+          </ul>
+          <a href="/resources/error-codes" class="bg-red-600 hover:bg-red-500 text-white font-medium px-4 py-2 rounded-lg transition-colors inline-block">
+            View Error Reference
+          </a>
+        </div>
+
+        <!-- Migration Guide -->
+        <div class="bg-blue-950/20 border border-blue-600/30 rounded-xl p-6">
+          <h3 class="text-xl font-semibold text-blue-300 mb-3">Forge to APS Migration Guide</h3>
+          <p class="text-slate-300 mb-4">
+            Complete migration guide from Forge to APS Platform Services. Endpoint mapping, 
+            authentication changes, and automated migration scripts.
+          </p>
+          <ul class="text-sm text-slate-400 space-y-1 mb-4">
+            <li>• Endpoint URL changes</li>
+            <li>• Authentication updates</li>
+            <li>• Breaking changes checklist</li>
+            <li>• RAPS migration commands</li>
+          </ul>
+          <a href="/resources/forge-migration" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg transition-colors inline-block">
+            Start Migration
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cross-Platform Section -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <span>🌍</span> Beyond APS: Cross-Platform Solutions
+      </h2>
+      
+      <div class="bg-gradient-to-r from-purple-950/20 to-blue-950/20 border border-purple-600/30 rounded-xl p-8">
+        <h3 class="text-xl font-semibold text-purple-300 mb-4">Universal CAD/PLM Developer Pain Points</h3>
+        <p class="text-slate-300 mb-6">
+          RAPS solves problems that plague developers across all CAD/PLM platforms. 
+          Learn how our approach addresses universal challenges in the $600M+ CAD automation market.
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="bg-slate-900/50 rounded-lg p-4">
+            <h4 class="font-semibold text-white mb-2">Authentication Chaos</h4>
+            <p class="text-sm text-slate-400">OAuth, API keys, tokens across 15+ platforms</p>
+          </div>
+          <div class="bg-slate-900/50 rounded-lg p-4">
+            <h4 class="font-semibold text-white mb-2">File Translation Hell</h4>
+            <p class="text-sm text-slate-400">200+ formats, incompatible versions</p>
+          </div>
+          <div class="bg-slate-900/50 rounded-lg p-4">
+            <h4 class="font-semibold text-white mb-2">SDK Version Conflicts</h4>
+            <p class="text-sm text-slate-400">Breaking changes costing millions annually</p>
+          </div>
+          <div class="bg-slate-900/50 rounded-lg p-4">
+            <h4 class="font-semibold text-white mb-2">Documentation Void</h4>
+            <p class="text-sm text-slate-400">Scattered, outdated, incomplete guides</p>
+          </div>
+        </div>
+        
+        <a href="/resources/cross-platform" class="bg-purple-600 hover:bg-purple-500 text-white font-medium px-6 py-3 rounded-lg transition-colors inline-block">
+          Explore Cross-Platform Solutions
+        </a>
+      </div>
+    </section>
+
+    <!-- Downloads Section -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <span>📥</span> Downloadable Resources
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="/resources/aps-cheatsheet.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📄</span>
+            <div>
+              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">APS Cheat Sheet PDF</h4>
+              <p class="text-xs text-slate-400">2-page quick reference</p>
+            </div>
+          </div>
+        </a>
+        
+        <a href="/resources/error-codes.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📕</span>
+            <div>
+              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">Error Codes Reference PDF</h4>
+              <p class="text-xs text-slate-400">Complete troubleshooting guide</p>
+            </div>
+          </div>
+        </a>
+        
+        <a href="/resources/oauth-flows.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📘</span>
+            <div>
+              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">OAuth Flows Visual Guide</h4>
+              <p class="text-xs text-slate-400">3-legged auth diagrams</p>
+            </div>
+          </div>
+        </a>
+        
+        <a href="/resources/workflow-recipes.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📗</span>
+            <div>
+              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">Workflow Recipes PDF</h4>
+              <p class="text-xs text-slate-400">Common patterns cookbook</p>
+            </div>
+          </div>
+        </a>
+        
+        <a href="/resources/migration-checklist.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📙</span>
+            <div>
+              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">Migration Checklist PDF</h4>
+              <p class="text-xs text-slate-400">Forge to APS step-by-step</p>
+            </div>
+          </div>
+        </a>
+        
+        <a href="/resources/raps-commands.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📔</span>
+            <div>
+              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">RAPS Commands Reference</h4>
+              <p class="text-xs text-slate-400">Complete CLI documentation</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <div class="bg-gradient-to-r from-rapeseed-600/20 to-yellow-600/20 border border-rapeseed-500/30 rounded-xl p-8 text-center">
+      <h3 class="text-2xl font-bold text-white mb-4">Need Something Specific?</h3>
+      <p class="text-slate-300 mb-6 max-w-2xl mx-auto">
+        Can't find what you're looking for? Let us know what resources would help you most. 
+        We're constantly expanding our developer resources based on community needs.
+      </p>
+      <div class="flex gap-4 justify-center">
+        <a href="https://github.com/dmytro-yemelianov/raps/issues" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-6 py-3 rounded-lg transition-colors">
+          Request Resource
+        </a>
+        <a href="https://github.com/dmytro-yemelianov/raps/discussions" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-6 py-3 rounded-lg transition-colors">
+          Join Discussion
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

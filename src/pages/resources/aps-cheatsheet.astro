@@ -1,0 +1,663 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="APS Developer Cheat Sheet" 
+  description="Single-page reference for Autodesk Platform Services APIs with RAPS shortcuts, OAuth flows, endpoints, URN formats, and troubleshooting guide."
+>
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-display font-bold text-white mb-4">APS Developer Cheat Sheet</h1>
+      <p class="text-lg text-slate-300 mb-4">Single-page reference for Autodesk Platform Services (APS) with RAPS CLI shortcuts</p>
+      
+      <div class="flex flex-wrap gap-4 mb-6">
+        <div class="bg-slate-800/50 px-3 py-1 rounded-full text-sm text-slate-400">
+          Last verified: January 2026
+        </div>
+        <div class="bg-blue-800/50 px-3 py-1 rounded-full text-sm text-blue-300">
+          RAPS v4.2.1+
+        </div>
+        <div class="bg-green-800/50 px-3 py-1 rounded-full text-sm text-green-300">
+          APS APIs: Auth v2, DM v1, MD v2, OSS v2, DA v3
+        </div>
+      </div>
+      
+      <div class="flex gap-4">
+        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          🖨️ Print Friendly
+        </button>
+        <a href="/resources/aps-cheatsheet.pdf" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors">
+          📄 Download PDF
+        </a>
+      </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <nav class="bg-slate-800/30 rounded-lg p-4 mb-8">
+      <h2 class="font-semibold text-white mb-3">Quick Navigation</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <a href="#authentication" class="text-blue-400 hover:text-blue-300">🔐 Authentication</a>
+        <a href="#data-management" class="text-green-400 hover:text-green-300">📁 Data Management</a>
+        <a href="#oss" class="text-yellow-400 hover:text-yellow-300">🗄️ Object Storage</a>
+        <a href="#model-derivative" class="text-purple-400 hover:text-purple-300">🔄 Model Derivative</a>
+        <a href="#design-automation" class="text-cyan-400 hover:text-cyan-300">🤖 Design Automation</a>
+        <a href="#error-codes" class="text-red-400 hover:text-red-300">⚠️ Error Codes</a>
+        <a href="#rate-limits" class="text-orange-400 hover:text-orange-300">📊 Rate Limits</a>
+        <a href="#quick-setup" class="text-pink-400 hover:text-pink-300">🔧 Quick Setup</a>
+      </div>
+    </nav>
+
+    <!-- Authentication Section -->
+    <section id="authentication" class="mb-12">
+      <h2 class="text-2xl font-bold text-blue-300 mb-6 border-b border-slate-700 pb-2">🔐 Authentication</h2>
+      
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">OAuth Flow Comparison</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+            <thead class="bg-slate-800">
+              <tr class="text-left">
+                <th class="px-4 py-3 text-white font-semibold">2-Legged OAuth</th>
+                <th class="px-4 py-3 text-white font-semibold">3-Legged OAuth</th>
+                <th class="px-4 py-3 text-white font-semibold">RAPS Command</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300"><strong>Use Case:</strong> Server-to-server</td>
+                <td class="px-4 py-3 text-slate-300"><strong>Use Case:</strong> User-facing apps</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">-</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300"><strong>Context:</strong> App identity only</td>
+                <td class="px-4 py-3 text-slate-300"><strong>Context:</strong> User + app identity</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">-</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300"><strong>BIM360/ACC:</strong> Limited access</td>
+                <td class="px-4 py-3 text-slate-300"><strong>BIM360/ACC:</strong> Full project access</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">-</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300"><strong>Grant Type:</strong> <code>client_credentials</code></td>
+                <td class="px-4 py-3 text-slate-300"><strong>Grant Type:</strong> <code>authorization_code</code></td>
+                <td class="px-4 py-3 text-slate-300 font-mono">-</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300"><strong>Endpoint:</strong> <code>/authentication/v2/token</code></td>
+                <td class="px-4 py-3 text-slate-300"><strong>Endpoint:</strong> <code>/authentication/v2/authorize</code> + <code>/token</code></td>
+                <td class="px-4 py-3 text-slate-300 font-mono">-</td>
+              </tr>
+              <tr class="border-t border-slate-700 bg-slate-800/30">
+                <td class="px-4 py-3 text-slate-300 font-mono">raps auth login</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">raps auth login --3legged</td>
+                <td class="px-4 py-3 text-slate-300">Default: 2-legged</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">Essential OAuth Scopes</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+            <thead class="bg-slate-800">
+              <tr class="text-left">
+                <th class="px-4 py-3 text-white font-semibold">Scope</th>
+                <th class="px-4 py-3 text-white font-semibold">Purpose</th>
+                <th class="px-4 py-3 text-white font-semibold">Required For</th>
+                <th class="px-4 py-3 text-white font-semibold">RAPS Usage</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-yellow-300 font-mono">data:read</td>
+                <td class="px-4 py-3 text-slate-300">Read files/projects</td>
+                <td class="px-4 py-3 text-slate-300">Download, list contents</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">--scopes data:read</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-yellow-300 font-mono">data:write</td>
+                <td class="px-4 py-3 text-slate-300">Modify metadata</td>
+                <td class="px-4 py-3 text-slate-300">Update file properties</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">--scopes data:read,data:write</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-yellow-300 font-mono">data:create</td>
+                <td class="px-4 py-3 text-slate-300">Upload files</td>
+                <td class="px-4 py-3 text-slate-300">File uploads, folder creation</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">--scopes data:read,data:write,data:create</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-yellow-300 font-mono">viewables:read</td>
+                <td class="px-4 py-3 text-slate-300">View models</td>
+                <td class="px-4 py-3 text-slate-300">Viewer SDK, derivatives</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">--scopes viewables:read</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-yellow-300 font-mono">code:all</td>
+                <td class="px-4 py-3 text-slate-300">Design Automation</td>
+                <td class="px-4 py-3 text-slate-300">All DA operations</td>
+                <td class="px-4 py-3 text-slate-300 font-mono">--scopes code:all</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-blue-950/20 border border-blue-600/30 rounded-lg p-4">
+        <h3 class="text-lg font-semibold text-blue-300 mb-2">Token Lifecycle</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 class="font-semibold text-white mb-1">Manual Process</h4>
+            <ul class="text-slate-300 space-y-1">
+              <li>• POST to <code>/authentication/v2/token</code></li>
+              <li>• Store token + refresh logic</li>
+              <li>• Check expiry (1 hour default)</li>
+              <li>• Refresh when needed</li>
+              <li>• Handle auth errors manually</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-white mb-1">RAPS Equivalent</h4>
+            <ul class="text-slate-300 space-y-1">
+              <li>• <code class="text-blue-300">raps auth login</code></li>
+              <li>• Automatic token management</li>
+              <li>• <code class="text-blue-300">raps auth status</code></li>
+              <li>• <code class="text-blue-300">raps auth refresh</code></li>
+              <li>• Built-in retry with refresh</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Management Section -->
+    <section id="data-management" class="mb-12">
+      <h2 class="text-2xl font-bold text-green-300 mb-6 border-b border-slate-700 pb-2">📁 Data Management API</h2>
+      
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">Project Hierarchy</h3>
+        <div class="bg-slate-900/50 rounded-lg p-4 font-mono text-sm">
+          <div class="text-slate-300">
+            Hub (Company/Account)<br/>
+            ├── Project 1<br/>
+            │&nbsp;&nbsp;&nbsp;├── Folder A<br/>
+            │&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── Item 1<br/>
+            │&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── Version 1<br/>
+            │&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── Version 2 (latest)<br/>
+            │&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── Item 2<br/>
+            │&nbsp;&nbsp;&nbsp;└── Folder B<br/>
+            └── Project 2
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">Common Endpoints</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+            <thead class="bg-slate-800">
+              <tr class="text-left">
+                <th class="px-4 py-3 text-white font-semibold">Operation</th>
+                <th class="px-4 py-3 text-white font-semibold">Manual API Call</th>
+                <th class="px-4 py-3 text-white font-semibold">RAPS Command</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">List Hubs</td>
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">GET /project/v1/hubs</td>
+                <td class="px-4 py-3 text-green-300 font-mono">raps dm hubs</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">List Projects</td>
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">GET /project/v1/hubs/&#123;hub_id&#125;/projects</td>
+                <td class="px-4 py-3 text-green-300 font-mono">raps dm projects</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">Upload File</td>
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">Multi-step: Create storage → Upload → Create item → Create version</td>
+                <td class="px-4 py-3 text-green-300 font-mono">raps dm upload &lt;file&gt; --project &lt;id&gt;</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">Download File</td>
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">GET /data/v1/projects/&#123;project_id&#125;/downloads + download URL</td>
+                <td class="px-4 py-3 text-green-300 font-mono">raps dm download &lt;item_id&gt;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-green-950/20 border border-green-600/30 rounded-lg p-4">
+        <h3 class="text-lg font-semibold text-green-300 mb-2">URN Formats</h3>
+        <div class="space-y-2 text-sm">
+          <div>
+            <span class="font-semibold text-white">OSS Object:</span>
+            <code class="text-yellow-300 ml-2">urn:adsk.objects:os.object:&#123;bucket&#125;:&#123;object&#125;</code>
+          </div>
+          <div>
+            <span class="font-semibold text-white">Data Management:</span>
+            <code class="text-yellow-300 ml-2">urn:adsk.wipprod:dm.lineage:&#123;item_id&#125;</code>
+          </div>
+          <div>
+            <span class="font-semibold text-white">Encoded URN:</span>
+            <code class="text-yellow-300 ml-2">Base64 URL-safe encoding</code>
+          </div>
+        </div>
+        <div class="mt-3 pt-3 border-t border-green-700/30">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs">
+            <div>
+              <div class="font-semibold text-red-300 mb-1">Manual (error-prone):</div>
+              <code class="text-slate-400">echo -n "urn:adsk.objects..." | base64 | tr '+/' '-_' | tr -d '='</code>
+            </div>
+            <div>
+              <div class="font-semibold text-green-300 mb-1">With RAPS:</div>
+              <code class="text-green-300">raps urn encode "urn:adsk.objects:os.object:bucket/file.dwg"</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Object Storage Section -->
+    <section id="oss" class="mb-12">
+      <h2 class="text-2xl font-bold text-yellow-300 mb-6 border-b border-slate-700 pb-2">🗄️ Object Storage Service (OSS)</h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h3 class="text-lg font-semibold text-white mb-3">Bucket Operations</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700 text-sm">
+              <thead class="bg-slate-800">
+                <tr>
+                  <th class="px-3 py-2 text-white font-semibold text-left">Operation</th>
+                  <th class="px-3 py-2 text-white font-semibold text-left">RAPS Command</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-t border-slate-700">
+                  <td class="px-3 py-2 text-slate-300">List Buckets</td>
+                  <td class="px-3 py-2 text-yellow-300 font-mono">raps bucket list</td>
+                </tr>
+                <tr class="border-t border-slate-700">
+                  <td class="px-3 py-2 text-slate-300">Create Bucket</td>
+                  <td class="px-3 py-2 text-yellow-300 font-mono">raps bucket create &lt;name&gt;</td>
+                </tr>
+                <tr class="border-t border-slate-700">
+                  <td class="px-3 py-2 text-slate-300">Bucket Details</td>
+                  <td class="px-3 py-2 text-yellow-300 font-mono">raps bucket info &lt;name&gt;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-white mb-3">Object Operations</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700 text-sm">
+              <thead class="bg-slate-800">
+                <tr>
+                  <th class="px-3 py-2 text-white font-semibold text-left">Operation</th>
+                  <th class="px-3 py-2 text-white font-semibold text-left">RAPS Command</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-t border-slate-700">
+                  <td class="px-3 py-2 text-slate-300">List Objects</td>
+                  <td class="px-3 py-2 text-yellow-300 font-mono">raps oss list &lt;bucket&gt;</td>
+                </tr>
+                <tr class="border-t border-slate-700">
+                  <td class="px-3 py-2 text-slate-300">Upload Object</td>
+                  <td class="px-3 py-2 text-yellow-300 font-mono">raps oss upload &lt;file&gt; &lt;bucket&gt;</td>
+                </tr>
+                <tr class="border-t border-slate-700">
+                  <td class="px-3 py-2 text-slate-300">Download Object</td>
+                  <td class="px-3 py-2 text-yellow-300 font-mono">raps oss download &lt;bucket&gt; &lt;object&gt;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-yellow-950/20 border border-yellow-600/30 rounded-lg p-4">
+        <h3 class="text-lg font-semibold text-yellow-300 mb-2">Bucket Naming Rules</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 class="font-semibold text-green-300 mb-2">✅ Allowed</h4>
+            <ul class="text-slate-300 space-y-1">
+              <li>• 3-128 characters</li>
+              <li>• Lowercase letters, numbers, hyphens</li>
+              <li>• Must start/end with letter or number</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-red-300 mb-2">❌ Not Allowed</h4>
+            <ul class="text-slate-300 space-y-1">
+              <li>• Spaces, underscores, special chars</li>
+              <li>• Cannot look like IP address</li>
+              <li>• Uppercase letters</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Model Derivative Section -->
+    <section id="model-derivative" class="mb-12">
+      <h2 class="text-2xl font-bold text-purple-300 mb-6 border-b border-slate-700 pb-2">🔄 Model Derivative API</h2>
+      
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">Translation Workflow</h3>
+        <div class="bg-slate-900/50 rounded-lg p-4 font-mono text-sm text-slate-300">
+          1. Upload to OSS or Data Management<br/>
+          2. Start Translation Job → GET Job Status (polling)<br/>
+          3. Translation Complete → Download Manifest<br/>
+          4. Extract Viewables/Properties
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">Translation Operations</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+            <thead class="bg-slate-800">
+              <tr class="text-left">
+                <th class="px-4 py-3 text-white font-semibold">Operation</th>
+                <th class="px-4 py-3 text-white font-semibold">RAPS Command</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">Start Translation</td>
+                <td class="px-4 py-3 text-purple-300 font-mono">raps translate &lt;urn&gt; --formats svf2</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">Check Status</td>
+                <td class="px-4 py-3 text-purple-300 font-mono">raps translate status &lt;urn&gt;</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">Wait for Completion</td>
+                <td class="px-4 py-3 text-purple-300 font-mono">raps translate &lt;urn&gt; --wait</td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 text-slate-300 font-semibold">Get Properties</td>
+                <td class="px-4 py-3 text-purple-300 font-mono">raps translate properties &lt;urn&gt;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-purple-950/20 border border-purple-600/30 rounded-lg p-4">
+          <h3 class="text-lg font-semibold text-purple-300 mb-3">Output Formats</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-white font-mono">svf2</span>
+              <span class="text-slate-400">Web viewer (modern)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-white font-mono">pdf</span>
+              <span class="text-slate-400">2D drawings</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-white font-mono">obj</span>
+              <span class="text-slate-400">3D meshes</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-white font-mono">stl</span>
+              <span class="text-slate-400">3D printing</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-white font-mono">ifc</span>
+              <span class="text-slate-400">Industry standard</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-purple-950/20 border border-purple-600/30 rounded-lg p-4">
+          <h3 class="text-lg font-semibold text-purple-300 mb-3">Status Codes</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex items-center gap-3">
+              <span class="bg-yellow-600 text-slate-900 px-2 py-1 rounded text-xs font-mono">pending</span>
+              <span class="text-slate-300">Job queued</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="bg-blue-600 text-white px-2 py-1 rounded text-xs font-mono">inprogress</span>
+              <span class="text-slate-300">Processing</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="bg-green-600 text-white px-2 py-1 rounded text-xs font-mono">success</span>
+              <span class="text-slate-300">Completed</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="bg-red-600 text-white px-2 py-1 rounded text-xs font-mono">failed</span>
+              <span class="text-slate-300">Processing failed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Codes Section -->
+    <section id="error-codes" class="mb-12">
+      <h2 class="text-2xl font-bold text-red-300 mb-6 border-b border-slate-700 pb-2">⚠️ Common Error Codes</h2>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+          <thead class="bg-slate-800">
+            <tr class="text-left">
+              <th class="px-4 py-3 text-white font-semibold">Code</th>
+              <th class="px-4 py-3 text-white font-semibold">API</th>
+              <th class="px-4 py-3 text-white font-semibold">Cause</th>
+              <th class="px-4 py-3 text-white font-semibold">RAPS Prevention</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-red-300 font-mono">400</td>
+              <td class="px-4 py-3 text-slate-300">All</td>
+              <td class="px-4 py-3 text-slate-300">Invalid request format</td>
+              <td class="px-4 py-3 text-green-300 font-mono">Built-in validation</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-red-300 font-mono">401</td>
+              <td class="px-4 py-3 text-slate-300">All</td>
+              <td class="px-4 py-3 text-slate-300">Authentication failed</td>
+              <td class="px-4 py-3 text-green-300 font-mono">raps auth refresh</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-red-300 font-mono">403</td>
+              <td class="px-4 py-3 text-slate-300">All</td>
+              <td class="px-4 py-3 text-slate-300">Insufficient permissions</td>
+              <td class="px-4 py-3 text-green-300 font-mono">raps auth status --scopes</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-red-300 font-mono">404</td>
+              <td class="px-4 py-3 text-slate-300">Model Derivative</td>
+              <td class="px-4 py-3 text-slate-300">URN not found</td>
+              <td class="px-4 py-3 text-green-300 font-mono">raps urn encode</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-red-300 font-mono">429</td>
+              <td class="px-4 py-3 text-slate-300">All</td>
+              <td class="px-4 py-3 text-slate-300">Rate limit exceeded</td>
+              <td class="px-4 py-3 text-green-300 font-mono">Built-in rate limiting</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Rate Limits Section -->
+    <section id="rate-limits" class="mb-12">
+      <h2 class="text-2xl font-bold text-orange-300 mb-6 border-b border-slate-700 pb-2">📊 Rate Limits</h2>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full bg-slate-900/50 rounded-lg border border-slate-700">
+          <thead class="bg-slate-800">
+            <tr class="text-left">
+              <th class="px-4 py-3 text-white font-semibold">API</th>
+              <th class="px-4 py-3 text-white font-semibold">Limit</th>
+              <th class="px-4 py-3 text-white font-semibold">Window</th>
+              <th class="px-4 py-3 text-white font-semibold">RAPS Handling</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">Authentication</td>
+              <td class="px-4 py-3 text-slate-300">500 requests/min</td>
+              <td class="px-4 py-3 text-slate-300">1 minute</td>
+              <td class="px-4 py-3 text-orange-300">Automatic token reuse</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">Data Management</td>
+              <td class="px-4 py-3 text-slate-300">100 requests/min</td>
+              <td class="px-4 py-3 text-slate-300">1 minute</td>
+              <td class="px-4 py-3 text-orange-300">Intelligent batching</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">Model Derivative</td>
+              <td class="px-4 py-3 text-slate-300">20 concurrent jobs</td>
+              <td class="px-4 py-3 text-slate-300">-</td>
+              <td class="px-4 py-3 text-orange-300">Queue management</td>
+            </tr>
+            <tr class="border-t border-slate-700">
+              <td class="px-4 py-3 text-slate-300 font-semibold">OSS</td>
+              <td class="px-4 py-3 text-slate-300">500 requests/min</td>
+              <td class="px-4 py-3 text-slate-300">1 minute</td>
+              <td class="px-4 py-3 text-orange-300">Parallel optimization</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Quick Setup Section -->
+    <section id="quick-setup" class="mb-12">
+      <h2 class="text-2xl font-bold text-pink-300 mb-6 border-b border-slate-700 pb-2">🔧 Quick Setup Commands</h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-lg font-semibold text-white mb-3">First-Time Setup</h3>
+          <div class="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300">
+            <div class="text-slate-500"># Install RAPS</div>
+            <div class="text-slate-500"># Windows: scoop install raps</div>
+            <div class="text-slate-500"># macOS: brew install raps</div>
+            <div class="text-slate-500"># Linux: cargo install raps-cli</div>
+            <div class="mt-2"></div>
+            <div class="text-slate-500"># Initial authentication</div>
+            <div class="text-pink-300">raps auth login</div>
+            <div class="mt-2"></div>
+            <div class="text-slate-500"># Test connectivity</div>
+            <div class="text-pink-300">raps auth status</div>
+            <div class="text-pink-300">raps dm projects --limit 1</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-white mb-3">Common Workflows</h3>
+          <div class="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300">
+            <div class="text-slate-500"># File Upload → Translation → View</div>
+            <div class="text-pink-300">raps oss upload model.rvt mybucket</div>
+            <div class="text-pink-300">raps translate $(raps urn encode \</div>
+            <div class="text-pink-300">&nbsp;&nbsp;"urn:adsk.objects:os.object:mybucket:model.rvt") --wait</div>
+            <div class="mt-2"></div>
+            <div class="text-slate-500"># Batch Operations</div>
+            <div class="text-pink-300">raps oss upload-batch *.dwg --bucket mybucket</div>
+            <div class="text-pink-300">raps translate-batch --bucket mybucket --formats svf2</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Emergency Commands -->
+    <div class="bg-red-950/20 border border-red-600/30 rounded-lg p-6 mb-12">
+      <h3 class="text-xl font-semibold text-red-300 mb-4">🚨 Emergency Commands</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h4 class="font-semibold text-white mb-2">Authentication Issues</h4>
+          <div class="space-y-1 text-sm font-mono">
+            <div class="text-red-300">raps auth refresh</div>
+            <div class="text-red-300">raps auth login --force</div>
+            <div class="text-red-300">raps auth status --verbose</div>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-semibold text-white mb-2">Operation Failures</h4>
+          <div class="space-y-1 text-sm font-mono">
+            <div class="text-red-300">raps health check --comprehensive</div>
+            <div class="text-red-300">raps logs --level error --last 1h</div>
+            <div class="text-red-300">raps config set retry.max-attempts 5</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pro Tips -->
+    <div class="bg-gradient-to-r from-rapeseed-600/20 to-yellow-600/20 border border-rapeseed-500/30 rounded-lg p-6">
+      <h3 class="text-xl font-semibold text-rapeseed-300 mb-4">💡 Pro Tips</h3>
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-300">
+        <li class="flex items-start gap-2">
+          <span class="text-rapeseed-400 mt-1">•</span>
+          <span>Use <code class="text-rapeseed-300">raps examples</code> to see common workflow patterns</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-rapeseed-400 mt-1">•</span>
+          <span>Set up multiple profiles with <code class="text-rapeseed-300">raps auth login --profile &lt;name&gt;</code></span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-rapeseed-400 mt-1">•</span>
+          <span>Enable verbose output with <code class="text-rapeseed-300">--verbose</code> flag for debugging</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-rapeseed-400 mt-1">•</span>
+          <span>Check <code class="text-rapeseed-300">raps health check</code> if anything isn't working</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  @media print {
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    
+    .bg-slate-900\/50,
+    .bg-slate-800\/30,
+    .bg-slate-800 {
+      background: #f8f9fa !important;
+    }
+    
+    .border-slate-700,
+    .border-slate-800 {
+      border-color: #e9ecef !important;
+    }
+    
+    .text-white {
+      color: #212529 !important;
+    }
+    
+    .text-slate-300,
+    .text-slate-400 {
+      color: #495057 !important;
+    }
+    
+    /* Hide navigation and non-essential elements */
+    nav,
+    .fixed {
+      display: none !important;
+    }
+  }
+</style>
+</BaseLayout>

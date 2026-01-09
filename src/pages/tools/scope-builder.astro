@@ -1,0 +1,672 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="APS OAuth Scope Builder Tool" 
+  description="Interactive tool to build and validate Autodesk Platform Services (APS) OAuth scope combinations for 2-legged and 3-legged authentication flows."
+>
+  <div class="tool-container">
+    <h1 class="tool-title">🔐 APS OAuth Scope Builder</h1>
+    <p class="tool-subtitle">Build and validate Autodesk Platform Services OAuth scope combinations</p>
+    
+    <div class="raps-tip">
+      <h3>💡 RAPS CLI Alternative</h3>
+      <p>Instead of using this web tool, you can use RAPS CLI:</p>
+      <p><code>raps auth login --scopes data:read,data:write,viewables:read</code></p>
+      <p><code>raps auth status --scopes</code> - Check current scopes</p>
+    </div>
+    
+    <!-- Authentication Type Selector -->
+    <div class="auth-type-selector">
+      <h3>🔑 Select Authentication Type</h3>
+      <p>Different OAuth flows support different scope combinations</p>
+      <div class="auth-type-buttons">
+        <div class="auth-btn active" onclick="setAuthType('2-legged')" data-type="2-legged">
+          2-Legged OAuth (Server-to-Server)
+        </div>
+        <div class="auth-btn" onclick="setAuthType('3-legged')" data-type="3-legged">
+          3-Legged OAuth (User Authorization)
+        </div>
+      </div>
+    </div>
+    
+    <!-- Preset Configurations -->
+    <div class="preset-section">
+      <h3>🚀 Quick Start Presets</h3>
+      <p>Common scope combinations for typical use cases</p>
+      <div class="preset-buttons">
+        <button class="preset-btn" onclick="applyPreset('viewer')">3D Model Viewer</button>
+        <button class="preset-btn" onclick="applyPreset('filemanager')">File Manager</button>
+        <button class="preset-btn" onclick="applyPreset('automation')">Design Automation</button>
+        <button class="preset-btn" onclick="applyPreset('bim360')">BIM 360/ACC Access</button>
+        <button class="preset-btn" onclick="applyPreset('readonly')">Read-Only Access</button>
+        <button class="preset-btn" onclick="applyPreset('maximum')">Maximum Permissions</button>
+      </div>
+    </div>
+    
+    <!-- Scope Categories -->
+    <div class="scope-categories">
+      <!-- Data Management Scopes -->
+      <div class="scope-category">
+        <h3>📁 Data Management</h3>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="data_read" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">data:read</div>
+            <div class="scope-description">Read files, folders, and projects from Data Management API</div>
+          </div>
+        </div>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="data_write" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">data:write</div>
+            <div class="scope-description">Modify file metadata and properties</div>
+          </div>
+        </div>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="data_create" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">data:create</div>
+            <div class="scope-description">Upload files and create folders</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Object Storage Scopes -->
+      <div class="scope-category">
+        <h3>🗄️ Object Storage (OSS)</h3>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="bucket_read" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">bucket:read</div>
+            <div class="scope-description">List and access Object Storage buckets</div>
+          </div>
+        </div>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="bucket_create" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">bucket:create</div>
+            <div class="scope-description">Create new storage buckets</div>
+          </div>
+        </div>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="bucket_delete" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">bucket:delete</div>
+            <div class="scope-description">Delete storage buckets</div>
+            <div class="scope-warning">⚠️ Use with caution</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Model Derivative Scopes -->
+      <div class="scope-category">
+        <h3>🔄 Model Derivative & Viewer</h3>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="viewables_read" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">viewables:read</div>
+            <div class="scope-description">Access translated models for 3D viewing</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design Automation Scopes -->
+      <div class="scope-category">
+        <h3>🤖 Design Automation</h3>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="code_all" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">code:all</div>
+            <div class="scope-description">Full access to Design Automation API (AutoCAD, Revit, etc.)</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Account Management Scopes -->
+      <div class="scope-category">
+        <h3>👥 Account Management</h3>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="account_read" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">account:read</div>
+            <div class="scope-description">Read BIM 360/ACC account information</div>
+            <div class="scope-warning">3-legged OAuth only</div>
+          </div>
+        </div>
+        
+        <div class="scope-item">
+          <input type="checkbox" class="scope-checkbox" id="account_write" onchange="updateScopes()">
+          <div class="scope-details">
+            <div class="scope-name">account:write</div>
+            <div class="scope-description">Modify BIM 360/ACC account settings</div>
+            <div class="scope-warning">3-legged OAuth only, admin privileges required</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="result-section">
+      <h3>🎯 Generated Scope Configuration</h3>
+      
+      <p><strong>Space-separated scopes:</strong></p>
+      <div class="scope-output" id="scopeOutput">No scopes selected</div>
+      
+      <p><strong>RAPS CLI command:</strong></p>
+      <div class="scope-output" id="rapsCommand">raps auth login</div>
+      
+      <p><strong>cURL example:</strong></p>
+      <div class="scope-output" id="curlCommand">Select scopes to generate command</div>
+      
+      <button class="copy-btn" onclick="copyScopes()">📋 Copy Scopes</button>
+      <button class="copy-btn" onclick="copyRapsCommand()">📋 Copy RAPS Command</button>
+      <button class="copy-btn" onclick="copyCurlCommand()">📋 Copy cURL Command</button>
+    </div>
+    
+    <!-- Validation Information -->
+    <div id="validationInfo" class="validation-info" style="display: none;">
+      <h4>⚠️ Scope Validation</h4>
+      <div id="validationMessages"></div>
+    </div>
+    
+    <!-- API Compatibility Matrix -->
+    <div class="compatibility-matrix">
+      <h3>📊 API Compatibility Matrix</h3>
+      <p>Which APIs you can access with your selected scopes:</p>
+      <table class="compatibility-table">
+        <thead>
+          <tr>
+            <th>API</th>
+            <th>Access Level</th>
+            <th>Required Scopes</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="compatibilityTableBody">
+          <!-- Populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  
+  .tool-title {
+    @apply text-3xl sm:text-4xl font-display font-bold text-white mb-4 text-center;
+  }
+  
+  .tool-subtitle {
+    @apply text-center text-slate-300 mb-8 text-lg;
+  }
+  
+  .raps-tip {
+    @apply bg-blue-950/30 border border-blue-800/30 rounded-lg p-6 mb-8;
+  }
+  
+  .raps-tip h3 {
+    @apply text-lg font-semibold text-blue-300 mb-3 mt-0;
+  }
+  
+  .raps-tip code {
+    @apply bg-blue-900/50 text-blue-200 px-2 py-1 rounded text-sm font-mono;
+  }
+  
+  .auth-type-selector {
+    @apply bg-yellow-950/20 border-2 border-yellow-600 rounded-lg p-6 mb-8 text-center;
+  }
+  
+  .auth-type-selector h3 {
+    @apply text-xl font-semibold text-yellow-300 mb-2 mt-0;
+  }
+  
+  .auth-type-buttons {
+    @apply flex gap-4 justify-center flex-wrap mt-4;
+  }
+  
+  .auth-btn {
+    @apply px-6 py-3 border-2 border-yellow-600 bg-transparent rounded-lg cursor-pointer transition-all font-semibold text-slate-300;
+  }
+  
+  .auth-btn.active {
+    @apply bg-yellow-600 text-slate-900;
+  }
+  
+  .auth-btn:hover {
+    @apply bg-yellow-600 text-slate-900;
+  }
+  
+  .preset-section {
+    @apply bg-slate-800/30 rounded-lg p-6 mb-8;
+  }
+  
+  .preset-section h3 {
+    @apply text-xl font-semibold text-white mb-2 mt-0;
+  }
+  
+  .preset-buttons {
+    @apply flex flex-wrap gap-3 mt-4;
+  }
+  
+  .preset-btn {
+    @apply bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-4 py-2 rounded-lg cursor-pointer text-sm font-medium transition-all;
+  }
+  
+  .scope-categories {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-6 mb-8;
+  }
+  
+  .scope-category {
+    @apply bg-slate-800/30 rounded-lg p-6 border-l-4 border-yellow-500;
+  }
+  
+  .scope-category h3 {
+    @apply text-lg font-semibold text-white mb-4 mt-0 flex items-center gap-2;
+  }
+  
+  .scope-item {
+    @apply flex items-start mb-4 p-3 rounded-lg transition-colors hover:bg-slate-700/30;
+  }
+  
+  .scope-checkbox {
+    @apply mr-3 mt-1 transform scale-125 accent-rapeseed-400;
+  }
+  
+  .scope-details {
+    @apply flex-1;
+  }
+  
+  .scope-name {
+    @apply font-semibold text-slate-200 mb-1;
+  }
+  
+  .scope-description {
+    @apply text-sm text-slate-400 leading-relaxed;
+  }
+  
+  .scope-warning {
+    @apply text-xs text-red-400 mt-1 italic;
+  }
+  
+  .disabled-scope {
+    @apply opacity-50;
+  }
+  
+  .disabled-scope .scope-checkbox {
+    @apply pointer-events-none;
+  }
+  
+  .result-section {
+    @apply bg-green-950/20 border-2 border-green-600 rounded-lg p-6 mb-8;
+  }
+  
+  .result-section h3 {
+    @apply text-xl font-semibold text-green-300 mb-4 mt-0;
+  }
+  
+  .scope-output {
+    @apply bg-slate-900 border border-green-600 rounded p-4 font-mono text-sm text-slate-300 mb-4 break-all;
+  }
+  
+  .copy-btn {
+    @apply bg-yellow-600 hover:bg-yellow-500 text-slate-900 px-4 py-2 rounded-lg font-semibold mr-2 mb-2 cursor-pointer transition-colors;
+  }
+  
+  .validation-info {
+    @apply bg-yellow-950/20 border border-yellow-600 rounded-lg p-4 mb-8;
+  }
+  
+  .validation-info h4 {
+    @apply text-lg font-semibold text-yellow-300 mb-2 mt-0;
+  }
+  
+  .compatibility-matrix h3 {
+    @apply text-xl font-semibold text-white mb-4;
+  }
+  
+  .compatibility-table {
+    @apply w-full border-collapse bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700;
+  }
+  
+  .compatibility-table th,
+  .compatibility-table td {
+    @apply px-4 py-3 text-left border-b border-slate-700;
+  }
+  
+  .compatibility-table th {
+    @apply bg-slate-800 text-white font-semibold;
+  }
+  
+  .compatibility-table tr:nth-child(even) {
+    @apply bg-slate-800/30;
+  }
+  
+  .api-supported {
+    @apply text-green-400 font-semibold;
+  }
+  
+  .api-limited {
+    @apply text-yellow-400 font-semibold;
+  }
+  
+  .api-not-supported {
+    @apply text-red-400 font-semibold;
+  }
+  
+  @media (max-width: 768px) {
+    .auth-type-buttons {
+      @apply flex-col items-center;
+    }
+    
+    .preset-buttons {
+      @apply flex-col;
+    }
+    
+    .scope-categories {
+      @apply grid-cols-1;
+    }
+  }
+</style>
+
+<script>
+  let currentAuthType = '2-legged';
+  let selectedScopes = new Set();
+
+  const presets = {
+    'viewer': ['data:read', 'viewables:read', 'bucket:read'],
+    'filemanager': ['data:read', 'data:write', 'data:create', 'bucket:read', 'bucket:create'],
+    'automation': ['code:all', 'bucket:read', 'bucket:create', 'data:read'],
+    'bim360': ['account:read', 'data:read', 'data:write', 'data:create'],
+    'readonly': ['data:read', 'bucket:read', 'viewables:read'],
+    'maximum': ['data:read', 'data:write', 'data:create', 'bucket:read', 'bucket:create', 'bucket:delete', 'viewables:read', 'code:all', 'account:read', 'account:write']
+  };
+
+  const apiCompatibility = [
+    {
+      api: 'Data Management API',
+      read: ['data:read'],
+      write: ['data:read', 'data:write'],
+      create: ['data:read', 'data:write', 'data:create'],
+      notes: 'Core file and project management'
+    },
+    {
+      api: 'Object Storage Service',
+      read: ['bucket:read'],
+      write: ['bucket:read', 'bucket:create'],
+      create: ['bucket:read', 'bucket:create'],
+      notes: 'Direct file storage'
+    },
+    {
+      api: 'Model Derivative API',
+      read: ['data:read', 'viewables:read'],
+      write: ['data:read', 'viewables:read'],
+      create: ['data:read', 'viewables:read'],
+      notes: 'File translation and viewing'
+    },
+    {
+      api: 'Design Automation API',
+      read: ['code:all'],
+      write: ['code:all'],
+      create: ['code:all'],
+      notes: 'CAD automation workflows'
+    },
+    {
+      api: 'BIM 360/ACC API',
+      read: ['account:read', 'data:read'],
+      write: ['account:read', 'account:write', 'data:read', 'data:write'],
+      create: ['account:read', 'account:write', 'data:read', 'data:write', 'data:create'],
+      notes: '3-legged OAuth only'
+    }
+  ];
+
+  function setAuthType(type) {
+    currentAuthType = type;
+    
+    // Update button states
+    document.querySelectorAll('.auth-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.querySelector(`[data-type="${type}"]`).classList.add('active');
+    
+    // Update scope availability
+    updateScopeAvailability();
+    updateScopes();
+  }
+
+  function updateScopeAvailability() {
+    const accountScopes = ['account_read', 'account_write'];
+    
+    accountScopes.forEach(scopeId => {
+      const scopeItem = document.getElementById(scopeId).closest('.scope-item');
+      
+      if (currentAuthType === '2-legged') {
+        scopeItem.classList.add('disabled-scope');
+        document.getElementById(scopeId).checked = false;
+      } else {
+        scopeItem.classList.remove('disabled-scope');
+      }
+    });
+    
+    selectedScopes.clear();
+    document.querySelectorAll('.scope-checkbox:checked').forEach(checkbox => {
+      if (!checkbox.closest('.scope-item').classList.contains('disabled-scope')) {
+        selectedScopes.add(checkbox.id.replace('_', ':'));
+      }
+    });
+  }
+
+  function applyPreset(presetName) {
+    // Clear all checkboxes
+    document.querySelectorAll('.scope-checkbox').forEach(cb => cb.checked = false);
+    selectedScopes.clear();
+    
+    // Apply preset scopes
+    const scopes = presets[presetName] || [];
+    scopes.forEach(scope => {
+      const scopeId = scope.replace(':', '_');
+      const checkbox = document.getElementById(scopeId);
+      const scopeItem = checkbox.closest('.scope-item');
+      
+      // Only check if not disabled for current auth type
+      if (!scopeItem.classList.contains('disabled-scope')) {
+        checkbox.checked = true;
+        selectedScopes.add(scope);
+      }
+    });
+    
+    updateScopes();
+  }
+
+  function updateScopes() {
+    // Collect selected scopes
+    selectedScopes.clear();
+    document.querySelectorAll('.scope-checkbox:checked').forEach(checkbox => {
+      const scopeItem = checkbox.closest('.scope-item');
+      if (!scopeItem.classList.contains('disabled-scope')) {
+        selectedScopes.add(checkbox.id.replace('_', ':'));
+      }
+    });
+    
+    const scopesArray = Array.from(selectedScopes);
+    const scopesString = scopesArray.join(' ');
+    
+    // Update output displays
+    document.getElementById('scopeOutput').textContent = 
+      scopesString || 'No scopes selected';
+    
+    const authFlag = currentAuthType === '3-legged' ? '--3legged ' : '';
+    const scopesFlag = scopesArray.length > 0 ? `--scopes ${scopesString}` : '';
+    document.getElementById('rapsCommand').textContent = 
+      `raps auth login ${authFlag}${scopesFlag}`.trim();
+    
+    // Update cURL command
+    updateCurlCommand(scopesString);
+    
+    // Update validation
+    validateScopes();
+    
+    // Update compatibility matrix
+    updateCompatibilityMatrix();
+  }
+
+  function updateCurlCommand(scopesString) {
+    if (!scopesString) {
+      document.getElementById('curlCommand').textContent = 'Select scopes to generate command';
+      return;
+    }
+    
+    const grantType = currentAuthType === '2-legged' ? 'client_credentials' : 'authorization_code';
+    
+    if (currentAuthType === '2-legged') {
+      document.getElementById('curlCommand').textContent = 
+        `curl -X POST "https://developer.api.autodesk.com/authentication/v2/token" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=$APS_CLIENT_ID&client_secret=$APS_CLIENT_SECRET&grant_type=${grantType}&scope=${scopesString}"`;
+    } else {
+      document.getElementById('curlCommand').textContent = 
+        `# Step 1: Get authorization code
+curl "https://developer.api.autodesk.com/authentication/v2/authorize?response_type=code&client_id=$APS_CLIENT_ID&redirect_uri=$APS_CALLBACK_URL&scope=${encodeURIComponent(scopesString)}"
+
+# Step 2: Exchange code for token
+curl -X POST "https://developer.api.autodesk.com/authentication/v2/token" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=$APS_CLIENT_ID&client_secret=$APS_CLIENT_SECRET&grant_type=authorization_code&code=$AUTHORIZATION_CODE&redirect_uri=$APS_CALLBACK_URL"`;
+    }
+  }
+
+  function validateScopes() {
+    const validationDiv = document.getElementById('validationInfo');
+    const messagesDiv = document.getElementById('validationMessages');
+    let messages = [];
+    
+    // Check for common issues
+    if (selectedScopes.has('data:write') && !selectedScopes.has('data:read')) {
+      messages.push('⚠️ data:write usually requires data:read');
+    }
+    
+    if (selectedScopes.has('data:create') && !selectedScopes.has('data:read')) {
+      messages.push('⚠️ data:create usually requires data:read');
+    }
+    
+    if (selectedScopes.has('bucket:create') && !selectedScopes.has('bucket:read')) {
+      messages.push('⚠️ bucket:create usually requires bucket:read');
+    }
+    
+    if (selectedScopes.has('viewables:read') && !selectedScopes.has('data:read')) {
+      messages.push('ℹ️ viewables:read typically used with data:read for file access');
+    }
+    
+    if (selectedScopes.has('account:write') && !selectedScopes.has('account:read')) {
+      messages.push('⚠️ account:write usually requires account:read');
+    }
+    
+    if (currentAuthType === '2-legged' && (selectedScopes.has('account:read') || selectedScopes.has('account:write'))) {
+      messages.push('❌ Account scopes only work with 3-legged OAuth');
+    }
+    
+    if (messages.length > 0) {
+      messagesDiv.innerHTML = messages.map(msg => `<p class="text-yellow-300">${msg}</p>`).join('');
+      validationDiv.style.display = 'block';
+    } else {
+      validationDiv.style.display = 'none';
+    }
+  }
+
+  function updateCompatibilityMatrix() {
+    const tbody = document.getElementById('compatibilityTableBody');
+    tbody.innerHTML = '';
+    
+    apiCompatibility.forEach(api => {
+      const row = tbody.insertRow();
+      
+      // API name
+      row.insertCell().textContent = api.api;
+      
+      // Check access level
+      let accessLevel = 'None';
+      let accessClass = 'api-not-supported';
+      
+      if (hasAllScopes(api.create)) {
+        accessLevel = 'Full (Create/Read/Write)';
+        accessClass = 'api-supported';
+      } else if (hasAllScopes(api.write)) {
+        accessLevel = 'Write & Read';
+        accessClass = 'api-supported';
+      } else if (hasAllScopes(api.read)) {
+        accessLevel = 'Read Only';
+        accessClass = 'api-limited';
+      }
+      
+      const accessCell = row.insertCell();
+      accessCell.textContent = accessLevel;
+      accessCell.className = accessClass;
+      
+      // Required scopes
+      const requiredScopes = api.create.join(', ');
+      row.insertCell().textContent = requiredScopes;
+      
+      // Notes
+      row.insertCell().textContent = api.notes;
+    });
+  }
+
+  function hasAllScopes(requiredScopes) {
+    return requiredScopes.every(scope => selectedScopes.has(scope));
+  }
+
+  function copyScopes() {
+    const scopesString = Array.from(selectedScopes).join(' ');
+    copyToClipboard(scopesString || 'No scopes selected', 'Scopes copied to clipboard!');
+  }
+
+  function copyRapsCommand() {
+    const command = document.getElementById('rapsCommand').textContent;
+    copyToClipboard(command, 'RAPS command copied to clipboard!');
+  }
+
+  function copyCurlCommand() {
+    const command = document.getElementById('curlCommand').textContent;
+    copyToClipboard(command, 'cURL command copied to clipboard!');
+  }
+
+  function copyToClipboard(text, message) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(message);
+    }).catch(err => {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert(message);
+    });
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    updateScopeAvailability();
+    updateCompatibilityMatrix();
+    
+    // Apply default preset
+    applyPreset('viewer');
+  });
+</script>
+</BaseLayout>

@@ -1,0 +1,536 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="APS Token Cost Estimator" 
+  description="Calculate monthly APS token costs for Model Derivative and Design Automation operations. Plan your budget with accurate pricing calculations."
+>
+  <div class="tool-container">
+    <h1 class="tool-title">💰 APS Token Cost Estimator</h1>
+    <p class="tool-subtitle">Calculate monthly APS token costs for Model Derivative and Design Automation operations</p>
+    
+    <div class="warning-box">
+      <h3>⚠️ Pricing Notice</h3>
+      <p>APS token pricing changed from $1 to $3/token in 2022, catching many developers off guard. This calculator uses current pricing but always verify with Autodesk's official pricing page.</p>
+    </div>
+    
+    <div class="raps-tip">
+      <h3>💡 RAPS CLI Alternative</h3>
+      <p>Instead of manual calculation, use RAPS CLI:</p>
+      <p><code>raps usage estimate --translations 100 --da-hours 10</code></p>
+      <p><code>raps cost forecast --monthly</code></p>
+    </div>
+    
+    <!-- Current Pricing Table -->
+    <div class="pricing-section">
+      <h2>📋 Current APS Pricing (2026)</h2>
+      <table class="cost-table">
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Token Cost</th>
+            <th>USD Cost (per operation)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Model Derivative - Revit/Navisworks</td>
+            <td>1.5 tokens</td>
+            <td>$4.50</td>
+            <td>Complex BIM files</td>
+          </tr>
+          <tr>
+            <td>Model Derivative - Other formats</td>
+            <td>0.5 tokens</td>
+            <td>$1.50</td>
+            <td>DWG, STEP, etc.</td>
+          </tr>
+          <tr>
+            <td>Design Automation - per hour</td>
+            <td>6 tokens</td>
+            <td>$18.00</td>
+            <td>CAD engine runtime</td>
+          </tr>
+          <tr class="free-operation">
+            <td>Viewer Sessions</td>
+            <td>0 tokens</td>
+            <td>Free</td>
+            <td>No cost for viewing</td>
+          </tr>
+          <tr class="free-operation">
+            <td>Data Management API</td>
+            <td>0 tokens</td>
+            <td>Free</td>
+            <td>File upload/download</td>
+          </tr>
+          <tr class="free-operation">
+            <td>Object Storage Service</td>
+            <td>0 tokens</td>
+            <td>Free</td>
+            <td>Storage limits apply</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Token Price:</strong> $3.00 USD per token (as of 2026)</p>
+    </div>
+    
+    <!-- Input Section -->
+    <div class="input-section">
+      <h3>🧮 Monthly Usage Calculator</h3>
+      
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="revitFiles">Revit/Navisworks Files per Month:</label>
+          <input type="number" id="revitFiles" value="0" min="0" onchange="calculateCosts()">
+        </div>
+        
+        <div class="input-group">
+          <label for="otherFiles">Other CAD Files per Month:</label>
+          <input type="number" id="otherFiles" value="0" min="0" onchange="calculateCosts()">
+        </div>
+        
+        <div class="input-group">
+          <label for="daHours">Design Automation Hours per Month:</label>
+          <input type="number" id="daHours" value="0" min="0" step="0.5" onchange="calculateCosts()">
+        </div>
+        
+        <div class="input-group">
+          <label for="teamSize">Team Size:</label>
+          <input type="number" id="teamSize" value="1" min="1" onchange="calculateCosts()">
+        </div>
+      </div>
+      
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="projectType">Project Type:</label>
+          <select id="projectType" onchange="updatePresets()">
+            <option value="custom">Custom</option>
+            <option value="prototyping">Prototyping</option>
+            <option value="small-team">Small Team</option>
+            <option value="enterprise">Enterprise</option>
+            <option value="automation">Heavy Automation</option>
+          </select>
+        </div>
+        
+        <div class="input-group">
+          <label for="translationFormats">Average Translation Formats per File:</label>
+          <select id="translationFormats" onchange="calculateCosts()">
+            <option value="1">1 format (SVF2 only)</option>
+            <option value="2">2 formats (SVF2 + PDF)</option>
+            <option value="3">3 formats (SVF2 + PDF + STL)</option>
+            <option value="4">4+ formats (Multiple outputs)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="results-section" id="resultsSection">
+      <h3>💵 Monthly Cost Breakdown</h3>
+      
+      <div class="cost-breakdown">
+        <div class="cost-item">
+          <div class="cost-value" id="revitCost">$0.00</div>
+          <div class="cost-label">Revit/Navisworks</div>
+        </div>
+        
+        <div class="cost-item">
+          <div class="cost-value" id="otherCost">$0.00</div>
+          <div class="cost-label">Other CAD Files</div>
+        </div>
+        
+        <div class="cost-item">
+          <div class="cost-value" id="daCost">$0.00</div>
+          <div class="cost-label">Design Automation</div>
+        </div>
+        
+        <div class="cost-item">
+          <div class="cost-value" id="totalTokens">0</div>
+          <div class="cost-label">Total Tokens</div>
+        </div>
+      </div>
+      
+      <div class="total-cost">
+        <div>Total Monthly Cost</div>
+        <div class="amount" id="totalCost">$0.00</div>
+        <div>Annual Cost: <span id="annualCost">$0.00</span></div>
+      </div>
+    </div>
+    
+    <!-- Free vs Paid Tier Comparison -->
+    <div class="pricing-section">
+      <h3>📊 Free Tier vs Paid Tier Comparison</h3>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Free Tier</th>
+            <th>Paid Tier</th>
+            <th>Your Usage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Model Derivative Credits</td>
+            <td class="free-tier">100 per month</td>
+            <td class="paid-tier">Unlimited (pay per use)</td>
+            <td class="free-tier" id="derivativeUsage">0</td>
+          </tr>
+          <tr>
+            <td>Design Automation</td>
+            <td class="free-tier">25 hours per month</td>
+            <td class="paid-tier">Unlimited (pay per use)</td>
+            <td class="free-tier" id="daUsage">0 hours</td>
+          </tr>
+          <tr>
+            <td>Data Storage (OSS)</td>
+            <td class="free-tier">1GB</td>
+            <td class="paid-tier">Unlimited (separate pricing)</td>
+            <td class="free-tier">-</td>
+          </tr>
+          <tr>
+            <td>Support</td>
+            <td class="free-tier">Community Forums</td>
+            <td class="paid-tier">Priority Support</td>
+            <td class="free-tier">-</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div id="recommendationBox" style="display: none;">
+        <h4 id="recommendationTitle"></h4>
+        <p id="recommendationText"></p>
+      </div>
+    </div>
+    
+    <!-- Cost Optimization Tips -->
+    <div class="pricing-section">
+      <h3>💡 Cost Optimization Tips</h3>
+      <ul>
+        <li><strong>Batch Processing:</strong> Use RAPS CLI's batch operations to optimize API calls</li>
+        <li><strong>Format Selection:</strong> Only translate to formats you actually need</li>
+        <li><strong>Caching:</strong> Store translated derivatives to avoid re-translation</li>
+        <li><strong>Free Tier First:</strong> Use free tier for development and testing</li>
+        <li><strong>Monitor Usage:</strong> Track token consumption with <code>raps usage report</code></li>
+        <li><strong>Design Automation:</strong> Optimize scripts to reduce processing time</li>
+        <li><strong>File Optimization:</strong> Smaller source files = faster translation = lower DA costs</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  
+  .tool-title {
+    @apply text-3xl sm:text-4xl font-display font-bold text-white mb-4 text-center;
+  }
+  
+  .tool-subtitle {
+    @apply text-center text-slate-300 mb-8 text-lg;
+  }
+  
+  .warning-box {
+    @apply bg-yellow-950/20 border border-yellow-600 rounded-lg p-6 mb-8;
+  }
+  
+  .warning-box h3 {
+    @apply text-lg font-semibold text-yellow-300 mb-3 mt-0;
+  }
+  
+  .raps-tip {
+    @apply bg-blue-950/30 border border-blue-800/30 rounded-lg p-6 mb-8;
+  }
+  
+  .raps-tip h3 {
+    @apply text-lg font-semibold text-blue-300 mb-3 mt-0;
+  }
+  
+  .raps-tip code {
+    @apply bg-blue-900/50 text-blue-200 px-2 py-1 rounded text-sm font-mono;
+  }
+  
+  .pricing-section {
+    @apply bg-slate-800/30 rounded-lg p-6 mb-8 border-l-4 border-green-500;
+  }
+  
+  .pricing-section h2, .pricing-section h3 {
+    @apply text-xl font-semibold text-green-300 mb-4 mt-0;
+  }
+  
+  .cost-table {
+    @apply w-full border-collapse mb-4 bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700;
+  }
+  
+  .cost-table th,
+  .cost-table td {
+    @apply px-4 py-3 text-left border-b border-slate-700;
+  }
+  
+  .cost-table th {
+    @apply bg-green-800 text-white font-semibold;
+  }
+  
+  .cost-table tr:nth-child(even) {
+    @apply bg-slate-800/30;
+  }
+  
+  .free-operation {
+    @apply bg-green-950/20;
+  }
+  
+  .input-section {
+    @apply bg-green-950/10 rounded-lg p-6 mb-8 border-l-4 border-yellow-500;
+  }
+  
+  .input-section h3 {
+    @apply text-xl font-semibold text-white mb-4 mt-0;
+  }
+  
+  .input-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 mb-6;
+  }
+  
+  .input-group {
+    @apply mb-4;
+  }
+  
+  .input-group label {
+    @apply block mb-2 font-semibold text-slate-200;
+  }
+  
+  .input-group input,
+  .input-group select {
+    @apply w-full p-3 border-2 border-slate-600 rounded-lg bg-slate-900 text-slate-300 transition-colors;
+  }
+  
+  .input-group input:focus,
+  .input-group select:focus {
+    @apply outline-none border-green-400;
+  }
+  
+  .results-section {
+    @apply bg-green-950/20 border-2 border-green-600 rounded-lg p-6 mb-8;
+  }
+  
+  .results-section h3 {
+    @apply text-xl font-semibold text-green-300 mb-6 mt-0;
+  }
+  
+  .cost-breakdown {
+    @apply grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6;
+  }
+  
+  .cost-item {
+    @apply bg-slate-900/50 p-4 rounded-lg text-center border border-green-600/30;
+  }
+  
+  .cost-value {
+    @apply text-2xl font-bold text-green-400 mb-2;
+  }
+  
+  .cost-label {
+    @apply text-slate-400 text-sm;
+  }
+  
+  .total-cost {
+    @apply bg-green-600 text-white p-6 rounded-lg text-center;
+  }
+  
+  .total-cost .amount {
+    @apply text-4xl font-bold my-3;
+  }
+  
+  .comparison-table {
+    @apply w-full border-collapse mb-6 bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    @apply px-4 py-3 text-center border-b border-slate-700;
+  }
+  
+  .comparison-table th {
+    @apply bg-slate-700 text-white font-semibold;
+  }
+  
+  .free-tier {
+    @apply bg-green-900/50 text-green-300 font-semibold;
+  }
+  
+  .paid-tier {
+    @apply bg-yellow-900/50 text-yellow-300 font-semibold;
+  }
+  
+  .over-limit {
+    @apply bg-red-900/50 text-red-300 font-semibold;
+  }
+  
+  #recommendationBox {
+    @apply bg-blue-950/20 border border-blue-600 rounded-lg p-4 mt-4;
+  }
+  
+  #recommendationTitle {
+    @apply text-lg font-semibold mb-2 mt-0;
+  }
+  
+  @media (max-width: 768px) {
+    .input-grid {
+      @apply grid-cols-1;
+    }
+    
+    .cost-breakdown {
+      @apply grid-cols-1;
+    }
+    
+    .tool-title {
+      @apply text-2xl;
+    }
+  }
+</style>
+
+<script>
+  // Preset configurations
+  const presets = {
+    prototyping: {
+      revitFiles: 5,
+      otherFiles: 10,
+      daHours: 0,
+      teamSize: 1
+    },
+    'small-team': {
+      revitFiles: 25,
+      otherFiles: 50,
+      daHours: 2,
+      teamSize: 3
+    },
+    enterprise: {
+      revitFiles: 200,
+      otherFiles: 500,
+      daHours: 40,
+      teamSize: 10
+    },
+    automation: {
+      revitFiles: 100,
+      otherFiles: 1000,
+      daHours: 100,
+      teamSize: 5
+    }
+  };
+
+  // Pricing constants
+  const TOKEN_PRICE = 3.00; // USD per token
+  const REVIT_TOKENS = 1.5;
+  const OTHER_TOKENS = 0.5;
+  const DA_TOKENS_PER_HOUR = 6;
+  
+  // Free tier limits
+  const FREE_DERIVATIVE_CREDITS = 100;
+  const FREE_DA_HOURS = 25;
+
+  function updatePresets() {
+    const projectType = document.getElementById('projectType').value;
+    if (projectType === 'custom') return;
+    
+    const preset = presets[projectType];
+    document.getElementById('revitFiles').value = preset.revitFiles;
+    document.getElementById('otherFiles').value = preset.otherFiles;
+    document.getElementById('daHours').value = preset.daHours;
+    document.getElementById('teamSize').value = preset.teamSize;
+    
+    calculateCosts();
+  }
+
+  function calculateCosts() {
+    const revitFiles = parseInt(document.getElementById('revitFiles').value) || 0;
+    const otherFiles = parseInt(document.getElementById('otherFiles').value) || 0;
+    const daHours = parseFloat(document.getElementById('daHours').value) || 0;
+    const formats = parseInt(document.getElementById('translationFormats').value) || 1;
+    
+    // Calculate tokens needed
+    const revitTokens = revitFiles * REVIT_TOKENS * formats;
+    const otherTokens = otherFiles * OTHER_TOKENS * formats;
+    const daTokens = daHours * DA_TOKENS_PER_HOUR;
+    const totalTokens = revitTokens + otherTokens + daTokens;
+    
+    // Calculate costs
+    const revitCost = revitTokens * TOKEN_PRICE;
+    const otherCost = otherTokens * TOKEN_PRICE;
+    const daCost = daTokens * TOKEN_PRICE;
+    const totalCost = totalTokens * TOKEN_PRICE;
+    const annualCost = totalCost * 12;
+    
+    // Update display
+    document.getElementById('revitCost').textContent = `$${revitCost.toFixed(2)}`;
+    document.getElementById('otherCost').textContent = `$${otherCost.toFixed(2)}`;
+    document.getElementById('daCost').textContent = `$${daCost.toFixed(2)}`;
+    document.getElementById('totalTokens').textContent = totalTokens.toFixed(1);
+    document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
+    document.getElementById('annualCost').textContent = `$${annualCost.toFixed(2)}`;
+    
+    // Update comparison table
+    updateComparisonTable(revitFiles + otherFiles, daHours, totalCost);
+  }
+
+  function updateComparisonTable(totalDerivatives, daHours, totalCost) {
+    const derivativeUsageCell = document.getElementById('derivativeUsage');
+    const daUsageCell = document.getElementById('daUsage');
+    const recommendationBox = document.getElementById('recommendationBox');
+    const recommendationTitle = document.getElementById('recommendationTitle');
+    const recommendationText = document.getElementById('recommendationText');
+    
+    // Update usage display
+    derivativeUsageCell.textContent = totalDerivatives;
+    daUsageCell.textContent = `${daHours} hours`;
+    
+    // Color code based on free tier limits
+    if (totalDerivatives <= FREE_DERIVATIVE_CREDITS) {
+      derivativeUsageCell.className = 'free-tier';
+    } else {
+      derivativeUsageCell.className = 'over-limit';
+    }
+    
+    if (daHours <= FREE_DA_HOURS) {
+      daUsageCell.className = 'free-tier';
+    } else {
+      daUsageCell.className = 'over-limit';
+    }
+    
+    // Show recommendation
+    recommendationBox.style.display = 'block';
+    
+    if (totalDerivatives <= FREE_DERIVATIVE_CREDITS && daHours <= FREE_DA_HOURS) {
+      recommendationTitle.textContent = '✅ Free Tier Recommended';
+      recommendationTitle.style.color = '#22c55e';
+      recommendationText.textContent = 'Your usage fits within the free tier limits. You can develop and test without costs!';
+    } else if (totalCost < 50) {
+      recommendationTitle.textContent = '💰 Low-Cost Usage';
+      recommendationTitle.style.color = '#f59e0b';
+      recommendationText.textContent = `Your monthly cost of $${totalCost.toFixed(2)} is relatively low. Consider paid tier for production use.`;
+    } else if (totalCost < 200) {
+      recommendationTitle.textContent = '📊 Moderate Usage';
+      recommendationTitle.style.color = '#64748b';
+      recommendationText.textContent = `Monthly cost of $${totalCost.toFixed(2)} suggests active development. Consider optimizing workflows and using RAPS CLI for efficiency.`;
+    } else {
+      recommendationTitle.textContent = '🏢 Enterprise Usage';
+      recommendationTitle.style.color = '#dc2626';
+      recommendationText.textContent = `High usage ($${totalCost.toFixed(2)}/month) indicates enterprise needs. Contact Autodesk for volume pricing and consider dedicated support.`;
+    }
+  }
+
+  // Initialize with default values
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set some default values for demonstration
+    document.getElementById('revitFiles').value = 10;
+    document.getElementById('otherFiles').value = 20;
+    document.getElementById('daHours').value = 5;
+    calculateCosts();
+  });
+</script>
+</BaseLayout>

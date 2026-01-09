@@ -1,0 +1,542 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="APS JWT Token Decoder Tool" 
+  description="Interactive tool to decode and analyze Autodesk Platform Services (APS) JWT authentication tokens with expiration and scope analysis."
+>
+  <div class="tool-container">
+    <h1 class="tool-title">🔓 APS JWT Token Decoder</h1>
+    <p class="tool-subtitle">Decode and analyze Autodesk Platform Services JWT authentication tokens</p>
+    
+    <div class="raps-tip">
+      <h3>💡 RAPS CLI Alternative</h3>
+      <p>Instead of using this web tool, you can use RAPS CLI:</p>
+      <p><code>raps auth status</code> - View current token details</p>
+      <p><code>raps auth decode-token &lt;jwt-token&gt;</code> - Decode specific token</p>
+    </div>
+    
+    <div class="warning">
+      <strong>⚠️ Security Notice:</strong> This tool runs entirely in your browser. No tokens are sent to any server. 
+      However, be careful when sharing decoded token information as it may contain sensitive data.
+    </div>
+    
+    <!-- Token Input Section -->
+    <div class="tool-section">
+      <h2>Enter JWT Token</h2>
+      <p>Paste your APS authentication token (JWT) to decode and analyze it</p>
+      
+      <label for="tokenInput">JWT Token:</label>
+      <textarea id="tokenInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
+      
+      <button onclick="decodeToken()">🔍 Decode Token</button>
+      <button onclick="validateToken()">✅ Validate JWT Format</button>
+      <button onclick="generateSampleToken()">📝 Load Sample Token</button>
+      <button onclick="clearToken()">🗑️ Clear</button>
+      
+      <div id="tokenValidation"></div>
+    </div>
+    
+    <!-- Token Parts Visualization -->
+    <div id="tokenParts" style="display: none;">
+      <div class="tool-section">
+        <h2>JWT Token Structure</h2>
+        <div class="token-parts">
+          <div class="token-part token-header">
+            <strong>Header:</strong> <span id="headerPart"></span>
+          </div>
+          <div class="token-part token-payload">
+            <strong>Payload:</strong> <span id="payloadPart"></span>
+          </div>
+          <div class="token-part token-signature">
+            <strong>Signature:</strong> <span id="signaturePart"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Decoded Information -->
+    <div id="decodedInfo" style="display: none;">
+      <div class="result-grid">
+        <!-- Token Header -->
+        <div class="result-section">
+          <h3>🏷️ Token Header</h3>
+          <div id="headerInfo" class="json-display"></div>
+        </div>
+        
+        <!-- Token Payload -->
+        <div class="result-section">
+          <h3>📦 Token Payload</h3>
+          <div id="payloadInfo" class="json-display"></div>
+        </div>
+      </div>
+      
+      <!-- Token Analysis -->
+      <div class="tool-section">
+        <h2>Token Analysis</h2>
+        <div id="tokenAnalysis"></div>
+      </div>
+      
+      <!-- Scope Information -->
+      <div id="scopeSection" style="display: none;">
+        <div class="tool-section">
+          <h2>OAuth Scopes</h2>
+          <div id="scopeInfo"></div>
+          <div id="scopeList" class="scope-list"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Information Box -->
+    <div class="info-box">
+      <h4>🔒 About JWT Tokens</h4>
+      <p>JSON Web Tokens (JWT) are used by APS for authentication. They contain:</p>
+      <ul>
+        <li><strong>Header:</strong> Token type and signing algorithm</li>
+        <li><strong>Payload:</strong> Claims including user info, scopes, and expiration</li>
+        <li><strong>Signature:</strong> Verification signature (cannot be decoded)</li>
+      </ul>
+      <p>APS tokens typically expire after 1 hour (3600 seconds) and contain OAuth scopes that define what APIs you can access.</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  
+  .tool-title {
+    @apply text-3xl sm:text-4xl font-display font-bold text-white mb-4 text-center;
+  }
+  
+  .tool-subtitle {
+    @apply text-center text-slate-300 mb-8 text-lg;
+  }
+  
+  .raps-tip {
+    @apply bg-blue-950/30 border border-blue-800/30 rounded-lg p-6 mb-8;
+  }
+  
+  .raps-tip h3 {
+    @apply text-lg font-semibold text-blue-300 mb-3 mt-0;
+  }
+  
+  .raps-tip code {
+    @apply bg-blue-900/50 text-blue-200 px-2 py-1 rounded text-sm font-mono;
+  }
+  
+  .warning {
+    @apply bg-orange-950/20 border border-orange-600 text-orange-200 rounded-lg p-4 mb-8;
+  }
+  
+  .tool-section {
+    @apply bg-slate-800/30 rounded-lg p-6 mb-8 border-l-4 border-blue-500;
+  }
+  
+  .tool-section h2 {
+    @apply text-xl font-semibold text-white mb-4 mt-0;
+  }
+  
+  label {
+    @apply block mb-2 font-semibold text-slate-200;
+  }
+  
+  textarea, input[type="text"] {
+    @apply w-full p-3 border-2 border-slate-600 rounded-lg bg-slate-900 text-slate-300 font-mono text-sm transition-colors min-h-[120px] resize-vertical;
+  }
+  
+  textarea:focus, input[type="text"]:focus {
+    @apply outline-none border-blue-400;
+  }
+  
+  button {
+    @apply bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold mr-2 mb-2 cursor-pointer transition-colors;
+  }
+  
+  button:hover {
+    @apply transform translate-y-px shadow-lg;
+  }
+  
+  .result-grid {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8;
+  }
+  
+  .result-section {
+    @apply bg-slate-900/50 border-2 border-slate-700 rounded-lg p-6;
+  }
+  
+  .result-section h3 {
+    @apply text-lg font-semibold text-white mb-4 mt-0 border-b-2 border-yellow-500 pb-2;
+  }
+  
+  .json-display {
+    @apply bg-slate-800/50 border border-slate-600 rounded p-4 font-mono text-sm text-slate-300 max-h-80 overflow-y-auto whitespace-pre-wrap;
+  }
+  
+  .token-parts {
+    @apply mb-4;
+  }
+  
+  .token-part {
+    @apply mb-3 p-3 rounded font-mono text-xs break-all border-l-4;
+  }
+  
+  .token-header {
+    @apply bg-yellow-950/20 border-yellow-600;
+  }
+  
+  .token-payload {
+    @apply bg-green-950/20 border-green-600;
+  }
+  
+  .token-signature {
+    @apply bg-blue-950/20 border-blue-600;
+  }
+  
+  .error {
+    @apply bg-red-950/20 border border-red-600 text-red-200 rounded p-4 mt-4;
+  }
+  
+  .info-box {
+    @apply bg-blue-950/20 border border-blue-600 rounded-lg p-4 mb-8;
+  }
+  
+  .info-box h4 {
+    @apply text-lg font-semibold text-blue-300 mb-3 mt-0;
+  }
+  
+  .info-box ul {
+    @apply list-disc list-inside space-y-1 text-blue-200;
+  }
+  
+  .scope-list {
+    @apply flex flex-wrap gap-2 mt-4;
+  }
+  
+  .scope-tag {
+    @apply bg-yellow-600 text-slate-900 px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .expiry-status {
+    @apply inline-block px-2 py-1 rounded text-xs font-semibold ml-2;
+  }
+  
+  .expiry-valid {
+    @apply bg-green-900/50 text-green-300;
+  }
+  
+  .expiry-expired {
+    @apply bg-red-900/50 text-red-300;
+  }
+  
+  .expiry-soon {
+    @apply bg-yellow-900/50 text-yellow-300;
+  }
+  
+  @media (max-width: 768px) {
+    .result-grid {
+      @apply grid-cols-1;
+    }
+    
+    .tool-title {
+      @apply text-2xl;
+    }
+  }
+</style>
+
+<script>
+  let currentToken = '';
+
+  function decodeToken() {
+    const token = document.getElementById('tokenInput').value.trim();
+    
+    if (!token) {
+      showError('Please enter a JWT token to decode.');
+      return;
+    }
+    
+    currentToken = token;
+    
+    try {
+      const parts = token.split('.');
+      
+      if (parts.length !== 3) {
+        showError('Invalid JWT format. JWT tokens should have 3 parts separated by dots.');
+        return;
+      }
+      
+      // Decode header
+      const header = JSON.parse(atob(parts[0]));
+      
+      // Decode payload (add padding if needed)
+      let payload64 = parts[1];
+      while (payload64.length % 4) {
+        payload64 += '=';
+      }
+      const payload = JSON.parse(atob(payload64));
+      
+      // Display token parts
+      displayTokenParts(parts);
+      
+      // Display decoded information
+      displayDecodedInfo(header, payload);
+      
+      // Analyze token
+      analyzeToken(payload);
+      
+      // Show scope information if available
+      if (payload.scope) {
+        displayScopeInfo(payload.scope);
+      }
+      
+      // Clear any previous errors
+      document.getElementById('tokenValidation').innerHTML = '';
+      
+    } catch (error) {
+      showError(`Failed to decode token: ${error.message}`);
+      hideDecodedInfo();
+    }
+  }
+
+  function validateToken() {
+    const token = document.getElementById('tokenInput').value.trim();
+    const validationDiv = document.getElementById('tokenValidation');
+    
+    if (!token) {
+      showValidation(validationDiv, 'Please enter a token to validate.', false);
+      return;
+    }
+    
+    try {
+      const parts = token.split('.');
+      
+      if (parts.length !== 3) {
+        showValidation(validationDiv, '❌ Invalid JWT format. Should have 3 parts separated by dots.', false);
+        return;
+      }
+      
+      // Try to decode header and payload
+      JSON.parse(atob(parts[0]));
+      let payload64 = parts[1];
+      while (payload64.length % 4) {
+        payload64 += '=';
+      }
+      JSON.parse(atob(payload64));
+      
+      showValidation(validationDiv, '✅ Valid JWT format', true);
+      
+    } catch (error) {
+      showValidation(validationDiv, `❌ Invalid JWT: ${error.message}`, false);
+    }
+  }
+
+  function generateSampleToken() {
+    // Sample APS token structure (this is just for demo purposes)
+    const sampleHeader = btoa(JSON.stringify({
+      "alg": "RS256",
+      "typ": "JWT",
+      "kid": "sample-key-id"
+    }));
+    
+    const samplePayload = btoa(JSON.stringify({
+      "sub": "12345678-1234-5678-9abc-123456789012",
+      "aud": "your-client-id",
+      "iss": "https://developer.api.autodesk.com",
+      "exp": Math.floor(Date.now() / 1000) + 3600,
+      "iat": Math.floor(Date.now() / 1000),
+      "scope": "data:read data:write viewables:read bucket:read",
+      "client_id": "your-client-id",
+      "userid": "ABCD123456789012",
+      "gty": "client-credentials"
+    }));
+    
+    const sampleSignature = "sample-signature-not-real";
+    
+    const sampleToken = `${sampleHeader}.${samplePayload}.${sampleSignature}`;
+    
+    document.getElementById('tokenInput').value = sampleToken;
+    
+    // Auto-decode the sample
+    setTimeout(decodeToken, 100);
+  }
+
+  function clearToken() {
+    document.getElementById('tokenInput').value = '';
+    document.getElementById('tokenValidation').innerHTML = '';
+    hideDecodedInfo();
+  }
+
+  function displayTokenParts(parts) {
+    document.getElementById('headerPart').textContent = parts[0];
+    document.getElementById('payloadPart').textContent = parts[1];
+    document.getElementById('signaturePart').textContent = parts[2];
+    document.getElementById('tokenParts').style.display = 'block';
+  }
+
+  function displayDecodedInfo(header, payload) {
+    // Display header
+    document.getElementById('headerInfo').textContent = JSON.stringify(header, null, 2);
+    
+    // Display payload
+    document.getElementById('payloadInfo').textContent = JSON.stringify(payload, null, 2);
+    
+    document.getElementById('decodedInfo').style.display = 'block';
+  }
+
+  function analyzeToken(payload) {
+    let analysis = '';
+    
+    // Token type analysis
+    analysis += '<div class="info-box">';
+    analysis += '<h4>🔍 Token Information</h4>';
+    
+    if (payload.gty) {
+      const grantType = payload.gty === 'client-credentials' ? '2-legged OAuth' : '3-legged OAuth';
+      analysis += `<p><strong>Grant Type:</strong> ${grantType} (${payload.gty})</p>`;
+    }
+    
+    if (payload.client_id) {
+      analysis += `<p><strong>Client ID:</strong> ${payload.client_id}</p>`;
+    }
+    
+    if (payload.userid) {
+      analysis += `<p><strong>User ID:</strong> ${payload.userid}</p>`;
+    }
+    
+    if (payload.aud) {
+      analysis += `<p><strong>Audience:</strong> ${payload.aud}</p>`;
+    }
+    
+    if (payload.iss) {
+      analysis += `<p><strong>Issuer:</strong> ${payload.iss}</p>`;
+    }
+    
+    analysis += '</div>';
+    
+    // Expiration analysis
+    if (payload.exp) {
+      const expiryTime = new Date(payload.exp * 1000);
+      const now = new Date();
+      const timeUntilExpiry = expiryTime - now;
+      const minutesUntilExpiry = Math.floor(timeUntilExpiry / 60000);
+      
+      let expiryStatus = '';
+      let expiryClass = '';
+      
+      if (timeUntilExpiry <= 0) {
+        expiryStatus = 'EXPIRED';
+        expiryClass = 'expiry-expired';
+      } else if (minutesUntilExpiry <= 10) {
+        expiryStatus = `Expires in ${minutesUntilExpiry} minutes`;
+        expiryClass = 'expiry-soon';
+      } else {
+        expiryStatus = `Valid for ${minutesUntilExpiry} minutes`;
+        expiryClass = 'expiry-valid';
+      }
+      
+      analysis += '<div class="info-box">';
+      analysis += '<h4>⏰ Token Expiration</h4>';
+      analysis += `<p><strong>Expires:</strong> ${expiryTime.toLocaleString()} <span class="expiry-status ${expiryClass}">${expiryStatus}</span></p>`;
+      
+      if (payload.iat) {
+        const issuedTime = new Date(payload.iat * 1000);
+        analysis += `<p><strong>Issued:</strong> ${issuedTime.toLocaleString()}</p>`;
+      }
+      
+      analysis += '</div>';
+    }
+    
+    document.getElementById('tokenAnalysis').innerHTML = analysis;
+  }
+
+  function displayScopeInfo(scopeString) {
+    const scopes = scopeString.split(' ').filter(scope => scope.trim());
+    
+    let scopeInfo = '<p>This token grants the following permissions:</p>';
+    
+    // Scope explanations
+    const scopeExplanations = {
+      'data:read': 'Read files and projects from Data Management API',
+      'data:write': 'Modify files and metadata in Data Management API',
+      'data:create': 'Create new files and folders in Data Management API',
+      'bucket:read': 'List and access Object Storage buckets',
+      'bucket:create': 'Create new Object Storage buckets',
+      'bucket:delete': 'Delete Object Storage buckets',
+      'viewables:read': 'Access translated models for viewing',
+      'code:all': 'Full access to Design Automation API',
+      'account:read': 'Read BIM 360/ACC account information',
+      'account:write': 'Modify BIM 360/ACC account settings'
+    };
+    
+    scopeInfo += '<ul class="list-disc list-inside space-y-1 text-slate-300">';
+    scopes.forEach(scope => {
+      const explanation = scopeExplanations[scope] || 'Custom or unknown scope';
+      scopeInfo += `<li><strong>${scope}</strong>: ${explanation}</li>`;
+    });
+    scopeInfo += '</ul>';
+    
+    document.getElementById('scopeInfo').innerHTML = scopeInfo;
+    
+    // Display scope tags
+    const scopeListDiv = document.getElementById('scopeList');
+    scopeListDiv.innerHTML = '';
+    scopes.forEach(scope => {
+      const tag = document.createElement('span');
+      tag.className = 'scope-tag';
+      tag.textContent = scope;
+      scopeListDiv.appendChild(tag);
+    });
+    
+    document.getElementById('scopeSection').style.display = 'block';
+  }
+
+  function showError(message) {
+    document.getElementById('tokenValidation').innerHTML = 
+      `<div class="error">${message}</div>`;
+    hideDecodedInfo();
+  }
+
+  function showValidation(element, message, isValid) {
+    const className = isValid ? 'info-box' : 'error';
+    element.innerHTML = `<div class="${className}">${message}</div>`;
+  }
+
+  function hideDecodedInfo() {
+    document.getElementById('decodedInfo').style.display = 'none';
+    document.getElementById('tokenParts').style.display = 'none';
+    document.getElementById('scopeSection').style.display = 'none';
+  }
+
+  // Auto-decode when token is pasted
+  document.addEventListener('DOMContentLoaded', () => {
+    const tokenInput = document.getElementById('tokenInput');
+    
+    tokenInput.addEventListener('paste', function(e) {
+      setTimeout(() => {
+        if (e.target.value.trim()) {
+          validateToken();
+        }
+      }, 100);
+    });
+    
+    // Keyboard shortcut for decoding
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') {
+        if (document.activeElement.id === 'tokenInput') {
+          decodeToken();
+        }
+      }
+    });
+    
+    // Auto-resize textarea
+    tokenInput.addEventListener('input', function(e) {
+      e.target.style.height = 'auto';
+      e.target.style.height = (e.target.scrollHeight) + 'px';
+    });
+  });
+</script>
+</BaseLayout>
