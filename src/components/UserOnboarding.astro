@@ -1,0 +1,361 @@
+---
+// User onboarding flow component
+---
+
+<div class="user-onboarding-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden" id="onboarding-overlay">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-2xl w-full relative">
+      <!-- Close Button -->
+      <button
+        id="onboarding-close"
+        class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
+        aria-label="Close onboarding"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      
+      <!-- Step 1: Welcome -->
+      <div class="onboarding-step active" data-step="1">
+        <div class="text-center mb-8">
+          <div class="text-6xl mb-4">🌼</div>
+          <h2 class="text-3xl font-display font-bold text-white mb-4">Welcome to RAPS!</h2>
+          <p class="text-lg text-slate-300">
+            Let's get you started with the most powerful CLI for Autodesk Platform Services
+          </p>
+        </div>
+        
+        <!-- User Type Selection -->
+        <div class="space-y-4 mb-8">
+          <h3 class="text-xl font-semibold text-white mb-4">What describes you best?</h3>
+          <div class="grid gap-4">
+            <button class="user-type-btn p-4 border border-slate-700 rounded-lg hover:border-rapeseed-500 hover:bg-rapeseed-500/10 transition-all text-left" data-type="devops">
+              <div class="flex items-center gap-4">
+                <div class="text-3xl">⚙️</div>
+                <div>
+                  <div class="font-semibold text-white">DevOps Engineer</div>
+                  <div class="text-sm text-slate-400">Building CI/CD pipelines and automation</div>
+                </div>
+              </div>
+            </button>
+            <button class="user-type-btn p-4 border border-slate-700 rounded-lg hover:border-rapeseed-500 hover:bg-rapeseed-500/10 transition-all text-left" data-type="aec">
+              <div class="flex items-center gap-4">
+                <div class="text-3xl">🏗️</div>
+                <div>
+                  <div class="font-semibold text-white">AEC Professional</div>
+                  <div class="text-sm text-slate-400">Working with CAD/BIM files and workflows</div>
+                </div>
+              </div>
+            </button>
+            <button class="user-type-btn p-4 border border-slate-700 rounded-lg hover:border-rapeseed-500 hover:bg-rapeseed-500/10 transition-all text-left" data-type="developer">
+              <div class="flex items-center gap-4">
+                <div class="text-3xl">👩‍💻</div>
+                <div>
+                  <div class="font-semibold text-white">Software Developer</div>
+                  <div class="text-sm text-slate-400">Building applications with APS APIs</div>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 2: Personalized Recommendations -->
+      <div class="onboarding-step hidden" data-step="2">
+        <div class="mb-8">
+          <h2 class="text-2xl font-display font-bold text-white mb-4">Perfect! Here's your personalized path:</h2>
+          
+          <!-- DevOps Path -->
+          <div class="user-path hidden" data-path="devops">
+            <div class="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl p-6 mb-6">
+              <h3 class="text-xl font-semibold text-blue-400 mb-3">🚀 DevOps Fast Track</h3>
+              <p class="text-slate-300 mb-4">Get RAPS integrated into your CI/CD pipeline in minutes</p>
+              <div class="space-y-3">
+                <a href="/docs/mode-github-actions" class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white">GitHub Actions Integration</span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </a>
+                <a href="/docs/mode-docker" class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white">Docker Integration</span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- AEC Path -->
+          <div class="user-path hidden" data-path="aec">
+            <div class="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-6 mb-6">
+              <h3 class="text-xl font-semibold text-emerald-400 mb-3">🏗️ AEC Workflow</h3>
+              <p class="text-slate-300 mb-4">Streamline your CAD/BIM file processing workflows</p>
+              <div class="space-y-3">
+                <a href="/docs/translation" class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white">Model Translation Guide</span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </a>
+                <a href="/tools/translation-debugger" class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white">Translation Debugger Tool</span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Developer Path -->
+          <div class="user-path hidden" data-path="developer">
+            <div class="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-xl p-6 mb-6">
+              <h3 class="text-xl font-semibold text-violet-400 mb-3">👩‍💻 Developer Tools</h3>
+              <p class="text-slate-300 mb-4">Essential tools for APS application development</p>
+              <div class="space-y-3">
+                <a href="/tools/scope-builder" class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white">OAuth Scope Builder</span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </a>
+                <a href="/tools/token-decoder" class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white">JWT Token Decoder</span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 3: Quick Start -->
+      <div class="onboarding-step hidden" data-step="3">
+        <div class="text-center mb-8">
+          <div class="text-4xl mb-4">🎉</div>
+          <h2 class="text-2xl font-display font-bold text-white mb-4">You're all set!</h2>
+          <p class="text-slate-300">
+            Ready to start your RAPS journey? Here are your next steps:
+          </p>
+        </div>
+        
+        <div class="space-y-4 mb-8">
+          <a href="/quickstart" class="block p-4 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors text-center">
+            Start Installation →
+          </a>
+          <div class="flex gap-4">
+            <a href="/docs" class="flex-1 p-3 border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white rounded-lg transition-colors text-center">
+              Browse Docs
+            </a>
+            <a href="/tools" class="flex-1 p-3 border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white rounded-lg transition-colors text-center">
+              Try Tools
+            </a>
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <button id="onboarding-finish" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">
+            Skip and explore on my own
+          </button>
+        </div>
+      </div>
+      
+      <!-- Navigation -->
+      <div class="flex justify-between items-center mt-8">
+        <button id="onboarding-back" class="px-4 py-2 text-slate-400 hover:text-white transition-colors hidden">
+          ← Back
+        </button>
+        <div class="flex space-x-2" id="onboarding-progress">
+          <div class="w-3 h-3 rounded-full bg-rapeseed-500"></div>
+          <div class="w-3 h-3 rounded-full bg-slate-700"></div>
+          <div class="w-3 h-3 rounded-full bg-slate-700"></div>
+        </div>
+        <button id="onboarding-next" class="px-4 py-2 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+          Next →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding Trigger (shows once) -->
+<div class="onboarding-trigger hidden fixed bottom-8 right-8 z-40" id="onboarding-trigger">
+  <button
+    id="onboarding-start"
+    class="flex items-center gap-3 px-6 py-3 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
+  >
+    <div class="text-2xl">🌼</div>
+    <div>
+      <div class="text-sm font-bold">New to RAPS?</div>
+      <div class="text-xs opacity-90">Take the quick tour</div>
+    </div>
+  </button>
+</div>
+
+<script>
+  // Onboarding functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('onboarding-overlay');
+    const trigger = document.getElementById('onboarding-trigger');
+    const startBtn = document.getElementById('onboarding-start');
+    const closeBtn = document.getElementById('onboarding-close');
+    const finishBtn = document.getElementById('onboarding-finish');
+    const nextBtn = document.getElementById('onboarding-next');
+    const backBtn = document.getElementById('onboarding-back');
+    const progressDots = document.querySelectorAll('#onboarding-progress > div');
+    const userTypeBtns = document.querySelectorAll('.user-type-btn');
+    
+    let currentStep = 1;
+    let selectedUserType = null;
+    
+    // Check if user has seen onboarding
+    const hasSeenOnboarding = localStorage.getItem('raps-onboarding-complete');
+    const isHomePage = window.location.pathname === '/';
+    
+    if (!hasSeenOnboarding && isHomePage) {
+      setTimeout(() => {
+        trigger?.classList.remove('hidden');
+      }, 3000); // Show after 3 seconds
+    }
+    
+    // Start onboarding
+    function startOnboarding() {
+      overlay?.classList.remove('hidden');
+      trigger?.classList.add('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      // Track onboarding start
+      if (window.analytics) {
+        window.analytics.track('onboarding_started');
+      }
+    }
+    
+    // Close onboarding
+    function closeOnboarding() {
+      overlay?.classList.add('hidden');
+      document.body.style.overflow = '';
+      localStorage.setItem('raps-onboarding-complete', 'true');
+      
+      // Track onboarding completion
+      if (window.analytics) {
+        window.analytics.track('onboarding_completed', {
+          completed_steps: currentStep,
+          user_type: selectedUserType
+        });
+      }
+    }
+    
+    // Update UI for current step
+    function updateStep() {
+      // Hide all steps
+      document.querySelectorAll('.onboarding-step').forEach(step => {
+        step.classList.add('hidden');
+        step.classList.remove('active');
+      });
+      
+      // Show current step
+      const currentStepEl = document.querySelector(`[data-step="${currentStep}"]`);
+      currentStepEl?.classList.remove('hidden');
+      currentStepEl?.classList.add('active');
+      
+      // Update progress dots
+      progressDots.forEach((dot, index) => {
+        if (index < currentStep) {
+          dot.classList.add('bg-rapeseed-500');
+          dot.classList.remove('bg-slate-700');
+        } else {
+          dot.classList.add('bg-slate-700');
+          dot.classList.remove('bg-rapeseed-500');
+        }
+      });
+      
+      // Update navigation buttons
+      if (currentStep === 1) {
+        backBtn?.classList.add('hidden');
+        nextBtn.disabled = !selectedUserType;
+      } else {
+        backBtn?.classList.remove('hidden');
+        nextBtn.disabled = false;
+      }
+      
+      if (currentStep === 3) {
+        nextBtn?.classList.add('hidden');
+      } else {
+        nextBtn?.classList.remove('hidden');
+      }
+    }
+    
+    // User type selection
+    userTypeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remove previous selection
+        userTypeBtns.forEach(b => {
+          b.classList.remove('border-rapeseed-500', 'bg-rapeseed-500/20');
+          b.classList.add('border-slate-700');
+        });
+        
+        // Add selection
+        btn.classList.add('border-rapeseed-500', 'bg-rapeseed-500/20');
+        btn.classList.remove('border-slate-700');
+        
+        selectedUserType = btn.dataset.type;
+        nextBtn.disabled = false;
+        
+        // Show relevant path in step 2
+        document.querySelectorAll('.user-path').forEach(path => {
+          path.classList.add('hidden');
+        });
+        
+        const userPath = document.querySelector(`[data-path="${selectedUserType}"]`);
+        userPath?.classList.remove('hidden');
+      });
+    });
+    
+    // Navigation
+    nextBtn?.addEventListener('click', () => {
+      if (currentStep < 3) {
+        currentStep++;
+        updateStep();
+      }
+    });
+    
+    backBtn?.addEventListener('click', () => {
+      if (currentStep > 1) {
+        currentStep--;
+        updateStep();
+      }
+    });
+    
+    // Event listeners
+    startBtn?.addEventListener('click', startOnboarding);
+    closeBtn?.addEventListener('click', closeOnboarding);
+    finishBtn?.addEventListener('click', closeOnboarding);
+    
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay?.classList.contains('hidden')) {
+        closeOnboarding();
+      }
+    });
+    
+    // Initialize
+    updateStep();
+  });
+</script>

@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mobile-friendly defaults */
+@layer base {
+  /* Prevent horizontal overflow */
+  html {
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure images don't overflow on mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Better touch targets for mobile */
+  @media (max-width: 640px) {
+    a, button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Exceptions for inline links */
+    p a, li a, span a {
+      min-height: auto;
+      min-width: auto;
+    }
+  }
+
+  /* Prevent code blocks from breaking layout */
+  pre, code {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Better table handling on mobile */
+  @media (max-width: 640px) {
+    table {
+      display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Emoji rendering - prevent anti-aliasing issues */
+  .emoji {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-style: normal;
+    font-weight: normal;
+  }
+}

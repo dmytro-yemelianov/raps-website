@@ -1,0 +1,865 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="APS Service Hierarchy"
+  description="Interactive visual hierarchy of Autodesk Platform Services showing service relationships and dependencies"
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="mb-12">
+        <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+          APS Service Hierarchy
+        </h1>
+        <p class="text-xl text-slate-300 mb-6">
+          Interactive visual map of Autodesk Platform Services showing service relationships, 
+          dependencies, and typical workflow patterns.
+        </p>
+        
+        <div class="flex flex-wrap gap-4 mb-6">
+          <button id="zoom-fit" class="px-4 py-2 bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium rounded-lg transition-colors">
+            Fit to View
+          </button>
+          <button id="zoom-reset" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors">
+            Reset Zoom
+          </button>
+          <button id="toggle-labels" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors">
+            Toggle Labels
+          </button>
+        </div>
+      </div>
+
+      <!-- Graph Container -->
+      <div class="bg-slate-900 border border-slate-700 rounded-xl mb-8 overflow-hidden">
+        <div id="aps-hierarchy-graph" class="w-full h-[600px] relative">
+          <!-- Loading state -->
+          <div id="graph-loading" class="absolute inset-0 flex items-center justify-center bg-slate-900">
+            <div class="text-center">
+              <div class="inline-flex items-center gap-2 text-slate-400 mb-2">
+                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading APS Hierarchy...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-white mb-4">Service Categories</h3>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full bg-blue-500"></div>
+              <span class="text-slate-300">Authentication & Core</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full bg-green-500"></div>
+              <span class="text-slate-300">Data Management (OSS)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full bg-purple-500"></div>
+              <span class="text-slate-300">Model Derivative</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
+              <span class="text-slate-300">Design Automation</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full bg-red-500"></div>
+              <span class="text-slate-300">ACC/BIM 360</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full bg-cyan-500"></div>
+              <span class="text-slate-300">Viewer & Reality</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-white mb-4">Connection Types</h3>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-0.5 bg-rapeseed-400"></div>
+              <span class="text-slate-300">Core Dependency</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-0.5 border-t-2 border-dashed border-slate-400"></div>
+              <span class="text-slate-300">Optional Integration</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-0.5 bg-gradient-to-r from-blue-400 to-green-400"></div>
+              <span class="text-slate-300">Data Flow</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 border-2 border-red-400 rounded-full"></div>
+              <span class="text-slate-300">Requires Authentication</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service Details -->
+      <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold text-white mb-4">Click on any service for details:</h3>
+        <div id="service-details" class="text-slate-400">
+          Select a service node to see detailed information about its functionality, dependencies, and RAPS commands.
+        </div>
+      </div>
+
+      <!-- Common Workflows -->
+      <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6">
+        <h3 class="text-xl font-bold text-white mb-4">Common Service Workflows</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="font-semibold text-rapeseed-400 mb-2">File Upload & Translation:</h4>
+            <p class="text-slate-300 text-sm">Authentication → OSS Upload → Model Derivative → Viewer</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-rapeseed-400 mb-2">ACC Project Integration:</h4>
+            <p class="text-slate-300 text-sm">Authentication → Data Management → ACC Projects → Model Derivative</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-rapeseed-400 mb-2">Design Automation:</h4>
+            <p class="text-slate-300 text-sm">Authentication → OSS → Design Automation → Model Derivative</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-rapeseed-400 mb-2">Reality Capture:</h4>
+            <p class="text-slate-300 text-sm">Authentication → OSS Upload → Reality Capture → Viewer</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // APS Service Hierarchy Data
+  const apsServices = {
+    nodes: [
+      // Authentication & Core
+      { id: 'auth', label: 'Authentication', category: 'core', color: '#3b82f6', x: 400, y: 50 },
+      { id: 'user-profile', label: 'User Profile', category: 'core', color: '#3b82f6', x: 200, y: 150 },
+      
+      // Data Management (OSS)
+      { id: 'oss', label: 'Object Storage\n(OSS)', category: 'data', color: '#10b981', x: 400, y: 200 },
+      { id: 'data-management', label: 'Data Management\nAPI', category: 'data', color: '#10b981', x: 600, y: 150 },
+      
+      // Model Derivative
+      { id: 'model-derivative', label: 'Model Derivative', category: 'translation', color: '#8b5cf6', x: 400, y: 350 },
+      { id: 'viewer', label: 'Viewer', category: 'viewer', color: '#06b6d4', x: 200, y: 450 },
+      { id: 'viewer-sdk', label: 'Viewer SDK', category: 'viewer', color: '#06b6d4', x: 350, y: 500 },
+      
+      // Design Automation
+      { id: 'design-automation', label: 'Design\nAutomation', category: 'automation', color: '#eab308', x: 600, y: 350 },
+      { id: 'da-autocad', label: 'AutoCAD\nEngine', category: 'automation', color: '#eab308', x: 750, y: 300 },
+      { id: 'da-inventor', label: 'Inventor\nEngine', category: 'automation', color: '#eab308', x: 750, y: 400 },
+      { id: 'da-revit', label: 'Revit\nEngine', category: 'automation', color: '#eab308', x: 750, y: 450 },
+      { id: 'da-3dsmax', label: '3ds Max\nEngine', category: 'automation', color: '#eab308', x: 750, y: 350 },
+      
+      // ACC/BIM 360
+      { id: 'acc-projects', label: 'ACC Projects', category: 'acc', color: '#ef4444', x: 100, y: 250 },
+      { id: 'acc-assets', label: 'ACC Assets', category: 'acc', color: '#ef4444', x: 50, y: 350 },
+      { id: 'bim360-docs', label: 'BIM 360 Docs', category: 'acc', color: '#ef4444', x: 150, y: 350 },
+      { id: 'acc-cost', label: 'ACC Cost\nManagement', category: 'acc', color: '#ef4444', x: 100, y: 400 },
+      
+      // Reality Capture
+      { id: 'reality-capture', label: 'Reality Capture', category: 'reality', color: '#06b6d4', x: 550, y: 500 },
+      { id: 'photo-scene', label: 'Photo to 3D', category: 'reality', color: '#06b6d4', x: 650, y: 550 },
+      
+      // Webhooks & Events
+      { id: 'webhooks', label: 'Webhooks', category: 'core', color: '#3b82f6', x: 300, y: 100 },
+    ],
+    
+    edges: [
+      // Core dependencies
+      { from: 'auth', to: 'oss', type: 'dependency' },
+      { from: 'auth', to: 'data-management', type: 'dependency' },
+      { from: 'auth', to: 'acc-projects', type: 'dependency' },
+      { from: 'auth', to: 'user-profile', type: 'dependency' },
+      { from: 'auth', to: 'model-derivative', type: 'dependency' },
+      { from: 'auth', to: 'design-automation', type: 'dependency' },
+      { from: 'auth', to: 'reality-capture', type: 'dependency' },
+      
+      // Data flow
+      { from: 'oss', to: 'model-derivative', type: 'dataflow' },
+      { from: 'model-derivative', to: 'viewer', type: 'dataflow' },
+      { from: 'viewer', to: 'viewer-sdk', type: 'dependency' },
+      
+      // Design Automation flows
+      { from: 'oss', to: 'design-automation', type: 'dataflow' },
+      { from: 'design-automation', to: 'da-autocad', type: 'dependency' },
+      { from: 'design-automation', to: 'da-inventor', type: 'dependency' },
+      { from: 'design-automation', to: 'da-revit', type: 'dependency' },
+      { from: 'design-automation', to: 'da-3dsmax', type: 'dependency' },
+      { from: 'design-automation', to: 'model-derivative', type: 'dataflow' },
+      
+      // ACC integrations
+      { from: 'data-management', to: 'acc-projects', type: 'integration' },
+      { from: 'acc-projects', to: 'acc-assets', type: 'dependency' },
+      { from: 'acc-projects', to: 'bim360-docs', type: 'dependency' },
+      { from: 'acc-projects', to: 'acc-cost', type: 'integration' },
+      { from: 'acc-projects', to: 'model-derivative', type: 'dataflow' },
+      
+      // Reality Capture
+      { from: 'oss', to: 'reality-capture', type: 'dataflow' },
+      { from: 'reality-capture', to: 'photo-scene', type: 'dependency' },
+      { from: 'reality-capture', to: 'viewer', type: 'dataflow' },
+      
+      // Webhooks
+      { from: 'webhooks', to: 'oss', type: 'integration' },
+      { from: 'webhooks', to: 'model-derivative', type: 'integration' },
+      { from: 'webhooks', to: 'acc-projects', type: 'integration' },
+    ]
+  };
+
+  // Service details data
+  const serviceDetails = {
+    'auth': {
+      name: 'Authentication',
+      description: 'OAuth 2.0 authentication service for all APS APIs',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'POST /authentication/v2/token',
+        'POST /authentication/v2/revoke', 
+        'POST /authentication/v2/introspect',
+        'GET /userprofile/v1/users/@me'
+      ],
+      scopes: ['data:read', 'data:write', 'user-profile:read', 'account:read'],
+      rapsCommands: ['raps auth login', 'raps auth test', 'raps auth scopes', 'raps auth refresh']
+    },
+    'user-profile': {
+      name: 'User Profile',
+      description: 'Access user information and profile data',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /userprofile/v1/users/@me',
+        'PATCH /userprofile/v1/users/@me',
+        'GET /userprofile/v1/users/{userId}'
+      ],
+      scopes: ['user-profile:read'],
+      rapsCommands: ['raps profile', 'raps profile update']
+    },
+    'oss': {
+      name: 'Object Storage Service (OSS)',
+      description: 'Cloud storage for CAD files and documents',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /oss/v2/buckets',
+        'POST /oss/v2/buckets',
+        'GET /oss/v2/buckets/{bucketKey}/details',
+        'PUT /oss/v2/buckets/{bucketKey}/objects/{objectName}',
+        'GET /oss/v2/buckets/{bucketKey}/objects/{objectName}',
+        'DELETE /oss/v2/buckets/{bucketKey}/objects/{objectName}',
+        'GET /oss/v2/buckets/{bucketKey}/objects',
+        'PUT /oss/v2/buckets/{bucketKey}/objects/{objectName}/resumable'
+      ],
+      scopes: ['bucket:create', 'bucket:read', 'data:create', 'data:read', 'data:write'],
+      rapsCommands: ['raps upload', 'raps download', 'raps bucket create', 'raps bucket list', 'raps bucket delete', 'raps object list']
+    },
+    'data-management': {
+      name: 'Data Management API',
+      description: 'Manage data across OSS and ACC/BIM 360',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /project/v1/hubs',
+        'GET /project/v1/hubs/{hub_id}/projects',
+        'GET /data/v1/projects/{project_id}',
+        'GET /data/v1/projects/{project_id}/folders/{folder_id}/contents',
+        'GET /data/v1/projects/{project_id}/items/{item_id}',
+        'POST /data/v1/projects/{project_id}/items',
+        'POST /data/v1/projects/{project_id}/versions'
+      ],
+      scopes: ['data:read', 'data:write', 'data:create'],
+      rapsCommands: ['raps dm hubs', 'raps dm projects', 'raps dm folders', 'raps dm items']
+    },
+    'model-derivative': {
+      name: 'Model Derivative',
+      description: 'File translation service for converting CAD files to web-viewable formats',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'POST /modelderivative/v2/designdata/job',
+        'GET /modelderivative/v2/designdata/{urn}/manifest',
+        'GET /modelderivative/v2/designdata/{urn}/metadata',
+        'GET /modelderivative/v2/designdata/{urn}/metadata/{guid}',
+        'GET /modelderivative/v2/designdata/{urn}/metadata/{guid}/properties',
+        'GET /modelderivative/v2/designdata/{urn}/thumbnail',
+        'DELETE /modelderivative/v2/designdata/{urn}/manifest'
+      ],
+      scopes: ['code:all', 'data:read'],
+      rapsCommands: ['raps translate', 'raps status', 'raps manifest', 'raps metadata', 'raps properties', 'raps thumbnail']
+    },
+    'viewer': {
+      name: 'Viewer',
+      description: 'Web-based 3D model viewer for translated files',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /modelderivative/v2/designdata/{urn}/manifest',
+        'GET /derivativeservice/v2/derivatives/{derivativeUrn}',
+        'POST /authentication/v2/token (viewables:read scope)'
+      ],
+      scopes: ['viewables:read'],
+      rapsCommands: ['raps view', 'raps viewer-token', 'raps viewer-urls']
+    },
+    'viewer-sdk': {
+      name: 'Viewer SDK',
+      description: 'JavaScript SDK for embedding 3D viewer in web applications',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'JavaScript SDK (client-side)',
+        'https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js'
+      ],
+      scopes: ['viewables:read'],
+      rapsCommands: ['raps viewer generate-html', 'raps viewer embed-code']
+    },
+    'design-automation': {
+      name: 'Design Automation',
+      description: 'Server-based automation for CAD applications',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /da/us-east/v3/engines',
+        'GET /da/us-east/v3/appbundles',
+        'POST /da/us-east/v3/appbundles',
+        'GET /da/us-east/v3/activities',
+        'POST /da/us-east/v3/activities',
+        'POST /da/us-east/v3/workitems',
+        'GET /da/us-east/v3/workitems/{id}'
+      ],
+      scopes: ['code:all', 'data:read', 'data:write'],
+      rapsCommands: ['raps da engines', 'raps da appbundles', 'raps da activities', 'raps da workitem create', 'raps da workitem status']
+    },
+    'da-autocad': {
+      name: 'AutoCAD Engine',
+      description: 'AutoCAD automation engine for Design Automation',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'Engine: Autodesk.AutoCAD+24',
+        'Commands: SCRIPT, NETLOAD, LISP',
+        'File types: .dwg, .dxf'
+      ],
+      scopes: ['code:all'],
+      rapsCommands: ['raps da run-autocad', 'raps da autocad-script']
+    },
+    'da-inventor': {
+      name: 'Inventor Engine',
+      description: 'Inventor automation engine for Design Automation',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'Engine: Autodesk.Inventor+2024',
+        'Commands: iLogic, Add-ins',
+        'File types: .ipt, .iam, .idw'
+      ],
+      scopes: ['code:all'],
+      rapsCommands: ['raps da run-inventor', 'raps da inventor-ilogic']
+    },
+    'da-revit': {
+      name: 'Revit Engine',
+      description: 'Revit automation engine for Design Automation',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'Engine: Autodesk.Revit+2024',
+        'Commands: Add-ins, Dynamo',
+        'File types: .rvt, .rfa, .rft'
+      ],
+      scopes: ['code:all'],
+      rapsCommands: ['raps da run-revit', 'raps da revit-addin', 'raps da revit-dynamo']
+    },
+    'da-3dsmax': {
+      name: '3ds Max Engine',
+      description: '3ds Max automation engine for Design Automation',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'Engine: Autodesk.3dsMax+2024',
+        'Commands: MaxScript, .NET',
+        'File types: .max, .3ds'
+      ],
+      scopes: ['code:all'],
+      rapsCommands: ['raps da run-3dsmax', 'raps da maxscript']
+    },
+    'acc-projects': {
+      name: 'ACC Projects',
+      description: 'Autodesk Construction Cloud project management',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /project/v1/hubs',
+        'GET /project/v1/hubs/{hub_id}/projects',
+        'GET /construction/admin/v1/projects/{project_id}',
+        'GET /construction/admin/v1/projects/{project_id}/users',
+        'POST /construction/admin/v1/projects/{project_id}/users',
+        'GET /construction/admin/v1/projects/{project_id}/companies'
+      ],
+      scopes: ['account:read', 'account:write'],
+      rapsCommands: ['raps acc projects', 'raps acc users', 'raps acc companies', 'raps acc create-project']
+    },
+    'acc-assets': {
+      name: 'ACC Assets',
+      description: 'Asset management in ACC projects',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /construction/assets/v2/projects/{project_id}/assets',
+        'POST /construction/assets/v2/projects/{project_id}/assets',
+        'GET /construction/assets/v2/projects/{project_id}/assets/{asset_id}',
+        'PATCH /construction/assets/v2/projects/{project_id}/assets/{asset_id}'
+      ],
+      scopes: ['account:read', 'account:write'],
+      rapsCommands: ['raps acc assets list', 'raps acc assets create', 'raps acc assets update']
+    },
+    'bim360-docs': {
+      name: 'BIM 360 Docs',
+      description: 'Document management in BIM 360',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /data/v1/projects/{project_id}/folders/{folder_id}/contents',
+        'GET /data/v1/projects/{project_id}/items/{item_id}',
+        'POST /data/v1/projects/{project_id}/items',
+        'GET /data/v1/projects/{project_id}/downloads'
+      ],
+      scopes: ['data:read', 'data:write'],
+      rapsCommands: ['raps bim360 folders', 'raps bim360 items', 'raps bim360 upload', 'raps bim360 download']
+    },
+    'acc-cost': {
+      name: 'ACC Cost Management',
+      description: 'Cost management and budgeting in ACC',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /construction/cost/v1/projects/{project_id}/budgets',
+        'POST /construction/cost/v1/projects/{project_id}/budgets',
+        'GET /construction/cost/v1/projects/{project_id}/contracts',
+        'GET /construction/cost/v1/projects/{project_id}/change-orders'
+      ],
+      scopes: ['account:read', 'account:write'],
+      rapsCommands: ['raps acc cost budgets', 'raps acc cost contracts', 'raps acc cost change-orders']
+    },
+    'reality-capture': {
+      name: 'Reality Capture',
+      description: 'Convert photos and point clouds to 3D models',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'POST /photo-to-3d/v1/photoscenes',
+        'GET /photo-to-3d/v1/photoscenes/{photoscene_id}',
+        'POST /photo-to-3d/v1/photoscenes/{photoscene_id}/photos',
+        'POST /photo-to-3d/v1/photoscenes/{photoscene_id}/processing',
+        'GET /photo-to-3d/v1/photoscenes/{photoscene_id}/progress'
+      ],
+      scopes: ['data:read', 'data:write', 'code:all'],
+      rapsCommands: ['raps reality create-scene', 'raps reality upload-photos', 'raps reality process', 'raps reality status']
+    },
+    'photo-scene': {
+      name: 'Photo to 3D',
+      description: 'Specific photo-to-3D processing service',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'POST /photo-to-3d/v1/photoscenes/{photoscene_id}/processing',
+        'GET /photo-to-3d/v1/photoscenes/{photoscene_id}/result'
+      ],
+      scopes: ['code:all'],
+      rapsCommands: ['raps photo-to-3d process', 'raps photo-to-3d download']
+    },
+    'webhooks': {
+      name: 'Webhooks',
+      description: 'Event notification system for APS services',
+      baseUrl: 'https://developer.api.autodesk.com',
+      endpoints: [
+        'GET /webhooks/v1/systems/{system}/events',
+        'GET /webhooks/v1/systems/{system}/hooks',
+        'POST /webhooks/v1/systems/{system}/hooks',
+        'DELETE /webhooks/v1/systems/{system}/hooks/{hook_id}',
+        'PUT /webhooks/v1/systems/{system}/hooks/{hook_id}'
+      ],
+      scopes: ['data:read', 'data:write'],
+      rapsCommands: ['raps webhooks list', 'raps webhooks create', 'raps webhooks delete', 'raps webhooks test']
+    }
+  };
+
+  class APSHierarchyGraph {
+    constructor(containerId) {
+      this.container = document.getElementById(containerId);
+      this.canvas = null;
+      this.ctx = null;
+      this.zoom = 1;
+      this.offsetX = 0;
+      this.offsetY = 0;
+      this.isDragging = false;
+      this.dragStartX = 0;
+      this.dragStartY = 0;
+      this.selectedNode = null;
+      this.showLabels = true;
+      this.animationFrame = null;
+      
+      this.init();
+    }
+    
+    init() {
+      this.createCanvas();
+      this.setupEventListeners();
+      this.render();
+      
+      // Hide loading state
+      document.getElementById('graph-loading').style.display = 'none';
+    }
+    
+    createCanvas() {
+      this.canvas = document.createElement('canvas');
+      this.canvas.width = this.container.offsetWidth;
+      this.canvas.height = this.container.offsetHeight;
+      this.canvas.style.cursor = 'grab';
+      this.container.appendChild(this.canvas);
+      
+      this.ctx = this.canvas.getContext('2d');
+      
+      // Handle high DPI displays
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.width = this.container.offsetWidth * dpr;
+      this.canvas.height = this.container.offsetHeight * dpr;
+      this.canvas.style.width = this.container.offsetWidth + 'px';
+      this.canvas.style.height = this.container.offsetHeight + 'px';
+      this.ctx.scale(dpr, dpr);
+    }
+    
+    setupEventListeners() {
+      // Mouse events
+      this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+      this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+      this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+      this.canvas.addEventListener('wheel', (e) => this.onWheel(e));
+      this.canvas.addEventListener('click', (e) => this.onClick(e));
+      
+      // Button events
+      document.getElementById('zoom-fit').addEventListener('click', () => this.fitToView());
+      document.getElementById('zoom-reset').addEventListener('click', () => this.resetZoom());
+      document.getElementById('toggle-labels').addEventListener('click', () => this.toggleLabels());
+      
+      // Window resize
+      window.addEventListener('resize', () => this.onResize());
+    }
+    
+    onMouseDown(e) {
+      this.isDragging = true;
+      this.dragStartX = e.offsetX;
+      this.dragStartY = e.offsetY;
+      this.canvas.style.cursor = 'grabbing';
+    }
+    
+    onMouseMove(e) {
+      if (this.isDragging) {
+        const deltaX = e.offsetX - this.dragStartX;
+        const deltaY = e.offsetY - this.dragStartY;
+        this.offsetX += deltaX;
+        this.offsetY += deltaY;
+        this.dragStartX = e.offsetX;
+        this.dragStartY = e.offsetY;
+        this.render();
+      }
+    }
+    
+    onMouseUp(e) {
+      this.isDragging = false;
+      this.canvas.style.cursor = 'grab';
+    }
+    
+    onWheel(e) {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const mouseX = e.offsetX;
+      const mouseY = e.offsetY;
+      
+      // Zoom towards mouse cursor
+      this.offsetX = mouseX - (mouseX - this.offsetX) * zoomFactor;
+      this.offsetY = mouseY - (mouseY - this.offsetY) * zoomFactor;
+      this.zoom *= zoomFactor;
+      
+      this.zoom = Math.max(0.1, Math.min(3, this.zoom));
+      this.render();
+    }
+    
+    onClick(e) {
+      const mouseX = (e.offsetX - this.offsetX) / this.zoom;
+      const mouseY = (e.offsetY - this.offsetY) / this.zoom;
+      
+      // Check if click is on a node
+      for (const node of apsServices.nodes) {
+        const distance = Math.sqrt(Math.pow(mouseX - node.x, 2) + Math.pow(mouseY - node.y, 2));
+        if (distance < 30) {
+          this.selectedNode = node.id;
+          this.showServiceDetails(node.id);
+          this.render();
+          return;
+        }
+      }
+      
+      this.selectedNode = null;
+      this.render();
+    }
+    
+    showServiceDetails(serviceId) {
+      const details = serviceDetails[serviceId];
+      if (!details) return;
+      
+      const detailsEl = document.getElementById('service-details');
+      detailsEl.innerHTML = `
+        <div class="bg-slate-800 rounded-lg p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <h4 class="font-semibold text-white text-xl">${details.name}</h4>
+            ${details.baseUrl ? `<span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">API</span>` : ''}
+          </div>
+          <p class="text-slate-300 mb-6">${details.description}</p>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- API Endpoints -->
+            <div>
+              <h5 class="font-medium text-rapeseed-400 mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 8.172V5L8 4z"/>
+                </svg>
+                API Endpoints:
+              </h5>
+              <div class="max-h-48 overflow-y-auto pr-2">
+                <ul class="text-sm text-slate-400 space-y-2">
+                  ${details.endpoints.map(endpoint => {
+                    const isHttpMethod = endpoint.match(/^(GET|POST|PUT|DELETE|PATCH)/);
+                    return `
+                      <li class="font-mono text-xs ${isHttpMethod ? 'bg-slate-700' : 'bg-slate-700/50'} px-3 py-2 rounded">
+                        ${isHttpMethod ? 
+                          `<span class="text-green-400">${endpoint.split(' ')[0]}</span> <span class="text-slate-200">${endpoint.substring(endpoint.indexOf(' ') + 1)}</span>` 
+                          : endpoint
+                        }
+                      </li>
+                    `;
+                  }).join('')}
+                </ul>
+              </div>
+            </div>
+            
+            <!-- OAuth Scopes & Commands -->
+            <div class="space-y-6">
+              <div>
+                <h5 class="font-medium text-rapeseed-400 mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                  </svg>
+                  OAuth Scopes:
+                </h5>
+                <ul class="text-sm text-slate-400 space-y-1">
+                  ${details.scopes.map(scope => `<li><code class="bg-slate-700 px-2 py-1 rounded text-cyan-300">${scope}</code></li>`).join('')}
+                </ul>
+              </div>
+              
+              <div>
+                <h5 class="font-medium text-rapeseed-400 mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  RAPS Commands:
+                </h5>
+                <div class="max-h-32 overflow-y-auto pr-2">
+                  <ul class="text-sm space-y-1">
+                    ${details.rapsCommands.map(cmd => `<li><code class="bg-slate-700 px-2 py-1 rounded text-green-300 text-xs">${cmd}</code></li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          ${details.baseUrl ? `
+            <div class="mt-4 pt-4 border-t border-slate-700">
+              <p class="text-xs text-slate-500">
+                <span class="font-medium">Base URL:</span> 
+                <code class="text-blue-400">${details.baseUrl}</code>
+              </p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+    
+    toggleLabels() {
+      this.showLabels = !this.showLabels;
+      this.render();
+    }
+    
+    fitToView() {
+      // Calculate bounding box of all nodes
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      
+      for (const node of apsServices.nodes) {
+        minX = Math.min(minX, node.x);
+        minY = Math.min(minY, node.y);
+        maxX = Math.max(maxX, node.x);
+        maxY = Math.max(maxY, node.y);
+      }
+      
+      const padding = 100;
+      const graphWidth = maxX - minX + padding * 2;
+      const graphHeight = maxY - minY + padding * 2;
+      
+      const scaleX = this.container.offsetWidth / graphWidth;
+      const scaleY = this.container.offsetHeight / graphHeight;
+      this.zoom = Math.min(scaleX, scaleY) * 0.8;
+      
+      this.offsetX = (this.container.offsetWidth - (maxX + minX) * this.zoom) / 2;
+      this.offsetY = (this.container.offsetHeight - (maxY + minY) * this.zoom) / 2;
+      
+      this.render();
+    }
+    
+    resetZoom() {
+      this.zoom = 1;
+      this.offsetX = 0;
+      this.offsetY = 0;
+      this.render();
+    }
+    
+    onResize() {
+      this.canvas.width = this.container.offsetWidth;
+      this.canvas.height = this.container.offsetHeight;
+      this.render();
+    }
+    
+    render() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      
+      this.ctx.save();
+      this.ctx.translate(this.offsetX, this.offsetY);
+      this.ctx.scale(this.zoom, this.zoom);
+      
+      // Draw edges first (behind nodes)
+      this.drawEdges();
+      
+      // Draw nodes
+      this.drawNodes();
+      
+      this.ctx.restore();
+    }
+    
+    drawEdges() {
+      for (const edge of apsServices.edges) {
+        const fromNode = apsServices.nodes.find(n => n.id === edge.from);
+        const toNode = apsServices.nodes.find(n => n.id === edge.to);
+        
+        if (!fromNode || !toNode) continue;
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(fromNode.x, fromNode.y);
+        this.ctx.lineTo(toNode.x, toNode.y);
+        
+        // Style based on edge type
+        switch (edge.type) {
+          case 'dependency':
+            this.ctx.strokeStyle = '#f5c542';
+            this.ctx.lineWidth = 2;
+            this.ctx.setLineDash([]);
+            break;
+          case 'integration':
+            this.ctx.strokeStyle = '#64748b';
+            this.ctx.lineWidth = 1;
+            this.ctx.setLineDash([5, 5]);
+            break;
+          case 'dataflow':
+            const gradient = this.ctx.createLinearGradient(fromNode.x, fromNode.y, toNode.x, toNode.y);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#10b981');
+            this.ctx.strokeStyle = gradient;
+            this.ctx.lineWidth = 3;
+            this.ctx.setLineDash([]);
+            break;
+        }
+        
+        this.ctx.stroke();
+        
+        // Draw arrow
+        this.drawArrow(fromNode, toNode);
+      }
+    }
+    
+    drawArrow(fromNode, toNode) {
+      const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
+      const arrowLength = 15;
+      const arrowAngle = Math.PI / 6;
+      
+      // Calculate arrow position (on edge of target node)
+      const nodeRadius = 25;
+      const arrowX = toNode.x - Math.cos(angle) * nodeRadius;
+      const arrowY = toNode.y - Math.sin(angle) * nodeRadius;
+      
+      this.ctx.beginPath();
+      this.ctx.moveTo(arrowX, arrowY);
+      this.ctx.lineTo(
+        arrowX - arrowLength * Math.cos(angle - arrowAngle),
+        arrowY - arrowLength * Math.sin(angle - arrowAngle)
+      );
+      this.ctx.moveTo(arrowX, arrowY);
+      this.ctx.lineTo(
+        arrowX - arrowLength * Math.cos(angle + arrowAngle),
+        arrowY - arrowLength * Math.sin(angle + arrowAngle)
+      );
+      this.ctx.stroke();
+    }
+    
+    drawNodes() {
+      for (const node of apsServices.nodes) {
+        // Node circle
+        this.ctx.beginPath();
+        this.ctx.arc(node.x, node.y, 25, 0, 2 * Math.PI);
+        
+        // Highlight selected node
+        if (this.selectedNode === node.id) {
+          this.ctx.fillStyle = node.color;
+          this.ctx.shadowColor = node.color;
+          this.ctx.shadowBlur = 20;
+          this.ctx.fill();
+          this.ctx.shadowBlur = 0;
+          
+          this.ctx.strokeStyle = '#ffffff';
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
+        } else {
+          this.ctx.fillStyle = node.color;
+          this.ctx.fill();
+          
+          this.ctx.strokeStyle = '#1e293b';
+          this.ctx.lineWidth = 2;
+          this.ctx.stroke();
+        }
+        
+        // Node label
+        if (this.showLabels) {
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          
+          // Handle multi-line labels
+          const lines = node.label.split('\n');
+          const lineHeight = 14;
+          const totalHeight = lines.length * lineHeight;
+          const startY = node.y + 40 + (totalHeight / 2) - lineHeight / 2;
+          
+          // Background for text
+          const maxWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
+          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+          this.ctx.fillRect(
+            node.x - maxWidth / 2 - 4,
+            startY - totalHeight / 2 - 2,
+            maxWidth + 8,
+            totalHeight + 4
+          );
+          
+          this.ctx.fillStyle = '#ffffff';
+          lines.forEach((line, index) => {
+            this.ctx.fillText(line, node.x, startY + (index * lineHeight));
+          });
+        }
+      }
+    }
+  }
+  
+  // Initialize the graph when the page loads
+  document.addEventListener('DOMContentLoaded', () => {
+    new APSHierarchyGraph('aps-hierarchy-graph');
+  });
+</script>
+</BaseLayout>

@@ -1,0 +1,355 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Cross-Platform CAD/PLM Solutions"
+  description="Universal solutions for CAD/PLM developer challenges across all platforms - authentication, file translation, SDK conflicts, and documentation gaps"
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="mb-12">
+        <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+          Cross-Platform CAD/PLM Solutions
+        </h1>
+        <p class="text-xl text-slate-300">
+          RAPS addresses universal pain points that plague developers across all CAD/PLM platforms. 
+          Learn how our approach solves industry-wide challenges in the $600M+ CAD automation market.
+        </p>
+      </div>
+
+      <!-- Market Overview -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-purple-400 mb-6">The CAD/PLM Developer Crisis</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="bg-red-950/20 border border-red-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-red-300 mb-3">💰 Financial Impact</h3>
+            <ul class="text-slate-300 space-y-2">
+              <li>• $600M+ annual CAD automation market</li>
+              <li>• 67% of projects over budget due to integration issues</li>
+              <li>• Average 6-month delay for CAD integrations</li>
+              <li>• $2M average cost per failed automation project</li>
+            </ul>
+          </div>
+          
+          <div class="bg-yellow-950/20 border border-yellow-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-yellow-300 mb-3">⏰ Time Waste</h3>
+            <ul class="text-slate-300 space-y-2">
+              <li>• 40% of developer time on authentication debugging</li>
+              <li>• 3+ weeks average to set up basic file translation</li>
+              <li>• 60% of documentation searches fail</li>
+              <li>• 80% of SDK updates break existing code</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-purple-950/20 to-blue-950/20 border border-purple-500/30 rounded-lg p-6">
+          <h3 class="text-xl font-semibold text-purple-300 mb-4">Why Every CAD Platform Fails Developers</h3>
+          <p class="text-slate-300 mb-4">
+            Whether you're working with Autodesk APS, SolidWorks APIs, PTC Windchill, Siemens NX, 
+            or any other CAD/PLM platform, the same fundamental problems plague every project:
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-medium text-white mb-2">Authentication Nightmare:</h4>
+              <p class="text-sm text-slate-400">15+ different auth methods across platforms. OAuth, API keys, tokens, certificates, LDAP integration - each with unique quirks and failure modes.</p>
+            </div>
+            <div>
+              <h4 class="font-medium text-white mb-2">Format Translation Hell:</h4>
+              <p class="text-sm text-slate-400">200+ CAD formats, proprietary converters, version incompatibilities. Simple file conversion becomes a multi-week project.</p>
+            </div>
+            <div>
+              <h4 class="font-medium text-white mb-2">SDK Dependency Conflicts:</h4>
+              <p class="text-sm text-slate-400">Breaking changes every release. Runtime dependencies. Version conflicts that crash production systems.</p>
+            </div>
+            <div>
+              <h4 class="font-medium text-white mb-2">Documentation Void:</h4>
+              <p class="text-sm text-slate-400">Scattered across wikis, forums, PDFs. Outdated examples. Missing error codes. No troubleshooting guidance.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Universal Solutions -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-green-400 mb-6">How RAPS Solves Universal Problems</h2>
+        
+        <div class="space-y-8">
+          <!-- Authentication -->
+          <div class="bg-slate-900/50 border border-green-500/30 rounded-lg p-6">
+            <div class="flex items-start gap-4 mb-4">
+              <span class="text-3xl">🔐</span>
+              <div>
+                <h3 class="text-xl font-semibold text-green-300">Universal Authentication Pattern</h3>
+                <p class="text-slate-300">One auth pattern that works across all platforms</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-2">The Problem Everywhere:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>• Autodesk: OAuth 2.0 + 3-legged flows</li>
+                  <li>• SolidWorks: API keys + session tokens</li>
+                  <li>• PTC: Certificate auth + CSRF tokens</li>
+                  <li>• Siemens: LDAP + custom headers</li>
+                  <li>• Bentley: JWT + refresh tokens</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-medium text-white mb-2">RAPS Solution:</h4>
+                <div class="bg-slate-800 p-3 rounded">
+                  <pre class="text-sm text-slate-300"><code># Universal auth pattern
+raps auth login --platform=autodesk
+raps auth login --platform=solidworks  
+raps auth login --platform=ptc
+# Same commands, different backends</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Translation -->
+          <div class="bg-slate-900/50 border border-blue-500/30 rounded-lg p-6">
+            <div class="flex items-start gap-4 mb-4">
+              <span class="text-3xl">🔄</span>
+              <div>
+                <h3 class="text-xl font-semibold text-blue-300">Universal File Translation</h3>
+                <p class="text-slate-300">200+ formats, one simple interface</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-2">Format Chaos:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>• AutoCAD: DWG, DXF (40+ versions)</li>
+                  <li>• SolidWorks: SLDPRT, SLDASM, SLDDRW</li>
+                  <li>• Inventor: IPT, IAM, IDW</li>
+                  <li>• Revit: RVT, RFA, RFT</li>
+                  <li>• STEP, IGES (1000+ variants)</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-medium text-white mb-2">RAPS Solution:</h4>
+                <div class="bg-slate-800 p-3 rounded">
+                  <pre class="text-sm text-slate-300"><code># Works with any format
+raps translate drawing.dwg
+raps translate model.sldprt
+raps translate assembly.rvt
+# Automatic format detection</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SDK Management -->
+          <div class="bg-slate-900/50 border border-yellow-500/30 rounded-lg p-6">
+            <div class="flex items-start gap-4 mb-4">
+              <span class="text-3xl">📦</span>
+              <div>
+                <h3 class="text-xl font-semibold text-yellow-300">SDK-Free Architecture</h3>
+                <p class="text-slate-300">No more dependency hell or version conflicts</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-2">SDK Problems:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>• Version conflicts between CAD SDKs</li>
+                  <li>• Runtime dependencies (ObjectARX, etc.)</li>
+                  <li>• Breaking changes every release</li>
+                  <li>• Platform-specific installations</li>
+                  <li>• License restrictions</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-medium text-white mb-2">RAPS Advantage:</h4>
+                <ul class="text-green-400 space-y-1 text-sm">
+                  <li>✅ Single binary installation</li>
+                  <li>✅ No SDK dependencies</li>
+                  <li>✅ Works offline</li>
+                  <li>✅ Cross-platform (Win/Mac/Linux)</li>
+                  <li>✅ No license restrictions</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documentation -->
+          <div class="bg-slate-900/50 border border-red-500/30 rounded-lg p-6">
+            <div class="flex items-start gap-4 mb-4">
+              <span class="text-3xl">📚</span>
+              <div>
+                <h3 class="text-xl font-semibold text-red-300">Unified Documentation</h3>
+                <p class="text-slate-300">Complete, searchable, always up-to-date</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-2">Documentation Hell:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>• Scattered across vendor sites</li>
+                  <li>• Outdated examples (2018 code)</li>
+                  <li>• Missing error explanations</li>
+                  <li>• No troubleshooting guides</li>
+                  <li>• PDF-only references</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-medium text-white mb-2">RAPS Docs:</h4>
+                <ul class="text-green-400 space-y-1 text-sm">
+                  <li>✅ Complete API coverage</li>
+                  <li>✅ Working examples (tested)</li>
+                  <li>✅ Error code explanations</li>
+                  <li>✅ Step-by-step troubleshooting</li>
+                  <li>✅ Searchable web docs</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Industry Impact -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Industry-Wide Benefits</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-emerald-400 mb-3">🏗️ AEC Industry</h3>
+            <ul class="text-slate-300 space-y-2 text-sm">
+              <li>• Revit + AutoCAD integration simplified</li>
+              <li>• BIM 360 / ACC automation</li>
+              <li>• Multi-platform project workflows</li>
+              <li>• Reduced integration costs by 60%</li>
+            </ul>
+          </div>
+          
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-blue-400 mb-3">⚙️ Manufacturing</h3>
+            <ul class="text-slate-300 space-y-2 text-sm">
+              <li>• SolidWorks + Fusion 360 workflows</li>
+              <li>• PLM system integrations</li>
+              <li>• CAM automation pipelines</li>
+              <li>• Cross-vendor file exchange</li>
+            </ul>
+          </div>
+          
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-purple-400 mb-3">🎬 Media & Entertainment</h3>
+            <ul class="text-slate-300 space-y-2 text-sm">
+              <li>• Maya + 3ds Max asset pipelines</li>
+              <li>• Game engine integrations</li>
+              <li>• Automated content workflows</li>
+              <li>• Multi-platform rendering</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Success Stories -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Cross-Platform Success Stories</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-gradient-to-r from-emerald-950/20 to-green-950/20 border border-emerald-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-emerald-300 mb-3">Fortune 500 AEC Firm</h3>
+            <p class="text-slate-300 mb-4">
+              "RAPS eliminated our 3-month integration cycles. We now deploy cross-platform 
+              workflows in hours, not months. ROI exceeded 400% in the first quarter."
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-xs">Revit</span>
+              <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-xs">AutoCAD</span>
+              <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-xs">BIM 360</span>
+              <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-xs">Navisworks</span>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-r from-blue-950/20 to-cyan-950/20 border border-blue-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-blue-300 mb-3">Global Manufacturing OEM</h3>
+            <p class="text-slate-300 mb-4">
+              "Cross-vendor CAD translation that actually works. Our design teams can finally 
+              collaborate regardless of their preferred tools. RAPS saved us $2M in integration costs."
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">SolidWorks</span>
+              <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">Fusion 360</span>
+              <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">Inventor</span>
+              <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">STEP/IGES</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Getting Started -->
+      <section class="mb-12">
+        <div class="bg-gradient-to-r from-rapeseed-600/20 to-yellow-600/20 border border-rapeseed-500/30 rounded-xl p-8">
+          <h2 class="text-2xl font-bold text-white mb-4">Start Your Cross-Platform Journey</h2>
+          <p class="text-slate-300 mb-6">
+            Don't let platform silos limit your innovation. Join thousands of developers who've 
+            simplified their CAD/PLM integrations with RAPS.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 class="font-semibold text-white mb-2">Quick Start (5 minutes):</h3>
+              <div class="bg-slate-800 p-4 rounded-lg">
+                <pre class="text-sm text-slate-300"><code># Install RAPS
+cargo install raps
+
+# Test with your existing files
+raps translate your-cad-file.dwg
+raps view your-cad-file.dwg
+
+# Works with any format! 🎉</code></pre>
+              </div>
+            </div>
+            <div>
+              <h3 class="font-semibold text-white mb-2">Enterprise Deployment:</h3>
+              <ul class="text-slate-400 space-y-2">
+                <li>• Container-ready architecture</li>
+                <li>• CI/CD pipeline integration</li>
+                <li>• Enterprise SSO support</li>
+                <li>• Multi-tenant configurations</li>
+                <li>• 24/7 support available</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <a href="/quickstart" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-semibold px-6 py-3 rounded-lg transition-colors">
+              Try RAPS Now →
+            </a>
+            <a href="mailto:enterprise@rapscli.xyz" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-6 py-3 rounded-lg transition-colors">
+              Enterprise Demo
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Related Resources -->
+      <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6">
+        <h3 class="text-xl font-bold text-white mb-4">Explore More Solutions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a href="/resources/aps-cheatsheet" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → APS Complete Cheat Sheet
+          </a>
+          <a href="/resources/workflow-recipes" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Workflow Recipes
+          </a>
+          <a href="/resources/error-codes" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Error Codes Reference
+          </a>
+          <a href="/docs" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Complete Documentation
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

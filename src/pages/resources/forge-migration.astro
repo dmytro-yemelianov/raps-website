@@ -1,0 +1,332 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Forge to APS Migration Guide"
+  description="Complete migration guide from Forge to Autodesk Platform Services with endpoint mapping and automated scripts"
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="mb-12">
+        <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+          Forge to APS Migration Guide
+        </h1>
+        <p class="text-xl text-slate-300">
+          Complete migration guide from Forge Platform to Autodesk Platform Services (APS). Updated endpoints, authentication changes, and automation tools.
+        </p>
+      </div>
+
+      <!-- Migration Overview -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-blue-400 mb-6">Migration Overview</h2>
+        
+        <div class="bg-blue-950/20 border border-blue-500/30 rounded-lg p-6 mb-6">
+          <div class="flex items-start gap-4">
+            <span class="text-3xl">🚀</span>
+            <div>
+              <h3 class="font-semibold text-blue-300 mb-2">Why Migrate?</h3>
+              <ul class="text-slate-300 space-y-2">
+                <li>• Forge API deprecation timeline: Legacy endpoints sunset December 2024</li>
+                <li>• Improved performance and reliability with APS</li>
+                <li>• New features and enhanced security</li>
+                <li>• Future-proof your applications</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-yellow-950/20 border border-yellow-500/30 rounded-lg p-6">
+          <div class="flex items-start gap-4">
+            <span class="text-3xl">⚠️</span>
+            <div>
+              <h3 class="font-semibold text-yellow-300 mb-2">Breaking Changes</h3>
+              <ul class="text-slate-300 space-y-2">
+                <li>• Base URL change: <code class="bg-slate-800 px-2 py-1 rounded">developer.api.autodesk.com</code> → <code class="bg-slate-800 px-2 py-1 rounded">developer.api.autodesk.com</code></li>
+                <li>• Some endpoint paths have changed</li>
+                <li>• OAuth flow improvements (backward compatible)</li>
+                <li>• Response format changes for certain APIs</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Endpoint Mapping -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Endpoint Mapping</h2>
+        
+        <div class="space-y-6">
+          <!-- Authentication -->
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-rapeseed-400 mb-4">Authentication</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-600">
+                    <th class="text-left py-2 text-slate-300">Forge (Old)</th>
+                    <th class="text-left py-2 text-slate-300">APS (New)</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-400">
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">POST /authentication/v1/authenticate</td>
+                    <td class="py-2 font-mono text-green-400">POST /authentication/v2/token</td>
+                  </tr>
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">POST /authentication/v1/refreshtoken</td>
+                    <td class="py-2 font-mono text-green-400">POST /authentication/v2/token</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Data Management -->
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-rapeseed-400 mb-4">Data Management</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-600">
+                    <th class="text-left py-2 text-slate-300">Forge (Old)</th>
+                    <th class="text-left py-2 text-slate-300">APS (New)</th>
+                    <th class="text-left py-2 text-slate-300">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-400">
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">GET /oss/v2/buckets</td>
+                    <td class="py-2 font-mono text-green-400">GET /oss/v2/buckets</td>
+                    <td class="py-2"><span class="bg-green-600 text-white px-2 py-1 rounded text-xs">Same</span></td>
+                  </tr>
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">POST /oss/v2/buckets</td>
+                    <td class="py-2 font-mono text-green-400">POST /oss/v2/buckets</td>
+                    <td class="py-2"><span class="bg-green-600 text-white px-2 py-1 rounded text-xs">Same</span></td>
+                  </tr>
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">PUT /oss/v2/buckets/{bucket}/objects/{object}</td>
+                    <td class="py-2 font-mono text-green-400">PUT /oss/v2/buckets/{bucket}/objects/{object}</td>
+                    <td class="py-2"><span class="bg-green-600 text-white px-2 py-1 rounded text-xs">Same</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Model Derivative -->
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-rapeseed-400 mb-4">Model Derivative</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-600">
+                    <th class="text-left py-2 text-slate-300">Forge (Old)</th>
+                    <th class="text-left py-2 text-slate-300">APS (New)</th>
+                    <th class="text-left py-2 text-slate-300">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-400">
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">POST /modelderivative/v2/designdata/job</td>
+                    <td class="py-2 font-mono text-green-400">POST /modelderivative/v2/designdata/job</td>
+                    <td class="py-2"><span class="bg-green-600 text-white px-2 py-1 rounded text-xs">Same</span></td>
+                  </tr>
+                  <tr class="border-b border-slate-700">
+                    <td class="py-2 font-mono">GET /modelderivative/v2/designdata/{urn}/manifest</td>
+                    <td class="py-2 font-mono text-green-400">GET /modelderivative/v2/designdata/{urn}/manifest</td>
+                    <td class="py-2"><span class="bg-green-600 text-white px-2 py-1 rounded text-xs">Same</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Migration Steps -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Migration Steps</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Step 1: Update Base URLs</h3>
+            <p class="text-slate-300 mb-4">
+              The primary change is ensuring you're using the correct base URL. Most endpoints remain the same.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">Before (Forge):</h4>
+              <pre class="text-sm text-slate-300 mb-4"><code>const BASE_URL = 'https://developer.api.autodesk.com';</code></pre>
+              
+              <h4 class="font-medium text-rapeseed-400 mb-2">After (APS):</h4>
+              <pre class="text-sm text-slate-300"><code>const BASE_URL = 'https://developer.api.autodesk.com';</code></pre>
+            </div>
+            <div class="mt-4 p-3 bg-green-950/20 border border-green-600/30 rounded">
+              <p class="text-green-300 text-sm">✅ Good news: The base URL is the same! Most of your code won't need changes.</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Step 2: Update Authentication</h3>
+            <p class="text-slate-300 mb-4">
+              OAuth flows are backward compatible, but you should update to the v2 endpoints for better performance.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Migration (Recommended):</h4>
+              <pre class="text-sm text-slate-300"><code># Install RAPS for automatic APS compatibility
+cargo install raps
+
+# Test your existing credentials
+raps auth test
+
+# If you have Forge credentials, they work with APS
+raps auth login</code></pre>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Step 3: Test Your Application</h3>
+            <p class="text-slate-300 mb-4">
+              Most Forge applications work unchanged with APS. Test core workflows to ensure compatibility.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">Testing Checklist:</h4>
+              <pre class="text-sm text-slate-300"><code># Test authentication
+raps auth test
+
+# Test file upload
+raps upload test-file.dwg
+
+# Test translation
+raps translate test-file.dwg
+
+# Test viewing
+raps view test-file.dwg</code></pre>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Step 4: Update Error Handling</h3>
+            <p class="text-slate-300 mb-4">
+              Error codes and messages remain largely the same. Review our error codes reference for any changes.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <pre class="text-sm text-slate-300"><code># Check for any new error patterns
+raps --verbose your-command
+
+# See comprehensive error reference
+# Visit: /resources/error-codes</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Automated Migration -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-green-400 mb-6">Automated Migration with RAPS</h2>
+        
+        <div class="bg-green-950/20 border border-green-500/30 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-green-300 mb-4">Zero-Downtime Migration</h3>
+          <p class="text-slate-300 mb-4">
+            RAPS handles the migration automatically. Your existing Forge credentials and workflows work immediately with APS.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h4 class="font-medium text-white mb-2">What RAPS Handles:</h4>
+              <ul class="text-slate-400 space-y-1">
+                <li>✅ Automatic endpoint routing</li>
+                <li>✅ Token compatibility</li>
+                <li>✅ Error code translation</li>
+                <li>✅ Rate limit handling</li>
+                <li>✅ Region management</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-medium text-white mb-2">What You Need to Do:</h4>
+              <ul class="text-slate-400 space-y-1">
+                <li>📦 Install RAPS</li>
+                <li>🔑 Import existing credentials</li>
+                <li>🧪 Test your workflows</li>
+                <li>🚀 Deploy with confidence</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="bg-slate-800 p-4 rounded-lg">
+            <h4 class="font-medium text-rapeseed-400 mb-2">Quick Start:</h4>
+            <pre class="text-sm text-slate-300"><code># Install RAPS
+cargo install raps
+
+# Import your existing Forge app credentials
+raps auth login
+
+# Test everything works
+raps auth test
+raps bucket list
+raps translate --help
+
+# You're migrated! 🎉</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Troubleshooting -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-red-400 mb-6">Migration Troubleshooting</h2>
+        
+        <div class="space-y-4">
+          <details class="bg-slate-900/50 border border-slate-700 rounded-lg">
+            <summary class="p-4 cursor-pointer font-medium text-white hover:text-rapeseed-400">
+              My OAuth tokens stopped working
+            </summary>
+            <div class="p-4 pt-0 text-slate-300">
+              <p class="mb-2">This usually means you're hitting deprecated endpoints. Update to APS endpoints:</p>
+              <pre class="text-sm bg-slate-800 p-3 rounded"><code>raps auth login --force-refresh</code></pre>
+            </div>
+          </details>
+
+          <details class="bg-slate-900/50 border border-slate-700 rounded-lg">
+            <summary class="p-4 cursor-pointer font-medium text-white hover:text-rapeseed-400">
+              Getting 404 errors on API calls
+            </summary>
+            <div class="p-4 pt-0 text-slate-300">
+              <p class="mb-2">Check if you're using the correct base URL and endpoint paths. See the mapping table above.</p>
+              <pre class="text-sm bg-slate-800 p-3 rounded"><code>raps --verbose &lt;your-command&gt;  # Debug API calls</code></pre>
+            </div>
+          </details>
+
+          <details class="bg-slate-900/50 border border-slate-700 rounded-lg">
+            <summary class="p-4 cursor-pointer font-medium text-white hover:text-rapeseed-400">
+              Performance issues after migration
+            </summary>
+            <div class="p-4 pt-0 text-slate-300">
+              <p class="mb-2">APS has updated rate limits. Use RAPS built-in retry logic:</p>
+              <pre class="text-sm bg-slate-800 p-3 rounded"><code>raps --retry-on-rate-limit &lt;your-command&gt;</code></pre>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Related Resources -->
+      <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6">
+        <h3 class="text-xl font-bold text-white mb-4">Related Resources</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a href="/resources/error-codes" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → APS Error Codes Reference
+          </a>
+          <a href="/docs/authentication" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Authentication Guide
+          </a>
+          <a href="/tools/token-decoder" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Token Decoder Tool
+          </a>
+          <a href="/quickstart" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → RAPS Quick Start
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

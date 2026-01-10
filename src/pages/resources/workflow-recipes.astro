@@ -1,0 +1,485 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Workflow Recipes"
+  description="Copy-paste ready workflows for common APS scenarios: upload-translate-view, property extraction, batch processing, and ACC project automation"
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="mb-12">
+        <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+          Workflow Recipes
+        </h1>
+        <p class="text-xl text-slate-300">
+          Copy-paste ready workflows for common APS scenarios. Real-world patterns that you can 
+          adapt and customize for your specific use cases.
+        </p>
+      </div>
+
+      <!-- Quick Start Recipes -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-green-400 mb-6">Quick Start Workflows</h2>
+        
+        <div class="space-y-8">
+          <!-- Upload-Translate-View -->
+          <div class="bg-slate-900/50 border border-green-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-green-300 mb-4">Upload → Translate → View</h3>
+            <p class="text-slate-300 mb-4">
+              The most common APS workflow: upload a CAD file, translate it, and get the viewer-ready result.
+            </p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-3">RAPS Commands:</h4>
+                <div class="bg-slate-800 p-4 rounded-lg">
+                  <pre class="text-sm text-slate-300"><code># One-line solution
+raps upload-and-translate myfile.dwg
+
+# Or step by step
+raps upload myfile.dwg
+raps translate myfile.dwg
+raps view myfile.dwg</code></pre>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="font-medium text-white mb-3">What happens:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>1. File uploaded to OSS bucket</li>
+                  <li>2. Translation job submitted</li>
+                  <li>3. Progress monitored automatically</li>
+                  <li>4. Viewer URLs returned</li>
+                  <li>5. Ready to embed in your app!</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Processing -->
+          <div class="bg-slate-900/50 border border-blue-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-blue-300 mb-4">Batch File Processing</h3>
+            <p class="text-slate-300 mb-4">
+              Process multiple files efficiently with rate limiting and progress tracking.
+            </p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-3">RAPS Commands:</h4>
+                <div class="bg-slate-800 p-4 rounded-lg">
+                  <pre class="text-sm text-slate-300"><code># Process all CAD files in directory
+raps batch translate ./cad-files/
+
+# With concurrency control
+raps batch translate ./cad-files/ --max-concurrent=3
+
+# Include subdirectories
+raps batch translate ./project/ --recursive</code></pre>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="font-medium text-white mb-3">Features:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>• Automatic rate limiting</li>
+                  <li>• Progress tracking</li>
+                  <li>• Retry on failures</li>
+                  <li>• Resume interrupted jobs</li>
+                  <li>• Detailed reporting</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Property Extraction -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-6">Data Extraction Workflows</h2>
+        
+        <div class="space-y-8">
+          <!-- Basic Properties -->
+          <div class="bg-slate-900/50 border border-yellow-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-yellow-300 mb-4">Extract File Properties</h3>
+            <p class="text-slate-300 mb-4">
+              Get metadata, properties, and geometry information from translated models.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># Extract all properties to JSON
+raps extract properties myfile.dwg --output=properties.json
+
+# Get specific property types
+raps extract properties myfile.dwg --type=metadata,geometry
+
+# Extract to CSV for Excel analysis
+raps extract properties myfile.dwg --format=csv --output=report.csv</code></pre>
+            </div>
+
+            <div class="text-sm text-slate-400">
+              <strong>Supported formats:</strong> JSON, CSV, XML, YAML
+            </div>
+          </div>
+
+          <!-- BOM Extraction -->
+          <div class="bg-slate-900/50 border border-orange-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-orange-300 mb-4">Bill of Materials (BOM) Export</h3>
+            <p class="text-slate-300 mb-4">
+              Extract part lists and quantities from assembly models.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># Generate BOM from assembly
+raps extract bom assembly.iam --output=bom.xlsx
+
+# Include custom properties
+raps extract bom assembly.iam --include-properties="Material,PartNumber,Cost"
+
+# Group by material
+raps extract bom assembly.iam --group-by=Material</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACC Integration -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-purple-400 mb-6">ACC/BIM 360 Workflows</h2>
+        
+        <div class="space-y-8">
+          <!-- Project Sync -->
+          <div class="bg-slate-900/50 border border-purple-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-purple-300 mb-4">Project File Synchronization</h3>
+            <p class="text-slate-300 mb-4">
+              Keep local files in sync with ACC projects and automate version control.
+            </p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-medium text-white mb-3">Setup & Sync:</h4>
+                <div class="bg-slate-800 p-4 rounded-lg">
+                  <pre class="text-sm text-slate-300"><code># List available projects
+raps account projects
+
+# Sync project to local directory
+raps sync project-123 ./local-project/
+
+# Watch for changes (continuous sync)
+raps sync project-123 ./local-project/ --watch</code></pre>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="font-medium text-white mb-3">Automation Options:</h4>
+                <ul class="text-slate-400 space-y-1 text-sm">
+                  <li>• Two-way synchronization</li>
+                  <li>• Conflict resolution</li>
+                  <li>• Version history tracking</li>
+                  <li>• Selective file filtering</li>
+                  <li>• Webhook notifications</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Automated Publishing -->
+          <div class="bg-slate-900/50 border border-pink-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-pink-300 mb-4">Automated Model Publishing</h3>
+            <p class="text-slate-300 mb-4">
+              Automatically publish and translate models when they're updated in ACC.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># Set up automated publishing for a project
+raps workflow create auto-publish \
+  --project=project-123 \
+  --trigger=file-updated \
+  --action=translate
+
+# Check workflow status
+raps workflow status auto-publish
+
+# View processing logs
+raps workflow logs auto-publish</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CI/CD Integration -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-cyan-400 mb-6">CI/CD & Automation</h2>
+        
+        <div class="space-y-8">
+          <!-- GitHub Actions -->
+          <div class="bg-slate-900/50 border border-cyan-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-cyan-300 mb-4">GitHub Actions Workflow</h3>
+            <p class="text-slate-300 mb-4">
+              Automatically process CAD files when they're committed to your repository.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># .github/workflows/cad-processing.yml
+name: Process CAD Files
+on:
+  push:
+    paths: ['**.dwg', '**.step', '**.rvt']
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dmytro-yemelianov/raps-action@v1
+      
+      - name: Process changed CAD files
+        run: |
+          raps batch translate ./changed-files/
+          raps generate thumbnails ./changed-files/
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}</code></pre>
+            </div>
+          </div>
+
+          <!-- Jenkins Pipeline -->
+          <div class="bg-slate-900/50 border border-emerald-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-emerald-300 mb-4">Jenkins Pipeline</h3>
+            <p class="text-slate-300 mb-4">
+              Enterprise-grade CAD processing pipeline with Jenkins.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code>// Jenkinsfile
+pipeline {
+    agent any
+    
+    stages {
+        stage('CAD Processing') {
+            steps {
+                script {
+                    sh 'raps auth login'
+                    sh 'raps batch translate ./cad-files/ --max-concurrent=5'
+                    sh 'raps extract properties ./cad-files/ --format=json'
+                }
+            }
+        }
+        
+        stage('Generate Reports') {
+            steps {
+                sh 'raps generate report --format=html --output=reports/'
+            }
+        }
+    }
+    
+    post {
+        always {
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'reports',
+                reportFiles: 'index.html',
+                reportName: 'CAD Processing Report'
+            ])
+        }
+    }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Advanced Patterns -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-red-400 mb-6">Advanced Workflow Patterns</h2>
+        
+        <div class="space-y-8">
+          <!-- Error Recovery -->
+          <div class="bg-slate-900/50 border border-red-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-red-300 mb-4">Robust Error Handling</h3>
+            <p class="text-slate-300 mb-4">
+              Production-ready workflows with comprehensive error handling and recovery.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># Retry failed translations with exponential backoff
+raps translate myfile.dwg \
+  --retry-attempts=5 \
+  --retry-delay=30s \
+  --retry-on-rate-limit
+
+# Validate files before processing
+raps validate ./input-files/
+raps translate ./input-files/ --skip-invalid
+
+# Comprehensive logging
+raps translate ./files/ \
+  --log-level=debug \
+  --log-file=processing.log \
+  --progress-file=progress.json</code></pre>
+            </div>
+          </div>
+
+          <!-- Custom Webhooks -->
+          <div class="bg-slate-900/50 border border-indigo-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-indigo-300 mb-4">Webhook Integration</h3>
+            <p class="text-slate-300 mb-4">
+              Integrate RAPS with your existing systems using webhooks and callbacks.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># Send webhook on completion
+raps translate myfile.dwg \
+  --webhook-url=https://api.myapp.com/cad-complete \
+  --webhook-auth="Bearer $API_TOKEN"
+
+# Custom webhook payload
+raps translate myfile.dwg \
+  --webhook-url=https://api.myapp.com/notify \
+  --webhook-data='{"project":"123","user":"john.doe"}'</code></pre>
+            </div>
+          </div>
+
+          <!-- Performance Optimization -->
+          <div class="bg-slate-900/50 border border-orange-500/30 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-orange-300 mb-4">Performance Optimization</h3>
+            <p class="text-slate-300 mb-4">
+              Optimize processing speed and resource usage for large-scale operations.
+            </p>
+            
+            <div class="bg-slate-800 p-4 rounded-lg mb-4">
+              <pre class="text-sm text-slate-300"><code># Optimize for speed
+raps batch translate ./files/ \
+  --max-concurrent=10 \
+  --region=US \
+  --cache-enabled \
+  --skip-thumbnails
+
+# Optimize for cost (slower but cheaper)
+raps batch translate ./files/ \
+  --max-concurrent=2 \
+  --compress-uploads \
+  --delete-source-after-translation
+
+# Monitor resource usage
+raps batch translate ./files/ \
+  --metrics-enabled \
+  --metrics-endpoint=https://metrics.myapp.com/</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Custom Scripts -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Ready-to-Use Scripts</h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-3">Daily Backup Script</h3>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <pre class="text-sm text-slate-300"><code>#!/bin/bash
+# daily-backup.sh
+
+DATE=$(date +%Y%m%d)
+BACKUP_DIR="./backups/$DATE"
+
+# Download all project files
+raps sync project-123 "$BACKUP_DIR"
+
+# Create thumbnails for quick preview
+raps generate thumbnails "$BACKUP_DIR"
+
+# Compress for storage
+tar -czf "backup-$DATE.tar.gz" "$BACKUP_DIR"
+
+echo "Backup completed: backup-$DATE.tar.gz"</code></pre>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-3">Quality Check Pipeline</h3>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <pre class="text-sm text-slate-300"><code>#!/bin/bash
+# quality-check.sh
+
+FILE=$1
+
+# Validate file structure
+if raps validate "$FILE"; then
+    echo "✓ File validation passed"
+else
+    echo "✗ File validation failed"
+    exit 1
+fi
+
+# Attempt translation
+if raps translate "$FILE" --timeout=300s; then
+    echo "✓ Translation successful"
+    
+    # Extract properties for analysis
+    raps extract properties "$FILE" \
+        --output="$FILE.properties.json"
+    
+    echo "✓ Quality check completed"
+else
+    echo "✗ Translation failed"
+    exit 1
+fi</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Best Practices -->
+      <section class="mb-12">
+        <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6">
+          <h2 class="text-xl font-bold text-white mb-4">Workflow Best Practices</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="font-semibold text-rapeseed-400 mb-2">Performance:</h3>
+              <ul class="text-slate-300 space-y-1 text-sm">
+                <li>• Use appropriate concurrency limits</li>
+                <li>• Enable caching for repeated operations</li>
+                <li>• Choose optimal regions for your users</li>
+                <li>• Monitor rate limits and adjust accordingly</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-rapeseed-400 mb-2">Reliability:</h3>
+              <ul class="text-slate-300 space-y-1 text-sm">
+                <li>• Always validate files before processing</li>
+                <li>• Implement comprehensive error handling</li>
+                <li>• Use retry logic with exponential backoff</li>
+                <li>• Log everything for debugging</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Related Resources -->
+      <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6">
+        <h3 class="text-xl font-bold text-white mb-4">Related Resources</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a href="/docs/commands" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Complete Command Reference
+          </a>
+          <a href="/resources/error-codes" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Error Codes & Troubleshooting
+          </a>
+          <a href="/docs/mode-github-actions" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → GitHub Actions Integration
+          </a>
+          <a href="/resources/aps-cheatsheet" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → APS API Cheat Sheet
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -50,10 +50,10 @@ export default {
         },
       },
       fontFamily: {
-        // Distinctive typography - Satoshi for headlines, General Sans for body
-        sans: ['General Sans', 'system-ui', 'sans-serif'],
-        display: ['Satoshi', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        // System fonts for optimal performance
+        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
+        display: ['ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
       },
       typography: {
         DEFAULT: {

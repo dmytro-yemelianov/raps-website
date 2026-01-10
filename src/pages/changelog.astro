@@ -4,6 +4,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '3.8.0',
+    date: '2026-01-10',
+    highlights: ['Interactive Shell', 'Rust 2024 Edition', 'TAB Completion', 'Parameter Hints'],
+    type: 'minor',
+    changes: {
+      added: [
+        'Interactive Shell mode with REPL for executing commands without retyping `raps`',
+        'TAB completion for commands, subcommands, and arguments',
+        'Parameter hints showing available options as you type',
+        'Command history with arrow key navigation',
+        'Fuzzy search for command discovery',
+      ],
+      changed: [
+        'Migrated to Rust 2024 Edition for improved language features',
+        'Updated minimum supported Rust version (MSRV) to 1.88',
+        'Enhanced MCP server stability with better argument validation',
+        'Improved error messages across all commands',
+      ],
+      fixed: [
+        'MCP server tool invocation with stricter argument validation',
+        'Cached APS client instances to reduce lock contention',
+        'Output format validation in MCP tools',
+      ],
+    },
+  },
+  {
     version: '3.7.0',
     date: '2026-01-07',
     highlights: ['Major Security Improvements', 'Performance Boost', 'Parallel Uploads', 'Secure Token Storage'],

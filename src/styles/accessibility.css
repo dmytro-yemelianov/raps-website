@@ -1,0 +1,150 @@
+/* Accessibility Improvements */
+
+/* Better focus indicators for keyboard navigation */
+*:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+*:focus-visible {
+  outline: 2px solid #facc15; /* rapeseed-400 */
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+
+/* Ensure interactive elements have minimum size for touch */
+button,
+a,
+input,
+textarea,
+select {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Small buttons/links exception */
+.text-xs,
+.text-sm {
+  min-height: 32px;
+}
+
+/* Better form field focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #facc15;
+  outline-offset: 0;
+  border-color: #facc15;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.1);
+}
+
+/* Ensure sufficient color contrast */
+.text-slate-500 {
+  color: #94a3b8; /* Ensure AA compliance */
+}
+
+.text-slate-400 {
+  color: #cbd5e1; /* Better contrast on dark backgrounds */
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #facc15;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error states */
+.error {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.error-message {
+  color: #f87171;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Success states */
+.success {
+  border-color: #22c55e !important;
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.success-message {
+  color: #86efac;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  * {
+    border-width: 2px !important;
+  }
+  
+  .text-slate-400,
+  .text-slate-500 {
+    color: #e2e8f0;
+  }
+  
+  button,
+  a {
+    text-decoration: underline;
+  }
+}
+
+/* Ensure images have alt text indicator in development */
+img:not([alt])::after {
+  content: "Missing alt text";
+  position: absolute;
+  background: red;
+  color: white;
+  padding: 4px;
+  font-size: 12px;
+}

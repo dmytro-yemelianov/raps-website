@@ -1,0 +1,203 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="APS Error Codes Reference"
+  description="Complete reference guide for Autodesk Platform Services error codes with solutions and RAPS commands"
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="mb-12">
+        <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+          APS Error Codes Reference
+        </h1>
+        <p class="text-xl text-slate-300">
+          Complete guide to APS error codes with causes, solutions, and RAPS commands to prevent or resolve issues.
+        </p>
+      </div>
+
+      <!-- Translation Errors -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-red-400 mb-6">Translation Errors</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-slate-900/50 border border-red-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-red-300 mb-2">TranslationWorker-InternalFailure</h3>
+            <p class="text-slate-300 mb-4">
+              The most common translation error, often caused by file corruption, unsupported features, or resource limits.
+            </p>
+            <div class="mb-4">
+              <h4 class="font-medium text-white mb-2">Common Causes:</h4>
+              <ul class="list-disc list-inside text-slate-400 space-y-1">
+                <li>File contains proprietary or licensed content</li>
+                <li>File is corrupted or incomplete</li>
+                <li>Unsupported CAD version or features</li>
+                <li>File exceeds size limits (500MB)</li>
+              </ul>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Solution:</h4>
+              <pre class="text-sm text-slate-300"><code>raps translate --validate-first &lt;file&gt;
+raps translate --force-version 2023 &lt;file&gt;</code></pre>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-red-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-red-300 mb-2">REVIT_FILE_TRANSLATION_ERROR</h3>
+            <p class="text-slate-300 mb-4">
+              Revit-specific translation failures, often related to missing families or corrupt project files.
+            </p>
+            <div class="mb-4">
+              <h4 class="font-medium text-white mb-2">Solutions:</h4>
+              <ul class="list-disc list-inside text-slate-400 space-y-1">
+                <li>Ensure all linked files and families are embedded</li>
+                <li>Use Revit's "Purge Unused" before uploading</li>
+                <li>Check for corrupt elements using Revit's repair tools</li>
+              </ul>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Solution:</h4>
+              <pre class="text-sm text-slate-300"><code>raps translate --revit-options="embed-links,purge-unused" &lt;file&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Authentication Errors -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-6">Authentication Errors</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-slate-900/50 border border-yellow-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-yellow-300 mb-2">401 Unauthorized</h3>
+            <p class="text-slate-300 mb-4">
+              Invalid or expired access token. Most commonly occurs with 3-legged OAuth tokens that expire after 1 hour.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Solution:</h4>
+              <pre class="text-sm text-slate-300"><code>raps auth refresh
+raps auth test</code></pre>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-yellow-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-yellow-300 mb-2">403 Forbidden</h3>
+            <p class="text-slate-300 mb-4">
+              Insufficient scopes or permissions. Check your app's OAuth scopes against the required permissions.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Solution:</h4>
+              <pre class="text-sm text-slate-300"><code>raps auth scopes list
+raps auth login --scopes="data:read data:write"</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rate Limit Errors -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-blue-400 mb-6">Rate Limit Errors</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-slate-900/50 border border-blue-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-blue-300 mb-2">429 Too Many Requests</h3>
+            <p class="text-slate-300 mb-4">
+              Rate limit exceeded. APS has different limits per endpoint: 100/min for most APIs, 10/min for translation.
+            </p>
+            <div class="mb-4">
+              <h4 class="font-medium text-white mb-2">Rate Limits:</h4>
+              <ul class="list-disc list-inside text-slate-400 space-y-1">
+                <li>Model Derivative: 10 requests/minute</li>
+                <li>Data Management: 100 requests/minute</li>
+                <li>Viewer: 1000 requests/minute</li>
+              </ul>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Solution (Built-in retry):</h4>
+              <pre class="text-sm text-slate-300"><code>raps translate --retry-on-rate-limit &lt;file&gt;
+raps batch --max-concurrent=5 &lt;files&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Region Errors -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-purple-400 mb-6">Region & Data Center Errors</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-slate-900/50 border border-purple-500/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-purple-300 mb-2">REGION_MISMATCH</h3>
+            <p class="text-slate-300 mb-4">
+              Bucket or object is in a different region than expected. Ensure consistent region usage.
+            </p>
+            <div class="bg-slate-800 p-4 rounded-lg">
+              <h4 class="font-medium text-rapeseed-400 mb-2">RAPS Solution:</h4>
+              <pre class="text-sm text-slate-300"><code>raps config set region US
+raps bucket create --region=US my-bucket</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Reference Table -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Quick Reference</h2>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full border border-slate-700 rounded-lg overflow-hidden">
+            <thead class="bg-slate-800">
+              <tr>
+                <th class="px-4 py-3 text-left text-white">Error Code</th>
+                <th class="px-4 py-3 text-left text-white">Meaning</th>
+                <th class="px-4 py-3 text-left text-white">Quick Fix</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-300">
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 font-mono text-red-400">401</td>
+                <td class="px-4 py-3">Invalid/expired token</td>
+                <td class="px-4 py-3"><code class="text-rapeseed-400">raps auth refresh</code></td>
+              </tr>
+              <tr class="border-t border-slate-700 bg-slate-900/30">
+                <td class="px-4 py-3 font-mono text-yellow-400">403</td>
+                <td class="px-4 py-3">Insufficient permissions</td>
+                <td class="px-4 py-3"><code class="text-rapeseed-400">raps auth scopes list</code></td>
+              </tr>
+              <tr class="border-t border-slate-700">
+                <td class="px-4 py-3 font-mono text-blue-400">429</td>
+                <td class="px-4 py-3">Rate limit exceeded</td>
+                <td class="px-4 py-3"><code class="text-rapeseed-400">raps --retry-on-rate-limit</code></td>
+              </tr>
+              <tr class="border-t border-slate-700 bg-slate-900/30">
+                <td class="px-4 py-3 font-mono text-red-400">500</td>
+                <td class="px-4 py-3">Translation failure</td>
+                <td class="px-4 py-3"><code class="text-rapeseed-400">raps translate --validate-first</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Related Resources -->
+      <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6">
+        <h3 class="text-xl font-bold text-white mb-4">Related Resources</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a href="/resources/aps-cheatsheet" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → APS Complete Cheat Sheet
+          </a>
+          <a href="/tools/token-decoder" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Token Decoder Tool
+          </a>
+          <a href="/resources/oauth-scopes-guide" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → OAuth Scopes Guide
+          </a>
+          <a href="/docs/troubleshooting" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+            → Troubleshooting Documentation
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

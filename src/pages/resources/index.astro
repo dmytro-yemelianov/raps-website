@@ -2,11 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout 
-  title="Developer Resources" 
+<BaseLayout
+  title="Developer Resources"
   description="Comprehensive developer resources for APS and cross-platform CAD/PLM development. Cheat sheets, guides, error references, and workflow recipes."
 >
-  <div class="max-w-7xl mx-auto">
+  <section class="py-16 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
     <div class="mb-12">
       <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
         Developer Resources Hub
@@ -74,9 +75,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <a href="/resources/aps-cheatsheet" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors">
               View Cheat Sheet
             </a>
-            <a href="/resources/aps-cheatsheet.pdf" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded-lg transition-colors">
-              📄 Download PDF
-            </a>
           </div>
         </div>
 
@@ -111,6 +109,24 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           </div>
           <a href="/resources/oauth-scopes-guide" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors inline-block">
             Read Guide
+          </a>
+        </div>
+
+        <!-- APS Service Hierarchy -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-rapeseed-400/30 transition-all">
+          <h3 class="text-xl font-semibold text-white mb-3">APS Service Hierarchy</h3>
+          <p class="text-slate-300 mb-4">
+            Interactive visual map of all APS services showing relationships, dependencies, 
+            and data flow patterns. Perfect for understanding the platform architecture.
+          </p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="bg-blue-400/10 text-blue-400 px-2 py-1 rounded text-xs">Interactive</span>
+            <span class="bg-purple-400/10 text-purple-400 px-2 py-1 rounded text-xs">Visual</span>
+            <span class="bg-cyan-400/10 text-cyan-400 px-2 py-1 rounded text-xs">Architecture</span>
+            <span class="bg-green-400/10 text-green-400 px-2 py-1 rounded text-xs">Node Graph</span>
+          </div>
+          <a href="/resources/aps-hierarchy" class="bg-rapeseed-500 hover:bg-rapeseed-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition-colors inline-block">
+            Explore Hierarchy
           </a>
         </div>
 
@@ -216,74 +232,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </section>
 
-    <!-- Downloads Section -->
-    <section class="mb-12">
-      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-        <span>📥</span> Downloadable Resources
-      </h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <a href="/resources/aps-cheatsheet.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">📄</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">APS Cheat Sheet PDF</h4>
-              <p class="text-xs text-slate-400">2-page quick reference</p>
-            </div>
-          </div>
-        </a>
-        
-        <a href="/resources/error-codes.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">📕</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">Error Codes Reference PDF</h4>
-              <p class="text-xs text-slate-400">Complete troubleshooting guide</p>
-            </div>
-          </div>
-        </a>
-        
-        <a href="/resources/oauth-flows.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">📘</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">OAuth Flows Visual Guide</h4>
-              <p class="text-xs text-slate-400">3-legged auth diagrams</p>
-            </div>
-          </div>
-        </a>
-        
-        <a href="/resources/workflow-recipes.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">📗</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">Workflow Recipes PDF</h4>
-              <p class="text-xs text-slate-400">Common patterns cookbook</p>
-            </div>
-          </div>
-        </a>
-        
-        <a href="/resources/migration-checklist.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">📙</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">Migration Checklist PDF</h4>
-              <p class="text-xs text-slate-400">Forge to APS step-by-step</p>
-            </div>
-          </div>
-        </a>
-        
-        <a href="/resources/raps-commands.pdf" class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all group">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">📔</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-rapeseed-400">RAPS Commands Reference</h4>
-              <p class="text-xs text-slate-400">Complete CLI documentation</p>
-            </div>
-          </div>
-        </a>
-      </div>
-    </section>
 
     <!-- Call to Action -->
     <div class="bg-gradient-to-r from-rapeseed-600/20 to-yellow-600/20 border border-rapeseed-500/30 rounded-xl p-8 text-center">
@@ -301,5 +249,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </a>
       </div>
     </div>
-  </div>
+    </div>
+  </section>
 </BaseLayout>

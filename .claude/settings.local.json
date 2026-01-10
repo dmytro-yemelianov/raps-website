@@ -13,12 +13,21 @@
       "Bash(gh run view:*)",
       "Bash(git add:*)",
       "Bash(git restore:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(npm run dev:*)",
+      "mcp__browsermcp__browser_navigate",
+      "mcp__browsermcp__browser_screenshot",
+      "mcp__browsermcp__browser_press_key",
+      "Bash(rm:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "C:\\Users\\dyd\\.ssh"
+      "C:\\Users\\dyd\\.ssh",
+      "C:\\c\\github\\raps"
     ]
   }
 }

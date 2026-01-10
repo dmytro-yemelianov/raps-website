@@ -1,0 +1,416 @@
+---
+title: "Docker"
+description: "Run RAPS in a containerized environment"
+section: "modes"
+order: 5
+icon: "🐳"
+---
+
+# Docker Mode
+
+Run RAPS in a containerized environment without installing Rust or managing dependencies. Perfect for CI/CD pipelines, isolated environments, and Kubernetes deployments.
+
+## Quick Start
+
+```bash
+# Pull the official image
+docker pull ghcr.io/dmytro-yemelianov/raps:latest
+
+# Run a command
+docker run --rm \
+  -e APS_CLIENT_ID="your_client_id" \
+  -e APS_CLIENT_SECRET="your_client_secret" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  auth test
+```
+
+## Available Images
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest stable release |
+| `3.8.0` | Specific version |
+| `3.8` | Latest patch of 3.8.x |
+| `3` | Latest minor of 3.x |
+
+### Multi-Architecture Support
+
+Images are available for:
+- `linux/amd64` (x86_64)
+- `linux/arm64` (Apple Silicon, ARM servers)
+
+```bash
+# Pull for specific architecture
+docker pull --platform linux/arm64 ghcr.io/dmytro-yemelianov/raps:latest
+```
+
+## Basic Usage
+
+### Single Commands
+
+```bash
+# Test authentication
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  auth test
+
+# List buckets
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  bucket list --output json
+```
+
+### With Volume Mounts
+
+Mount local directories to upload/download files:
+
+```bash
+# Upload a file
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  -v $(pwd)/models:/data \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  object upload my-bucket /data/model.rvt
+
+# Download files
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  -v $(pwd)/downloads:/output \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  object download my-bucket model.rvt --output /output/
+```
+
+### Interactive Mode
+
+Run the interactive shell inside Docker:
+
+```bash
+docker run -it --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  shell
+```
+
+## Docker Compose
+
+### Basic Configuration
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  raps:
+    image: ghcr.io/dmytro-yemelianov/raps:latest
+    environment:
+      - APS_CLIENT_ID=${APS_CLIENT_ID}
+      - APS_CLIENT_SECRET=${APS_CLIENT_SECRET}
+    volumes:
+      - ./models:/data
+    command: ["bucket", "list"]
+```
+
+Run with:
+
+```bash
+docker-compose run --rm raps bucket list
+docker-compose run --rm raps object upload my-bucket /data/model.rvt
+```
+
+### Multi-Service Setup
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # Upload service
+  uploader:
+    image: ghcr.io/dmytro-yemelianov/raps:latest
+    environment:
+      - APS_CLIENT_ID=${APS_CLIENT_ID}
+      - APS_CLIENT_SECRET=${APS_CLIENT_SECRET}
+    volumes:
+      - ./models:/data:ro
+    profiles: ["upload"]
+    command: ["object", "upload", "my-bucket", "/data/"]
+
+  # Translation monitor
+  translator:
+    image: ghcr.io/dmytro-yemelianov/raps:latest
+    environment:
+      - APS_CLIENT_ID=${APS_CLIENT_ID}
+      - APS_CLIENT_SECRET=${APS_CLIENT_SECRET}
+    profiles: ["translate"]
+
+  # Maintenance tasks
+  cleanup:
+    image: ghcr.io/dmytro-yemelianov/raps:latest
+    environment:
+      - APS_CLIENT_ID=${APS_CLIENT_ID}
+      - APS_CLIENT_SECRET=${APS_CLIENT_SECRET}
+    profiles: ["cleanup"]
+    command: ["bucket", "list", "--output", "json"]
+```
+
+## Environment File
+
+Use `.env` file for credentials:
+
+```env
+# .env
+APS_CLIENT_ID=your_client_id
+APS_CLIENT_SECRET=your_client_secret
+APS_REGION=US
+```
+
+```bash
+# Docker will load .env automatically
+docker-compose run --rm raps auth test
+```
+
+## CI/CD Integration
+
+### GitLab CI
+
+```yaml
+# .gitlab-ci.yml
+variables:
+  RAPS_IMAGE: ghcr.io/dmytro-yemelianov/raps:3.8.0
+
+translate:
+  image: $RAPS_IMAGE
+  variables:
+    APS_CLIENT_ID: $APS_CLIENT_ID
+    APS_CLIENT_SECRET: $APS_CLIENT_SECRET
+  script:
+    - raps auth test
+    - raps bucket create ci-$CI_PIPELINE_ID --retention transient
+    - raps object upload ci-$CI_PIPELINE_ID models/*.rvt --batch
+  after_script:
+    - raps bucket delete ci-$CI_PIPELINE_ID --yes || true
+```
+
+### Jenkins Pipeline
+
+```groovy
+// Jenkinsfile
+pipeline {
+    agent {
+        docker {
+            image 'ghcr.io/dmytro-yemelianov/raps:3.8.0'
+        }
+    }
+    environment {
+        APS_CLIENT_ID = credentials('aps-client-id')
+        APS_CLIENT_SECRET = credentials('aps-client-secret')
+    }
+    stages {
+        stage('Test Auth') {
+            steps {
+                sh 'raps auth test'
+            }
+        }
+        stage('Upload') {
+            steps {
+                sh 'raps object upload my-bucket models/*.rvt --batch'
+            }
+        }
+    }
+}
+```
+
+### Azure DevOps
+
+```yaml
+# azure-pipelines.yml
+pool:
+  vmImage: 'ubuntu-latest'
+
+container:
+  image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+
+variables:
+  - group: aps-credentials
+
+steps:
+  - script: raps auth test
+    env:
+      APS_CLIENT_ID: $(APS_CLIENT_ID)
+      APS_CLIENT_SECRET: $(APS_CLIENT_SECRET)
+
+  - script: raps bucket list --output json
+    env:
+      APS_CLIENT_ID: $(APS_CLIENT_ID)
+      APS_CLIENT_SECRET: $(APS_CLIENT_SECRET)
+```
+
+### CircleCI
+
+```yaml
+# .circleci/config.yml
+version: 2.1
+
+jobs:
+  translate:
+    docker:
+      - image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+    environment:
+      APS_CLIENT_ID: $APS_CLIENT_ID
+      APS_CLIENT_SECRET: $APS_CLIENT_SECRET
+    steps:
+      - checkout
+      - run: raps auth test
+      - run: raps bucket list
+
+workflows:
+  main:
+    jobs:
+      - translate
+```
+
+## Kubernetes
+
+### Job for One-Off Tasks
+
+```yaml
+# raps-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: raps-translate
+spec:
+  template:
+    spec:
+      containers:
+        - name: raps
+          image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+          command: ["raps", "translate", "start", "$(URN)", "--wait"]
+          env:
+            - name: APS_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aps-credentials
+                  key: client-id
+            - name: APS_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: aps-credentials
+                  key: client-secret
+            - name: URN
+              value: "dXJuOmFkc2sub2JqZWN0czp..."
+      restartPolicy: Never
+```
+
+### CronJob for Scheduled Tasks
+
+```yaml
+# raps-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: raps-cleanup
+spec:
+  schedule: "0 2 * * 0"  # Every Sunday at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: raps
+              image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  raps bucket list --output json | \
+                  jq -r '.[] | select(.policyKey == "transient") | .bucketKey' | \
+                  while read bucket; do
+                    raps bucket delete "$bucket" --yes || true
+                  done
+              envFrom:
+                - secretRef:
+                    name: aps-credentials
+          restartPolicy: OnFailure
+```
+
+### Create Kubernetes Secret
+
+```bash
+kubectl create secret generic aps-credentials \
+  --from-literal=client-id="$APS_CLIENT_ID" \
+  --from-literal=client-secret="$APS_CLIENT_SECRET"
+```
+
+## Building Custom Images
+
+Extend the RAPS image with additional tools:
+
+```dockerfile
+# Dockerfile
+FROM ghcr.io/dmytro-yemelianov/raps:3.8.0
+
+# Add jq for JSON processing
+RUN apk add --no-cache jq
+
+# Add custom scripts
+COPY scripts/ /scripts/
+RUN chmod +x /scripts/*.sh
+
+# Default command
+CMD ["raps", "--help"]
+```
+
+Build and run:
+
+```bash
+docker build -t my-raps .
+docker run --rm my-raps bucket list
+```
+
+## Troubleshooting
+
+### Permission Denied on Volumes
+
+```bash
+# Fix: Run as current user
+docker run --rm \
+  -u $(id -u):$(id -g) \
+  -v $(pwd)/models:/data \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  object upload my-bucket /data/model.rvt
+```
+
+### Network Issues
+
+```bash
+# Use host network (if needed)
+docker run --rm --network host \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  auth test
+```
+
+### Debug Mode
+
+```bash
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  --debug auth test
+```
+
+## Related Documentation
+
+- [CLI Mode](/docs/mode-cli) — Command-line reference
+- [GitHub Actions](/docs/mode-github-actions) — GitHub CI/CD
+- [Configuration](/docs/configuration) — Environment variables
+- [raps-docker Repository](https://github.com/dmytro-yemelianov/raps-docker) — Docker image source

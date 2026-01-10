@@ -528,6 +528,11 @@ const graphData = {
       viewGraphBtn?.classList.remove('active');
       viewListBtn?.setAttribute('aria-pressed', 'true');
       viewGraphBtn?.setAttribute('aria-pressed', 'false');
+      // Stop graph animation when not visible
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
     } else {
       listView?.classList.add('hidden');
       graphView?.classList.remove('hidden');
@@ -536,7 +541,8 @@ const graphData = {
       viewGraphBtn?.classList.add('active');
       viewListBtn?.setAttribute('aria-pressed', 'false');
       viewGraphBtn?.setAttribute('aria-pressed', 'true');
-      initGraph();
+      // Always reinitialize graph when showing to ensure proper layout
+      resetAndInitGraph();
     }
   }
 
@@ -749,6 +755,8 @@ const graphData = {
     category: string;
     aliases: string[];
     related: string[];
+    icon: string;
+    wiki: string;
     x: number;
     y: number;
     vx: number;
@@ -789,6 +797,31 @@ const graphData = {
     cli: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
   };
 
+  function resetAndInitGraph() {
+    // Cancel any existing animation
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+
+    // Reset graph state
+    graphInitialized = false;
+    nodes = [];
+    edges = [];
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    selectedNode = null;
+    hideTooltip();
+
+    // Reset zoom slider
+    const zoomSlider = document.getElementById('graph-zoom') as HTMLInputElement;
+    if (zoomSlider) zoomSlider.value = '1';
+
+    // Small delay to ensure DOM is ready after view switch
+    setTimeout(() => initGraph(), 50);
+  }
+
   function initGraph() {
     if (graphInitialized) return;
 
@@ -814,13 +847,20 @@ const graphData = {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
+    // Distribute nodes in a grid-like pattern for better initial spread
+    const cols = Math.ceil(Math.sqrt(data.nodes.length));
+    const spacing = Math.min(rect.width, rect.height) / (cols + 1);
+
     nodes = data.nodes.map((n: any, i: number) => {
-      const angle = (i / data.nodes.length) * Math.PI * 2;
-      const radius = 200 + Math.random() * 100;
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      // Add some randomness to prevent exact grid
+      const jitterX = (Math.random() - 0.5) * spacing * 0.5;
+      const jitterY = (Math.random() - 0.5) * spacing * 0.5;
       return {
         ...n,
-        x: centerX + Math.cos(angle) * radius,
-        y: centerY + Math.sin(angle) * radius,
+        x: spacing + col * spacing + jitterX,
+        y: spacing + row * spacing + jitterY,
         vx: 0,
         vy: 0,
         visible: true,
@@ -890,7 +930,7 @@ const graphData = {
         const dx = mouseX - node.x;
         const dy = mouseY - node.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 20) {
+        if (dist < 22) {  // Match the larger node radius
           clickedNode = node;
           break;
         }
@@ -1127,9 +1167,10 @@ const graphData = {
       if (!node.visible) return;
 
       const isSelected = selectedNode?.id === node.id;
-      const radius = isSelected ? 18 : 14;
+      const radius = isSelected ? 22 : 18;
       const color = categoryNodeColors[node.category] || '#64748b';
 
+      // Draw node circle
       ctx!.beginPath();
       ctx!.arc(node.x, node.y, radius, 0, Math.PI * 2);
       ctx!.fillStyle = isSelected ? color : `${color}cc`;
@@ -1141,6 +1182,22 @@ const graphData = {
         ctx!.stroke();
       }
 
+      // Draw icon inside node if available
+      if (node.icon) {
+        ctx!.font = `${isSelected ? '16' : '14'}px system-ui, sans-serif`;
+        ctx!.textAlign = 'center';
+        ctx!.textBaseline = 'middle';
+        ctx!.fillText(node.icon, node.x, node.y);
+      } else {
+        // Fallback: draw first letter of term
+        ctx!.fillStyle = '#fff';
+        ctx!.font = `bold ${isSelected ? '12' : '10'}px system-ui, sans-serif`;
+        ctx!.textAlign = 'center';
+        ctx!.textBaseline = 'middle';
+        ctx!.fillText(node.term[0].toUpperCase(), node.x, node.y);
+      }
+
+      // Draw term label below node
       ctx!.fillStyle = '#fff';
       ctx!.font = `${isSelected ? 'bold ' : ''}11px system-ui, sans-serif`;
       ctx!.textAlign = 'center';

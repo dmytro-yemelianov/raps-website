@@ -8,6 +8,12 @@
  *   </GlossaryText>
  *
  * This will automatically add tooltips to "DWG", "OSS", and "buckets".
+ *
+ * Terms are NOT highlighted in:
+ * - Code blocks (<pre>, <code>)
+ * - Headings (<h1> - <h6>)
+ * - Links (<a>)
+ * - Inside HTML tag attributes
  */
 
 import { glossary, type GlossaryTerm } from '../data/glossary';
@@ -55,47 +61,97 @@ termPatterns.sort((a, b) => b.pattern.source.length - a.pattern.source.length);
 // Get the raw text content
 const rawContent = await Astro.slots.render('default');
 
+// Tags where we should NOT add tooltips
+const skipTags = ['pre', 'code', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'script', 'style', 'button', 'input', 'textarea', 'nav', 'aside', 'header', 'footer', 'label', 'summary', 'figcaption'];
+
 // Process the content
 function processContent(html: string): string {
-  // Track which terms we've already tooltipped
   const tooltippedTerms = new Set<string>();
 
-  // Simple approach: only process text outside of HTML tags
-  // This prevents breaking existing markup
+  // Parse HTML into segments: tags vs text content
+  // This regex matches HTML tags (including self-closing and with attributes)
+  const tagRegex = /(<[^>]+>)/g;
+  const segments = html.split(tagRegex);
 
-  let result = html;
+  // Track which tags we're currently inside
+  const tagStack: string[] = [];
 
-  for (const { pattern, term } of termPatterns) {
-    // Skip if we've already tooltipped this term and firstOnly is true
-    if (firstOnly && tooltippedTerms.has(term.term)) continue;
+  const processedSegments = segments.map(segment => {
+    // Check if this segment is an HTML tag
+    if (segment.startsWith('<')) {
+      // Extract tag name
+      const closingMatch = segment.match(/^<\/(\w+)/);
+      const openingMatch = segment.match(/^<(\w+)/);
 
-    // Replace matches with tooltip markup
-    // Only replace text that's not already inside a tag or tooltip
-    result = result.replace(pattern, (match, offset) => {
-      // Check if we're inside a tag or already-processed tooltip
-      const before = result.substring(0, offset);
-      const openTags = (before.match(/<[^/][^>]*>/g) || []).length;
-      const closeTags = (before.match(/<\/[^>]*>/g) || []).length;
+      if (closingMatch) {
+        // Closing tag - pop from stack
+        const tagName = closingMatch[1].toLowerCase();
+        const lastIndex = tagStack.lastIndexOf(tagName);
+        if (lastIndex !== -1) {
+          tagStack.splice(lastIndex, 1);
+        }
+      } else if (openingMatch) {
+        // Opening tag - check if self-closing
+        const tagName = openingMatch[1].toLowerCase();
+        const isSelfClosing = segment.endsWith('/>') ||
+          ['br', 'hr', 'img', 'input', 'meta', 'link', 'area', 'base', 'col', 'embed', 'param', 'source', 'track', 'wbr'].includes(tagName);
 
-      // Skip if inside unclosed tags (rough heuristic)
-      if (before.includes('tooltip-wrapper') && !before.includes('</span>')) {
-        return match;
+        if (!isSelfClosing) {
+          tagStack.push(tagName);
+        }
       }
 
-      // Skip if already tooltipped this term
-      if (firstOnly && tooltippedTerms.has(term.term)) {
-        return match;
-      }
+      // Return tag unchanged
+      return segment;
+    }
 
-      tooltippedTerms.add(term.term);
+    // This is text content - check if we're inside a skip tag
+    const shouldSkip = tagStack.some(tag => skipTags.includes(tag));
 
-      // Return tooltip markup
-      const termId = term.term.toLowerCase().replace(/\s+/g, '-');
-      return `<span class="tooltip-wrapper group relative inline"><span class="tooltip-trigger cursor-help border-b border-dotted border-slate-500 hover:border-rapeseed-400 transition-colors" tabindex="0" role="button" aria-describedby="tooltip-${termId}">${match}</span><span id="tooltip-${termId}" role="tooltip" class="tooltip-content pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 sm:w-80 px-3 py-2 text-sm text-slate-200 bg-slate-800 border border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50"><span class="block font-semibold text-rapeseed-400 mb-1">${term.term}</span><span class="block text-slate-300 leading-relaxed">${term.shortDef}</span><a href="/glossary#${termId}" class="pointer-events-auto inline-flex items-center gap-1 mt-2 text-xs text-slate-400 hover:text-rapeseed-400 transition-colors">View in glossary<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></a><span class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></span></span></span>`;
-    });
-  }
+    if (shouldSkip || !segment.trim()) {
+      return segment;
+    }
 
-  return result;
+    // Process text content for glossary terms
+    let processedText = segment;
+
+    for (const { pattern, term } of termPatterns) {
+      // Skip if we've already tooltipped this term and firstOnly is true
+      if (firstOnly && tooltippedTerms.has(term.term)) continue;
+
+      // Check if this segment contains the term
+      const matches = processedText.match(pattern);
+      if (!matches) continue;
+
+      // Replace only if not already inside a tooltip
+      processedText = processedText.replace(pattern, (match, offset) => {
+        // Check if we're inside an already-processed tooltip
+        const before = processedText.substring(0, offset);
+        const noGlossaryOpens = (before.match(/data-no-glossary/g) || []).length;
+        const tooltipWrapperCloses = (before.match(/<\/span><\/span><\/span>/g) || []).length;
+
+        if (noGlossaryOpens > tooltipWrapperCloses) {
+          return match;
+        }
+
+        // Skip if already tooltipped this term
+        if (firstOnly && tooltippedTerms.has(term.term)) {
+          return match;
+        }
+
+        tooltippedTerms.add(term.term);
+
+        // Return tooltip markup
+        const termId = term.term.toLowerCase().replace(/\s+/g, '-');
+        const icon = term.icon ? `<span class="mr-1">${term.icon}</span>` : '';
+        return `<span class="tooltip-wrapper group relative inline" data-no-glossary><span class="tooltip-trigger cursor-help border-b border-dotted border-slate-500 hover:border-rapeseed-400 transition-colors" tabindex="0" role="button" aria-describedby="tooltip-${termId}">${match}</span><span id="tooltip-${termId}" role="tooltip" class="tooltip-content pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 sm:w-80 px-3 py-2 text-sm text-slate-200 bg-slate-800 border border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50"><span class="block font-semibold text-rapeseed-400 mb-1">${icon}${term.term}</span><span class="block text-slate-300 leading-relaxed mb-2">${term.shortDef}</span><a href="/glossary#${termId}" class="pointer-events-auto inline-flex items-center gap-1 mt-2 text-xs text-slate-400 hover:text-rapeseed-400 transition-colors">View in glossary<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></a><span class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></span></span></span>`;
+      });
+    }
+
+    return processedText;
+  });
+
+  return processedSegments.join('');
 }
 
 const processedContent = processContent(rawContent);
@@ -108,5 +164,26 @@ const processedContent = processContent(rawContent);
   .tooltip-wrapper:hover .tooltip-content,
   .tooltip-wrapper:focus-within .tooltip-content {
     pointer-events: auto;
+  }
+
+  /* Mobile: Ensure tooltips don't overflow viewport */
+  @media (max-width: 640px) {
+    .tooltip-content {
+      /* On mobile, center tooltip in viewport instead of relative to term */
+      position: fixed !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      max-width: calc(100vw - 2rem) !important;
+      width: 18rem !important;
+      margin: 0 !important;
+    }
+
+    /* Hide the arrow on mobile since tooltip is centered */
+    .tooltip-content > span:last-child {
+      display: none;
+    }
   }
 </style>

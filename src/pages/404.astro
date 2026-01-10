@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page Not Found">
+  <section class="py-32 text-center">
+    <div class="max-w-2xl mx-auto px-4">
+      <!-- 404 Icon -->
+      <div class="mb-8">
+        <div class="text-8xl mb-4">🌼</div>
+        <div class="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-rapeseed-400 to-amber-400 mb-4">
+          404
+        </div>
+      </div>
+      
+      <!-- Error Message -->
+      <h1 class="text-3xl font-bold text-white mb-4">
+        Page not found
+      </h1>
+      <p class="text-lg text-slate-400 mb-8 leading-relaxed">
+        The page you're looking for doesn't exist or has been moved.
+        Let's get you back on track.
+      </p>
+      
+      <!-- Search Suggestions -->
+      <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8 text-left">
+        <h3 class="text-lg font-semibold text-white mb-4">Popular destinations:</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <a href="/quickstart" class="flex items-center gap-3 p-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors">
+            <span class="text-2xl">⚡</span>
+            <div>
+              <div class="font-medium">Quick Start</div>
+              <div class="text-sm text-slate-500">Get up and running</div>
+            </div>
+          </a>
+          <a href="/docs" class="flex items-center gap-3 p-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors">
+            <span class="text-2xl">📚</span>
+            <div>
+              <div class="font-medium">Documentation</div>
+              <div class="text-sm text-slate-500">Complete CLI reference</div>
+            </div>
+          </a>
+          <a href="/tools" class="flex items-center gap-3 p-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors">
+            <span class="text-2xl">🛠️</span>
+            <div>
+              <div class="font-medium">Interactive Tools</div>
+              <div class="text-sm text-slate-500">Browser-based utilities</div>
+            </div>
+          </a>
+          <a href="/blog" class="flex items-center gap-3 p-3 text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors">
+            <span class="text-2xl">✍️</span>
+            <div>
+              <div class="font-medium">Blog</div>
+              <div class="text-sm text-slate-500">DevOps insights</div>
+            </div>
+          </a>
+        </div>
+      </div>
+      
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/" class="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-lg transition-colors">
+          Go Home
+        </a>
+        <a href="/docs" class="px-6 py-3 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white rounded-lg transition-colors">
+          Browse Docs
+        </a>
+      </div>
+      
+      <!-- Help -->
+      <div class="mt-12 pt-8 border-t border-slate-800">
+        <p class="text-sm text-slate-500 mb-4">
+          Still can't find what you're looking for?
+        </p>
+        <div class="flex items-center justify-center gap-4">
+          <a href="https://github.com/dmytro-yemelianov/raps/issues" target="_blank" class="text-sm text-slate-400 hover:text-white transition-colors">
+            Report an issue
+          </a>
+          <span class="text-slate-600">•</span>
+          <a href="https://discord.gg/PXRabMhWTY" target="_blank" class="text-sm text-slate-400 hover:text-white transition-colors">
+            Join Discord
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

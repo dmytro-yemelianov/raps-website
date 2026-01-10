@@ -1,0 +1,224 @@
+---
+title: "Usage Modes"
+description: "Different ways to use RAPS: CLI, Interactive Shell, GitHub Actions, Docker, and MCP Server"
+section: "modes"
+order: 1
+icon: "🎯"
+---
+
+# Usage Modes
+
+RAPS offers five different ways to interact with Autodesk Platform Services. Choose the mode that best fits your workflow.
+
+## At a Glance
+
+| Mode | Best For | Key Features |
+|------|----------|--------------|
+| [**CLI**](/docs/mode-cli) | Scripts, automation | Full command set, piping, exit codes |
+| [**Interactive Shell**](/docs/interactive-shell) | Learning, exploration | TAB completion, hints, history |
+| [**GitHub Actions**](/docs/mode-github-actions) | GitHub CI/CD | Pre-built action, matrix builds |
+| [**Docker**](/docs/mode-docker) | Containerized workflows | No install, isolated, multi-arch |
+| [**MCP Server**](/docs/mcp-server) | AI assistants | Natural language, Claude/Cursor |
+
+---
+
+## CLI Mode
+
+The standard command-line interface for scripts and automation.
+
+```bash
+# One-liner operations
+raps bucket list --output json | jq '.[] | .bucketKey'
+
+# Scripting with exit codes
+if raps auth test; then
+    raps object upload my-bucket model.rvt
+fi
+```
+
+**Key features:**
+- Full command set (100+ commands)
+- Multiple output formats (JSON, YAML, CSV, table)
+- Standardized exit codes for scripting
+- Shell completions (bash, zsh, fish, PowerShell)
+
+📖 [**CLI Mode Documentation →**](/docs/mode-cli)
+
+---
+
+## Interactive Shell
+
+REPL environment with TAB completion and parameter hints.
+
+```
+$ raps shell
+
+Welcome to the RAPS interactive shell!
+raps> bucket [TAB]
+create    delete    get       list
+
+raps> bucket create <BUCKET_KEY>
+raps> bucket create my-test --retention transient
+✓ Bucket created: my-test
+```
+
+**Key features:**
+- TAB completion for commands and flags
+- Gray parameter hints show required/optional args
+- Command history with ↑/↓ navigation
+- Built-in help command
+
+📖 [**Interactive Shell Documentation →**](/docs/interactive-shell)
+
+---
+
+## GitHub Actions
+
+Pre-built action for CI/CD workflows.
+
+```yaml
+# .github/workflows/aps.yml
+- name: Setup RAPS
+  uses: dmytro-yemelianov/raps-action@v1
+
+- name: Upload Models
+  run: raps object upload my-bucket models/*.rvt --batch
+  env:
+    APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+    APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+**Key features:**
+- Easy setup with single action
+- Version pinning for reproducibility
+- Cross-platform (ubuntu, windows, macos)
+- Matrix builds for parallel processing
+
+📖 [**GitHub Actions Documentation →**](/docs/mode-github-actions)
+
+---
+
+## Docker
+
+Run RAPS in isolated containers.
+
+```bash
+# Single command
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  bucket list
+
+# With file uploads
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  -v $(pwd)/models:/data \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  object upload my-bucket /data/model.rvt
+```
+
+**Key features:**
+- No Rust installation required
+- Multi-architecture (amd64, arm64)
+- Works in any CI/CD system
+- Kubernetes ready
+
+📖 [**Docker Documentation →**](/docs/mode-docker)
+
+---
+
+## MCP Server
+
+AI assistant integration via Model Context Protocol.
+
+```json
+// claude_desktop_config.json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"],
+      "env": {
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+Then ask Claude: *"List all my OSS buckets"*
+
+**Key features:**
+- 14 MCP tools for APS operations
+- Natural language commands
+- Works with Claude, Cursor, and other MCP clients
+- No command syntax needed
+
+📖 [**MCP Server Documentation →**](/docs/mcp-server)
+
+---
+
+## Comparison Matrix
+
+| Feature | CLI | Shell | Actions | Docker | MCP |
+|---------|:---:|:-----:|:-------:|:------:|:---:|
+| TAB completion | — | ✓ | — | — | — |
+| Parameter hints | — | ✓ | — | — | — |
+| Command history | — | ✓ | — | — | — |
+| Scripting | ✓ | — | ✓ | ✓ | — |
+| CI/CD native | ✓ | — | ✓ | ✓ | — |
+| Natural language | — | — | — | — | ✓ |
+| No install needed | — | — | ✓ | ✓ | — |
+| Isolated environment | — | — | ✓ | ✓ | — |
+
+---
+
+## Choosing the Right Mode
+
+```
+                    How will you use RAPS?
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+   ┌─────────┐        ┌──────────┐        ┌─────────┐
+   │Learning │        │Scripting │        │AI-assist│
+   │Exploring│        │  CI/CD   │        │Workflow │
+   └────┬────┘        └────┬─────┘        └────┬────┘
+        │                  │                   │
+        ▼                  ▼                   ▼
+  ┌──────────┐       ┌──────────┐       ┌──────────┐
+  │Interactive│       │   CLI    │       │   MCP    │
+  │   Shell  │       │  Docker  │       │  Server  │
+  │          │       │ Actions  │       │          │
+  └──────────┘       └──────────┘       └──────────┘
+```
+
+### Recommendations
+
+**Use Interactive Shell if you're:**
+- New to RAPS and learning commands
+- Exploring available options
+- Debugging command syntax
+
+**Use CLI if you're:**
+- Writing shell scripts
+- Piping output to other tools
+- Running one-off commands
+
+**Use GitHub Actions if you're:**
+- Automating on GitHub
+- Need easy CI/CD integration
+- Running parallel matrix builds
+
+**Use Docker if you're:**
+- Running in containers/Kubernetes
+- Need isolated environments
+- Don't want to install Rust
+
+**Use MCP Server if you're:**
+- Using Claude Desktop or Cursor
+- Prefer natural language
+- Prototyping quickly

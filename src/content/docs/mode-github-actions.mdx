@@ -1,0 +1,401 @@
+---
+title: "GitHub Actions"
+description: "Pre-built GitHub Action for CI/CD automation with RAPS"
+section: "modes"
+order: 4
+icon: "🐙"
+---
+
+# GitHub Actions
+
+RAPS provides a pre-built GitHub Action for easy CI/CD integration. Automate model uploads, translations, and APS operations directly in your GitHub workflows.
+
+## Quick Start
+
+```yaml
+# .github/workflows/aps.yml
+name: APS Automation
+
+on:
+  push:
+    paths:
+      - 'models/**'
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+        with:
+          version: 'latest'
+
+      - name: Test Authentication
+        run: raps auth test
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+## Action Configuration
+
+### Inputs
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `version` | RAPS version to install | `latest` |
+
+### Example with Version Pinning
+
+```yaml
+- name: Setup RAPS
+  uses: dmytro-yemelianov/raps-action@v1
+  with:
+    version: '3.8.0'  # Pin to specific version
+```
+
+## Setting Up Secrets
+
+1. Go to your repository **Settings** → **Secrets and variables** → **Actions**
+2. Add the following secrets:
+   - `APS_CLIENT_ID` — Your APS application client ID
+   - `APS_CLIENT_SECRET` — Your APS application client secret
+
+## Workflow Examples
+
+### Upload and Translate on Push
+
+```yaml
+name: Translate Models
+
+on:
+  push:
+    paths:
+      - 'models/*.rvt'
+      - 'models/*.dwg'
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    env:
+      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+      BUCKET: ci-builds-${{ github.run_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+
+      - name: Create Bucket
+        run: raps bucket create $BUCKET --retention transient
+
+      - name: Upload Models
+        run: |
+          for file in models/*.rvt models/*.dwg; do
+            if [ -f "$file" ]; then
+              echo "Uploading $file..."
+              raps object upload $BUCKET "$file"
+            fi
+          done
+
+      - name: Translate Models
+        run: |
+          for file in models/*.rvt models/*.dwg; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              URN=$(raps object urn $BUCKET "$filename" --quiet)
+              echo "Translating $filename..."
+              raps translate start "$URN" --format svf2 --wait
+            fi
+          done
+
+      - name: Cleanup
+        if: always()
+        run: raps bucket delete $BUCKET --yes || true
+```
+
+### Matrix Builds for Multiple Models
+
+Process multiple models in parallel:
+
+```yaml
+name: Parallel Translation
+
+on: [push]
+
+jobs:
+  list-models:
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.find.outputs.models }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        run: |
+          models=$(find models -name "*.rvt" -printf '"%f",' | sed 's/,$//')
+          echo "models=[$models]" >> $GITHUB_OUTPUT
+
+  translate:
+    needs: list-models
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.list-models.outputs.models) }}
+      fail-fast: false
+    env:
+      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+
+      - name: Upload and Translate
+        run: |
+          BUCKET="matrix-${{ github.run_id }}"
+          raps bucket create $BUCKET --retention transient || true
+          raps object upload $BUCKET "models/${{ matrix.model }}"
+          URN=$(raps object urn $BUCKET "${{ matrix.model }}" --quiet)
+          raps translate start "$URN" --format svf2 --wait
+```
+
+### Scheduled Maintenance
+
+Run periodic APS maintenance tasks:
+
+```yaml
+name: Weekly Cleanup
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Every Sunday at 2 AM
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+
+    steps:
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+
+      - name: List Old Buckets
+        run: |
+          raps bucket list --output json | jq -r '.[] |
+            select(.createdDate < (now - 7*24*60*60 | strftime("%Y-%m-%dT%H:%M:%S"))) |
+            .bucketKey'
+
+      - name: Delete Transient Buckets
+        run: |
+          raps bucket list --output json | jq -r '.[] |
+            select(.policyKey == "transient") |
+            .bucketKey' | while read bucket; do
+              echo "Deleting $bucket..."
+              raps bucket delete "$bucket" --yes || true
+          done
+```
+
+### Pull Request Validation
+
+Validate models before merging:
+
+```yaml
+name: PR Validation
+
+on:
+  pull_request:
+    paths:
+      - 'models/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+
+      - name: Validate Models
+        id: validate
+        run: |
+          BUCKET="pr-${{ github.event.pull_request.number }}"
+          raps bucket create $BUCKET --retention transient
+
+          failed=0
+          for file in $(git diff --name-only origin/main...HEAD -- 'models/*.rvt'); do
+            if [ -f "$file" ]; then
+              echo "Validating $file..."
+              raps object upload $BUCKET "$file"
+              URN=$(raps object urn $BUCKET "$(basename $file)" --quiet)
+
+              if ! raps translate start "$URN" --format svf2 --wait; then
+                echo "::error::Translation failed for $file"
+                failed=1
+              fi
+            fi
+          done
+
+          raps bucket delete $BUCKET --yes || true
+          exit $failed
+
+      - name: Comment on PR
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ Model translation validation failed. Please check the workflow logs.'
+            })
+```
+
+### Export Translation Results
+
+Save translation outputs as artifacts:
+
+```yaml
+name: Export Derivatives
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model filename'
+        required: true
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+
+      - name: Translate and Download
+        run: |
+          BUCKET="export-${{ github.run_id }}"
+          MODEL="${{ github.event.inputs.model }}"
+
+          raps bucket create $BUCKET --retention transient
+          raps object upload $BUCKET "models/$MODEL"
+
+          URN=$(raps object urn $BUCKET "$MODEL" --quiet)
+          raps translate start "$URN" --format obj --wait
+
+          mkdir -p output
+          raps translate download "$URN" --output-dir output/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: derivatives-${{ github.event.inputs.model }}
+          path: output/
+          retention-days: 7
+```
+
+## Cross-Platform Support
+
+RAPS Action works on all GitHub-hosted runners:
+
+```yaml
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup RAPS
+        uses: dmytro-yemelianov/raps-action@v1
+
+      - name: Test
+        run: raps auth test
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+## Caching (Optional)
+
+Speed up workflows by caching the RAPS binary:
+
+```yaml
+- name: Cache RAPS
+  uses: actions/cache@v4
+  with:
+    path: ~/.cargo/bin/raps
+    key: raps-${{ runner.os }}-3.8.0
+
+- name: Setup RAPS
+  uses: dmytro-yemelianov/raps-action@v1
+  with:
+    version: '3.8.0'
+```
+
+## Debugging Workflows
+
+### Enable Debug Output
+
+```yaml
+- name: Debug API Calls
+  run: raps bucket list --debug
+  env:
+    APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+    APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+### Check Authentication
+
+```yaml
+- name: Check Auth
+  run: |
+    raps auth test
+    raps auth status
+  env:
+    APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+    APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+## Security Best Practices
+
+1. **Use Secrets** — Never hardcode credentials in workflows
+2. **Limit Permissions** — Use minimal scopes for your APS app
+3. **Review Actions** — Pin action versions with SHA hashes for security
+4. **Cleanup Resources** — Delete temporary buckets after use
+
+```yaml
+# Pin by SHA for security
+- uses: dmytro-yemelianov/raps-action@abc123def456...
+
+# Always cleanup
+- name: Cleanup
+  if: always()
+  run: raps bucket delete $BUCKET --yes || true
+```
+
+## Related Documentation
+
+- [CLI Mode](/docs/mode-cli) — Command-line reference
+- [Exit Codes](/docs/exit-codes) — Understanding exit codes
+- [Pipelines](/docs/pipelines) — YAML-based automation
+- [raps-action Repository](https://github.com/dmytro-yemelianov/raps-action) — Action source code

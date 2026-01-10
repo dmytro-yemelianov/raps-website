@@ -3,6 +3,11 @@ import { getCollection } from 'astro:content';
 // Changelog releases data
 const releases = [
   {
+    version: '3.8.0',
+    date: '2026-01-10',
+    description: 'Interactive Shell, TAB Completion, Parameter Hints, Rust 2024 Edition',
+  },
+  {
     version: '3.7.0',
     date: '2026-01-07',
     description: 'Major Security Improvements, Performance Boost, Parallel Uploads, Secure Token Storage',
