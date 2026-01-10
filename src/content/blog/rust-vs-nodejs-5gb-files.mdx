@@ -27,11 +27,12 @@ We ran a benchmark parsing a **3.4GB JSON metadata extract** from a large stadiu
 $ node --max-old-space-size=8192 parse-metadata.js stadium-model.json
 Processing 3.4GB JSON file...
 
-<--- Last few GCs --->
-[12345:0x5555556] 180234 ms: Mark-Sweep 8142.1 (8192.0) -> 8140.2 (8192.0) MB, 1247.3 / 0.0 ms allocation failure GC in old space requested
-[12345:0x5555556] 181567 ms: Mark-Sweep 8142.8 (8192.0) -> 8141.1 (8192.0) MB, 1312.4 / 0.0 ms allocation failure GC in old space requested
+--- Last few GCs ---
+[pid:0x5555556] 180234 ms: Mark-Sweep 8142.1 (8192.0) MB
+[pid:0x5555556] 181567 ms: Mark-Sweep 8142.8 (8192.0) MB
 
-FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+FATAL ERROR: Ineffective mark-compacts near heap limit
+Allocation failed - JavaScript heap out of memory
 ```
 
 **Result:** Crashed with `FATAL ERROR: Ineffective mark-compacts near heap limit`
@@ -50,7 +51,7 @@ user    0m13.891s
 sys     0m0.346s
 ```
 
-**Result:** Processed the stream in **14 seconds** using constant memory (<100MB).
+**Result:** Processed the stream in **14 seconds** using constant memory (under 100MB).
 
 ## Why the Dramatic Difference?
 
@@ -90,13 +91,12 @@ AEC files aren't just big — they're **structurally complex**:
             }
           ],
           "geometry": {
-            "vertices": [ /* 10,000+ vertices */ ],
-            "faces": [ /* 5,000+ faces */ ],
-            "boundingBox": { /* ... */ }
+            "vertices": ["...10000+ vertices..."],
+            "faces": ["...5000+ faces..."],
+            "boundingBox": {}
           }
         }
       }
-      /* ... repeated 2.8 million times ... */
     ]
   }
 }
@@ -237,7 +237,7 @@ Processed 12 models (28GB total) in 3m42s.
 
 # Memory usage stays predictable
 $ raps model analyze massive-stadium.json
-# Uses <200MB RAM regardless of input size
+# Uses under 200MB RAM regardless of input size
 ```
 
 ## The Infrastructure Impact
@@ -274,7 +274,7 @@ For processing 5GB+ datasets, running in resource-constrained environments, and 
 - Building web applications or REST APIs
 - Need rapid prototyping and iteration
 - Team expertise is primarily JavaScript
-- Processing small-to-medium files (<100MB)
+- Processing small-to-medium files (under 100MB)
 - Integration with existing JavaScript ecosystems
 
 ### Use Rust When:

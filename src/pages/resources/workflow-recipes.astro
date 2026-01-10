@@ -238,8 +238,8 @@ jobs:
           raps batch translate ./changed-files/
           raps generate thumbnails ./changed-files/
         env:
-          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}</code></pre>
+          APS_CLIENT_ID: {'${{ secrets.APS_CLIENT_ID }}'}
+          APS_CLIENT_SECRET: {'${{ secrets.APS_CLIENT_SECRET }}'}</code></pre>
             </div>
           </div>
 
@@ -252,29 +252,29 @@ jobs:
             
             <div class="bg-slate-800 p-4 rounded-lg mb-4">
               <pre class="text-sm text-slate-300"><code>// Jenkinsfile
-pipeline {
+pipeline &#123;
     agent any
-    
-    stages {
-        stage('CAD Processing') {
-            steps {
-                script {
+
+    stages &#123;
+        stage('CAD Processing') &#123;
+            steps &#123;
+                script &#123;
                     sh 'raps auth login'
                     sh 'raps batch translate ./cad-files/ --max-concurrent=5'
                     sh 'raps extract properties ./cad-files/ --format=json'
-                }
-            }
-        }
-        
-        stage('Generate Reports') {
-            steps {
+                &#125;
+            &#125;
+        &#125;
+
+        stage('Generate Reports') &#123;
+            steps &#123;
                 sh 'raps generate report --format=html --output=reports/'
-            }
-        }
-    }
-    
-    post {
-        always {
+            &#125;
+        &#125;
+    &#125;
+
+    post &#123;
+        always &#123;
             publishHTML([
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
@@ -283,9 +283,9 @@ pipeline {
                 reportFiles: 'index.html',
                 reportName: 'CAD Processing Report'
             ])
-        }
-    }
-}</code></pre>
+        &#125;
+    &#125;
+&#125;</code></pre>
             </div>
           </div>
         </div>
@@ -338,7 +338,7 @@ raps translate myfile.dwg \
 # Custom webhook payload
 raps translate myfile.dwg \
   --webhook-url=https://api.myapp.com/notify \
-  --webhook-data='{"project":"123","user":"john.doe"}'</code></pre>
+  --webhook-data='&#123;"project":"123","user":"john.doe"&#125;'</code></pre>
             </div>
           </div>
 

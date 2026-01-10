@@ -128,8 +128,9 @@ const getReadingTime = (content: string) => {
               Join Discord
             </a>
           </div>
-        ) : (
-          posts.map((post, index) => (
+        </div>
+      ) : (
+        allPosts.map((post, index) => (
             <article class="group">
               <a href={`/blog/${post.id.replace(/\.mdx?$/, '')}`} class="block">
                 <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 transition-all hover:bg-slate-900">

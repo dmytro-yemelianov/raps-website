@@ -22,7 +22,13 @@
       "Bash(rm:*)",
       "Bash(git pull:*)",
       "Bash(git fetch:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(dir:*)",
+      "WebFetch(domain:rapscli.xyz)",
+      "Bash(npx astro check:*)",
+      "Bash(npm install:*)",
+      "Bash(grep:*)",
+      "Bash(npm test)"
     ],
     "deny": [],
     "ask": [],
