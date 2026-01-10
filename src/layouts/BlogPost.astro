@@ -204,7 +204,7 @@ const getReadingTime = (content: string) => {
               {relatedPosts.map((post) => (
                 <article class="group">
                   <a
-                    href={`/blog/${post.slug}`}
+                    href={`/blog/${post.id.replace(/\.mdx?$/, '')}`}
                     class="block p-6 bg-gradient-to-r from-slate-900/50 to-slate-800/50 border border-slate-800 rounded-xl hover:border-rapeseed-400/30 transition-all hover:shadow-lg hover:shadow-rapeseed-500/5"
                   >
                     <div class="flex items-start justify-between mb-3">

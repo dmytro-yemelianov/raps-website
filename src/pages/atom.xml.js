@@ -47,13 +47,13 @@ export async function GET(context) {
   const blogItems = posts
     .filter((post) => !post.data.draft)
     .map((post) => ({
-      id: `${site}/blog/${post.id}/`,
+      id: `${site}/blog/${post.id.replace(/\.mdx?$/, '')}/`,
       title: post.data.title,
       updated: post.data.updatedDate || post.data.pubDate,
       published: post.data.pubDate,
       summary: post.data.description,
       author: post.data.author || 'Dmytro Yemelianov',
-      link: `${site}/blog/${post.id}/`,
+      link: `${site}/blog/${post.id.replace(/\.mdx?$/, '')}/`,
       categories: post.data.tags || [],
     }));
 
