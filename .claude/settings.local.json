@@ -21,7 +21,8 @@
       "mcp__browsermcp__browser_press_key",
       "Bash(rm:*)",
       "Bash(git pull:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": [],

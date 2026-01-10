@@ -56,7 +56,7 @@ export async function GET(context) {
       pubDate: post.data.pubDate,
       description: post.data.description,
       author: post.data.author || 'Dmytro Yemelianov',
-      link: `/blog/${post.id}/`,
+      link: `/blog/${post.id.replace(/\.mdx?$/, '')}/`,
       categories: post.data.tags || [],
     }));
 
