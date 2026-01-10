@@ -83,7 +83,58 @@ raps translate manifest $URN --output json
 
 Four commands. No clicking. No waiting. No email chains.
 
+### Real-World Automation Example
+
+Here's what a complete automated workflow looks like in practice:
+
+```yaml
+# GitHub Actions workflow
+name: Model Processing Pipeline
+on:
+  push:
+    paths: ['models/**/*.rvt']
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup RAPS
+      run: curl -fsSL https://rapscli.xyz/install.sh | sh
+    
+    - name: Process Changed Models
+      run: |
+        # Find changed models
+        for model in $(git diff --name-only HEAD~1 HEAD | grep '\.rvt$'); do
+          echo "Processing $model..."
+          
+          # Upload to cloud
+          raps object upload project-models "$model"
+          
+          # Start translation  
+          URN=$(raps object urn project-models "$model")
+          raps translate start $URN --format svf2 --wait --timeout 1800
+          
+          # Generate thumbnail
+          raps translate thumbnail $URN --width 400 --height 400
+          
+          # Notify team
+          slack-notify "✅ $model processed and ready for review"
+        done
+```
+
 When this runs in a GitHub Actions workflow, it happens automatically every time a model changes. The team is notified through Slack or Teams. Errors are caught immediately. The status is visible in a dashboard, not someone's inbox.
+
+### The Zero-Click Deployment Reality
+
+With proper automation, your "time to deploy" goes from **20 minutes of clicking to 0 minutes**. You push code, you go get coffee, and your models are processed and distributed.
+
+No more:
+- Forgetting to upload the latest version
+- Uploading debug builds to production
+- Manual coordination of file availability  
+- Context switching between design and deployment tasks
 
 ## The Path Forward
 

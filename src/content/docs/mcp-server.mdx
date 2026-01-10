@@ -1,26 +1,39 @@
 ---
 title: "MCP Server"
 description: "AI assistant integration via Model Context Protocol"
-section: "commands"
-order: 10
+section: "modes"
+order: 6
 icon: "🤖"
 ---
 
-# MCP Server
+# MCP Server: Talk to Your Model
 
 The `raps serve` command starts a Model Context Protocol (MCP) server, enabling AI assistants to interact with Autodesk Platform Services through natural language.
 
 > **New in v3.0.0** — The MCP server is a major feature addition.
 
+## From "Chat with PDF" to "Chat with Tools"
+
+We are moving past the era of "Chat with PDF." The next frontier is **Chat with Tools**.
+
+If you have ever tried to paste a 500MB JSON metadata extract from a Revit model into ChatGPT, you know the pain: "Message too long." RAG (Retrieval-Augmented Generation) helps, but it is static. It can't query the current state of a model or trigger an action.
+
+Enter the **Model Context Protocol (MCP)**.
+
 ## What is MCP?
 
-The [Model Context Protocol](https://modelcontextprotocol.io/) is an open standard that allows AI assistants to use external tools. With RAPS MCP server, you can ask your AI assistant to:
+The [Model Context Protocol](https://modelcontextprotocol.io/) is an open standard that allows AI assistants to use external tools. Instead of dumping data into the context window, the LLM has access to a live toolkit.
 
-- Create and manage buckets
+With RAPS MCP server, you can ask your AI assistant to:
+
+- Find specific BIM elements by properties ("all 'Basic Wall' instances over 100m²")
+- Create and manage buckets dynamically  
 - Upload files and start translations
-- Browse BIM 360/ACC projects
-- Check translation status
-- And more...
+- Browse BIM 360/ACC projects in real-time
+- Check translation status and retrieve results
+- Query live model metadata without size limits
+
+This bridges the gap between the rigid, complex data structures of BIM and the natural language interface of AI.
 
 ## Quick Start
 
@@ -116,6 +129,18 @@ The RAPS MCP server exposes 14 tools:
 | `hub_list` | List BIM 360/ACC hubs |
 | `project_list` | List projects in a hub |
 
+## How It Works: Live Tool Execution
+
+Instead of dumping data into the context window, the LLM has access to a toolkit. When you ask a question, the flow looks like this:
+
+1. **You:** "Find all 'Basic Wall' instances in the 'Hospital.rvt' file that are over 100m²."
+2. **LLM:** *Thinking... I need to inspect the model metadata.*
+3. **LLM (Action):** Calls `raps model:query --file Hospital.rvt --category Walls`
+4. **RAPS:** Returns a filtered JSON snippet.
+5. **LLM (Response):** "I found 12 walls matching your criteria. Here are their IDs..."
+
+You don't need to write SQL or complex filter queries. You just ask. The AI translates your natural language into the appropriate RAPS commands.
+
 ## Example Conversations
 
 ### Creating a bucket
@@ -136,6 +161,19 @@ The RAPS MCP server exposes 14 tools:
 > - my-project-files (persistent, US)
 > - temp-uploads (transient, US)
 > - eu-data (persistent, EMEA)
+
+### Advanced model querying
+
+> **You:** Find all steel beams in the hospital model that are longer than 10 meters and show me their material properties
+
+> **AI:** Let me query the model metadata for you.
+> 
+> Found 47 steel beams over 10 meters:
+> - W12x45 beams: 12 instances (Grade 50 steel)
+> - W14x30 beams: 23 instances (Grade 36 steel)  
+> - W16x67 beams: 12 instances (Grade 50 steel)
+>
+> All beams have fire rating of 2 hours. Would you like the complete material specifications?
 
 ### Translation workflow
 
