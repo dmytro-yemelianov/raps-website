@@ -27,15 +27,51 @@ const formatDate = (date: Date) => {
   }).format(date);
 };
 
-// Get related posts (same tags)
+// Get related posts with improved algorithm
 const allPosts = await getCollection('blog');
+
+// Calculate relevance score for related posts
 const relatedPosts = allPosts
-  .filter((post) => {
-    if (!frontmatter.tags) return false;
-    return post.data.tags?.some((tag: string) => frontmatter.tags?.includes(tag));
+  .filter((post) => post.data.title !== frontmatter.title && !post.data.draft)
+  .map((post) => {
+    let score = 0;
+    
+    // Score based on common tags
+    const commonTags = frontmatter.tags?.filter((tag: string) => 
+      post.data.tags?.includes(tag)
+    ) || [];
+    score += commonTags.length * 3;
+    
+    // Boost score if it's also featured
+    if (post.data.featured && frontmatter.featured) {
+      score += 2;
+    }
+    
+    // Score based on same author
+    if (post.data.author === frontmatter.author) {
+      score += 1;
+    }
+    
+    // Score based on recency (newer posts get slight boost)
+    const daysDiff = Math.abs(new Date(post.data.pubDate).getTime() - new Date(frontmatter.pubDate).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysDiff < 30) {
+      score += 0.5;
+    }
+    
+    return { post, score };
   })
-  .filter((post) => post.data.title !== frontmatter.title)
-  .slice(0, 3);
+  .filter(({ score }) => score > 0)
+  .sort((a, b) => b.score - a.score)
+  .slice(0, 3)
+  .map(({ post }) => post);
+
+// Calculate reading time
+const getReadingTime = (content: string) => {
+  const wordsPerMinute = 200;
+  const words = content.split(/\s+/).length;
+  const minutes = Math.ceil(words / wordsPerMinute);
+  return minutes;
+};
 ---
 
 <BaseLayout 
@@ -46,6 +82,7 @@ const relatedPosts = allPosts
 >
   <article class="py-16 sm:py-24">
     <div class="max-w-3xl mx-auto px-4 sm:px-6">
+      
       <!-- Article Header -->
       <header class="mb-12">
         <!-- Meta -->
@@ -157,21 +194,84 @@ const relatedPosts = allPosts
         <!-- Related Posts -->
         {relatedPosts.length > 0 && (
           <div>
-            <h3 class="text-lg font-semibold text-white mb-6">Related Articles</h3>
-            <div class="grid gap-4">
+            <div class="flex items-center gap-3 mb-6">
+              <svg class="w-5 h-5 text-rapeseed-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+              <h3 class="text-xl font-semibold text-white">Related Articles</h3>
+            </div>
+            <div class="grid gap-6">
               {relatedPosts.map((post) => (
-                <a
-                  href={`/blog/${post.id}`}
-                  class="p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-primary-500/50 transition-colors group"
-                >
-                  <div class="font-medium text-white group-hover:text-primary-400 transition-colors">
-                    {post.data.title}
-                  </div>
-                  <div class="text-sm text-slate-400 mt-1">
-                    {post.data.description}
-                  </div>
-                </a>
+                <article class="group">
+                  <a
+                    href={`/blog/${post.slug}`}
+                    class="block p-6 bg-gradient-to-r from-slate-900/50 to-slate-800/50 border border-slate-800 rounded-xl hover:border-rapeseed-400/30 transition-all hover:shadow-lg hover:shadow-rapeseed-500/5"
+                  >
+                    <div class="flex items-start justify-between mb-3">
+                      <div class="flex items-center gap-3 text-sm text-slate-500">
+                        <time datetime={post.data.pubDate.toISOString()}>
+                          {formatDate(post.data.pubDate)}
+                        </time>
+                        <span>•</span>
+                        <span>5 min read</span>
+                        {post.data.featured && (
+                          <>
+                            <span>•</span>
+                            <span class="px-2 py-0.5 bg-rapeseed-500/20 text-rapeseed-400 text-xs font-medium rounded-full">
+                              Featured
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <h4 class="font-semibold text-white mb-3 group-hover:text-rapeseed-400 transition-colors leading-tight">
+                      {post.data.title}
+                    </h4>
+                    
+                    <p class="text-slate-400 text-sm mb-4 line-clamp-2 leading-relaxed">
+                      {post.data.description}
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                      <div class="flex flex-wrap gap-2">
+                        {post.data.tags?.slice(0, 2).map((tag: string) => (
+                          <span class="px-2 py-1 text-xs font-medium bg-slate-800 text-slate-300 rounded">
+                            {tag}
+                          </span>
+                        ))}
+                        {(post.data.tags?.length || 0) > 2 && (
+                          <span class="px-2 py-1 text-xs font-medium text-slate-500 rounded">
+                            +{(post.data.tags?.length || 0) - 2} more
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div class="flex items-center gap-1 text-sm text-rapeseed-400 group-hover:text-rapeseed-300">
+                        <span>Read article</span>
+                        <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </a>
+                </article>
               ))}
+            </div>
+            
+            <!-- More Articles CTA -->
+            <div class="mt-8 p-6 bg-gradient-to-r from-rapeseed-950/50 to-amber-950/50 border border-rapeseed-900/50 rounded-xl text-center">
+              <h4 class="text-lg font-semibold text-white mb-2">Looking for more insights?</h4>
+              <p class="text-slate-400 mb-4">Explore our complete collection of APS development tutorials and DevOps guides.</p>
+              <a
+                href="/blog"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-rapeseed-500/20 hover:bg-rapeseed-500/30 text-rapeseed-400 hover:text-rapeseed-300 rounded-lg transition-colors border border-rapeseed-500/30"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0l-4-4m4 4l-4 4"/>
+                </svg>
+                Browse All Articles
+              </a>
             </div>
           </div>
         )}

@@ -3,6 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import GlossaryText from '../components/GlossaryText.astro';
 import { getCollection } from 'astro:content';
+import '../styles/globals.css';
 
 interface Props {
   title: string;
@@ -53,6 +54,13 @@ const navSections = [
     title: 'Getting Started',
     items: allDocs
       .filter(doc => doc.data.section === 'getting-started')
+      .sort((a, b) => a.data.order - b.data.order)
+  },
+  {
+    id: 'modes',
+    title: 'Usage Modes',
+    items: allDocs
+      .filter(doc => doc.data.section === 'modes')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
@@ -157,6 +165,24 @@ const sectionContainsCurrent = (sectionId: string) => {
     <div class="flex">
       <!-- Sidebar -->
       <aside class="hidden lg:block w-64 fixed left-0 top-16 bottom-0 overflow-y-auto border-r border-slate-800/50 bg-slate-950">
+        <!-- Documentation Search -->
+        <div class="p-4 border-b border-slate-800/50">
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="Search docs..."
+              id="docs-search"
+              class="w-full px-3 py-2 pl-10 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 focus:bg-slate-800"
+            />
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <!-- Search Results -->
+          <div id="search-results" class="hidden mt-3 bg-slate-800 border border-slate-700 rounded-lg max-h-64 overflow-y-auto">
+            <div class="p-3 text-sm text-slate-400">Start typing to search...</div>
+          </div>
+        </div>
         <nav class="py-6 px-4" id="docs-nav">
           {navSections.map(section => (
             (section.items?.length > 0 || section.subsections) && (
@@ -300,6 +326,24 @@ const sectionContainsCurrent = (sectionId: string) => {
               </svg>
             </button>
           </div>
+          <!-- Mobile Documentation Search -->
+          <div class="p-4 border-b border-slate-800">
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="Search docs..."
+                id="docs-search-mobile"
+                class="w-full px-3 py-2 pl-10 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 focus:bg-slate-700"
+              />
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <!-- Mobile Search Results -->
+            <div id="search-results-mobile" class="hidden mt-3 bg-slate-700 border border-slate-600 rounded-lg max-h-64 overflow-y-auto">
+              <div class="p-3 text-sm text-slate-400">Start typing to search...</div>
+            </div>
+          </div>
           <nav class="py-4 px-3">
             {navSections.map(section => (
               (section.items?.length > 0 || section.subsections) && (
@@ -422,9 +466,14 @@ const sectionContainsCurrent = (sectionId: string) => {
       <!-- Main content -->
       <main class="flex-1 lg:ml-64 min-h-screen">
         <div class="max-w-4xl mx-auto px-6 py-12">
-          <GlossaryText>
-            <slot />
-          </GlossaryText>
+          
+          <div class="docs-content">
+            <GlossaryText>
+              <slot />
+            </GlossaryText>
+          </div>
+          
+          </div>
         </div>
       </main>
     </div>
@@ -432,7 +481,7 @@ const sectionContainsCurrent = (sectionId: string) => {
     <!-- Mermaid.js -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     
-    <script>
+    <script define:vars={{ navSections }}>
       // Mobile sidebar
       const toggle = document.getElementById('docs-menu-toggle');
       const sidebar = document.getElementById('docs-mobile-sidebar');
@@ -660,6 +709,176 @@ const sectionContainsCurrent = (sectionId: string) => {
           }
         }
       });
+      
+      // Documentation Search Implementation
+      let docsIndex = [];
+      
+      // Build search index from navigation
+      function buildSearchIndex() {
+        navSections.forEach(section => {
+          if (section.items) {
+            section.items.forEach(item => {
+              docsIndex.push({
+                title: item.data.title,
+                slug: item.slug,
+                description: item.data.description || '',
+                section: section.title,
+                url: `/docs/${item.slug}`
+              });
+            });
+          }
+          
+          if (section.subsections) {
+            section.subsections.forEach(subsection => {
+              subsection.items.forEach(item => {
+                docsIndex.push({
+                  title: item.data.title,
+                  slug: item.slug,
+                  description: item.data.description || '',
+                  section: `${section.title} > ${subsection.title}`,
+                  url: `/docs/${item.slug}`
+                });
+              });
+            });
+          }
+        });
+      }
+      
+      // Search function
+      function searchDocs(query) {
+        if (!query || query.length < 2) return [];
+        
+        const results = docsIndex.filter(item => {
+          const searchText = `${item.title} ${item.description} ${item.section}`.toLowerCase();
+          const queryLower = query.toLowerCase();
+          return searchText.includes(queryLower);
+        }).slice(0, 8); // Limit to 8 results
+        
+        return results;
+      }
+      
+      // Render search results
+      function renderSearchResults(results, containerId) {
+        const container = document.getElementById(containerId);
+        
+        if (results.length === 0) {
+          container.innerHTML = '<div class="p-3 text-sm text-slate-400">No results found</div>';
+          return;
+        }
+        
+        const html = results.map(result => `
+          <a href="${result.url}" class="block p-3 hover:bg-slate-700 transition-colors border-b border-slate-600 last:border-b-0">
+            <div class="font-medium text-white text-sm">${highlightMatch(result.title, document.getElementById(containerId.includes('mobile') ? 'docs-search-mobile' : 'docs-search').value)}</div>
+            <div class="text-xs text-slate-400 mt-1">${result.section}</div>
+            ${result.description ? `<div class="text-xs text-slate-500 mt-1 line-clamp-2">${highlightMatch(result.description, document.getElementById(containerId.includes('mobile') ? 'docs-search-mobile' : 'docs-search').value)}</div>` : ''}
+          </a>
+        `).join('');
+        
+        container.innerHTML = html;
+      }
+      
+      // Highlight search matches
+      function highlightMatch(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')})`, 'gi');
+        return text.replace(regex, '<mark class="bg-rapeseed-400/30 text-rapeseed-300">$1</mark>');
+      }
+      
+      // Setup search functionality
+      function setupSearch() {
+        buildSearchIndex();
+        
+        const searchInputs = ['docs-search', 'docs-search-mobile'];
+        const resultContainers = ['search-results', 'search-results-mobile'];
+        
+        searchInputs.forEach((inputId, index) => {
+          const input = document.getElementById(inputId);
+          const resultsContainer = document.getElementById(resultContainers[index]);
+          
+          if (!input || !resultsContainer) return;
+          
+          let searchTimeout;
+          
+          input.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length === 0) {
+              resultsContainer.classList.add('hidden');
+              return;
+            }
+            
+            if (query.length < 2) {
+              resultsContainer.classList.remove('hidden');
+              resultsContainer.innerHTML = '<div class="p-3 text-sm text-slate-400">Type at least 2 characters...</div>';
+              return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+              const results = searchDocs(query);
+              renderSearchResults(results, resultContainers[index]);
+              resultsContainer.classList.remove('hidden');
+              
+              // Track search usage
+              if (window.analytics) {
+                window.analytics.track('docs_search', {
+                  query: query,
+                  results_count: results.length,
+                  is_mobile: inputId.includes('mobile')
+                });
+              }
+            }, 200);
+          });
+          
+          input.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2) {
+              resultsContainer.classList.remove('hidden');
+            }
+          });
+          
+          // Hide results when clicking outside
+          document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+              resultsContainer.classList.add('hidden');
+            }
+          });
+          
+          // Keyboard navigation
+          input.addEventListener('keydown', function(e) {
+            const links = resultsContainer.querySelectorAll('a');
+            if (links.length === 0) return;
+            
+            let activeIndex = -1;
+            links.forEach((link, index) => {
+              if (link.classList.contains('bg-slate-600')) {
+                activeIndex = index;
+                link.classList.remove('bg-slate-600');
+              }
+            });
+            
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              activeIndex = Math.min(activeIndex + 1, links.length - 1);
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              activeIndex = Math.max(activeIndex - 1, 0);
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              if (activeIndex >= 0) {
+                links[activeIndex].click();
+              }
+            }
+            
+            if (activeIndex >= 0) {
+              links[activeIndex].classList.add('bg-slate-600');
+            }
+          });
+        });
+      }
+      
+      // Initialize search when page loads
+      document.addEventListener('DOMContentLoaded', setupSearch);
+      
     </script>
   </body>
 </html>

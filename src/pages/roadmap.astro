@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-// Roadmap data organized by version/milestone
+// Roadmap data organized by version/milestone with voting and progress
 const roadmap = [
   {
     version: '3.5.0',
@@ -14,24 +14,28 @@ const roadmap = [
         description: 'Add more MCP tools for Data Management (folders, items, versions), ACC modules (RFIs, submittals, assets), and Design Automation.',
         priority: 'high',
         category: 'mcp',
+        id: 'mcp-tool-coverage',
       },
       {
         title: 'MCP Streaming Responses',
         description: 'Support streaming for long-running operations like translation jobs and file uploads with real-time progress updates.',
         priority: 'high',
         category: 'mcp',
+        id: 'mcp-streaming',
       },
       {
         title: 'AI Conversation Context',
         description: 'Enable MCP tools to maintain context across multiple operations (e.g., "translate that file" after listing objects).',
         priority: 'medium',
         category: 'mcp',
+        id: 'ai-context',
       },
       {
         title: 'GitHub Copilot Extension',
         description: 'Native integration with GitHub Copilot for VS Code to enable APS operations directly from the IDE.',
         priority: 'medium',
         category: 'integrations',
+        id: 'copilot-extension',
       },
     ],
   },
@@ -46,12 +50,14 @@ const roadmap = [
         description: 'Support team-wide configuration profiles with role-based access controls and credential sharing.',
         priority: 'high',
         category: 'auth',
+        id: 'multi-user-profiles',
       },
       {
         title: 'Webhook Event Processing',
         description: 'Built-in webhook server with event routing, filtering, and custom handlers for real-time APS notifications.',
         priority: 'high',
         category: 'webhooks',
+        id: 'webhook-processing',
       },
       {
         title: 'Audit Logging',
@@ -233,8 +239,8 @@ const priorityLabels = {
 ---
 
 <BaseLayout title="Roadmap" description="RAPS development roadmap and planned features for future releases.">
-  <section class="py-12 sm:py-16 lg:py-20">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+  <section class="py-16 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
       
       <!-- Header -->
       <div class="mb-12 sm:mb-16">
@@ -321,10 +327,12 @@ const priorityLabels = {
                         </div>
                         <p class="text-sm sm:text-base text-slate-400">{feature.description}</p>
                       </div>
-                      <div class="flex items-center gap-2 sm:shrink-0">
+                      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:shrink-0">
+                        <!-- Priority Badge -->
                         <span class={`px-2 py-1 text-xs font-medium rounded bg-${priorityLabels[feature.priority].color}-500/10 text-${priorityLabels[feature.priority].color}-400`}>
                           {priorityLabels[feature.priority].label} Priority
                         </span>
+                        
                       </div>
                     </div>
                   </div>
@@ -342,7 +350,7 @@ const priorityLabels = {
         </h3>
         <p class="text-sm sm:text-base text-slate-300 mb-6">
           This roadmap is community-driven. Your feedback and feature requests help prioritize development.
-          Vote on existing proposals or suggest new features on GitHub Discussions.
+          Suggest new features or join discussions on GitHub.
         </p>
         <div class="flex flex-wrap gap-3">
           <a
@@ -383,3 +391,4 @@ const priorityLabels = {
     </div>
   </section>
 </BaseLayout>
+
