@@ -87,21 +87,21 @@ const services = [
     name: 'Design Automation',
     icon: '⚙️',
     features: [
-      { name: 'Engine Discovery', command: 'da engine list', status: 'full' },
-      { name: 'Activity Management', command: 'da activity list/create', status: 'partial' },
-      { name: 'App Bundles', command: 'da appbundle list/create', status: 'partial' },
-      { name: 'Work Items', command: 'da workitem create/status', status: 'partial' },
-      { name: 'Result Download', command: 'da workitem download', status: 'full' },
+      { name: 'Engine Discovery', command: 'da engines', status: 'full' },
+      { name: 'Activity Management', command: 'da activities/activity-create/activity-delete', status: 'full' },
+      { name: 'App Bundles', command: 'da appbundles/appbundle-create/appbundle-delete', status: 'full' },
+      { name: 'Work Items', command: 'da run', status: 'full' },
     ]
   },
   {
     name: 'Reality Capture',
     icon: '📸',
     features: [
-      { name: 'Photoscene CRUD', command: 'rc photoscene create/delete', status: 'full' },
-      { name: 'Photo Upload', command: 'rc photoscene upload', status: 'full' },
-      { name: 'Processing', command: 'rc photoscene process', status: 'full' },
-      { name: 'Result Download', command: 'rc photoscene download', status: 'full' },
+      { name: 'Photoscene CRUD', command: 'reality create/delete', status: 'full' },
+      { name: 'Photo Upload', command: 'reality upload', status: 'full' },
+      { name: 'Processing', command: 'reality process', status: 'full' },
+      { name: 'Status & Results', command: 'reality status/result', status: 'full' },
+      { name: 'Output Formats', command: 'reality formats', status: 'full' },
     ]
   },
   {

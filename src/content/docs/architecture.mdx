@@ -41,7 +41,10 @@ graph TB
         OSS[raps-oss]
         DER[raps-derivative]
         DM[raps-dm]
-        SSA[raps-ssa]
+        DA[raps-da]
+        ACC[raps-acc]
+        WH[raps-webhooks]
+        RC[raps-reality]
     end
     
     CLI --> APP
@@ -55,11 +58,18 @@ graph TB
     OSS --> KER
     DER --> KER
     DM --> KER
-    SSA --> KER
-    
+    DA --> KER
+    ACC --> KER
+    WH --> KER
+    RC --> KER
+
     APP --> OSS
     APP --> DER
     APP --> DM
+    APP --> DA
+    APP --> ACC
+    APP --> WH
+    APP --> RC
 ```
 
 ## Kernel (`raps-kernel`)
@@ -92,7 +102,10 @@ Service crates provide APS API functionality:
 - **`raps-oss`**: Object Storage Service (buckets, objects, uploads, downloads)
 - **`raps-derivative`**: Model Derivative API (translations, manifests, derivatives)
 - **`raps-dm`**: Data Management API (hubs, projects, folders, items, versions)
-- **`raps-ssa`**: Secure Service Accounts (SSA management, JWT assertion)
+- **`raps-da`**: Design Automation API (engines, activities, work items)
+- **`raps-acc`**: ACC/BIM 360 (issues, RFIs, assets, submittals, checklists)
+- **`raps-webhooks`**: Webhooks API (subscriptions, events, verification)
+- **`raps-reality`**: Reality Capture API (photoscenes, processing, results)
 
 **Service Principles:**
 - Depend only on `raps-kernel`, not on each other
@@ -135,7 +148,7 @@ cargo build --no-default-features --features core
 
 ```bash
 $ raps --version
-raps 3.8.0
+raps 3.9.0
 ```
 
 ## Performance Targets
