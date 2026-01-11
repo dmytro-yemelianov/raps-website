@@ -216,14 +216,22 @@ const platforms = {
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Detect platform once
-    const detectPlatform = () => {
+    // Detect platform once (uses userAgentData when available, falls back to userAgent)
+    const detectPlatform = (): string | null => {
       const ua = navigator.userAgent.toLowerCase();
-      const platform = navigator.platform.toLowerCase();
-      
-      if (platform.includes('win') || ua.includes('windows')) return 'windows';
-      if (platform.includes('mac') || ua.includes('mac')) return 'macos';
-      if (platform.includes('linux') || ua.includes('linux')) return 'linux';
+
+      // Modern API (Chrome 90+, Edge 90+, Opera 76+)
+      if ('userAgentData' in navigator && navigator.userAgentData?.platform) {
+        const platform = (navigator.userAgentData.platform as string).toLowerCase();
+        if (platform.includes('win')) return 'windows';
+        if (platform.includes('mac')) return 'macos';
+        if (platform.includes('linux')) return 'linux';
+      }
+
+      // Fallback to userAgent parsing
+      if (ua.includes('windows') || ua.includes('win64') || ua.includes('win32')) return 'windows';
+      if (ua.includes('macintosh') || ua.includes('mac os')) return 'macos';
+      if (ua.includes('linux') && !ua.includes('android')) return 'linux';
       return null;
     };
 

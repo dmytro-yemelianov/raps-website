@@ -153,6 +153,10 @@ const sectionContainsCurrent = (sectionId: string) => {
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={`${title} | RAPS Docs`} />
     <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL('/og-image.png', Astro.site)} />
+    <meta property="og:site_name" content="RAPS CLI" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={new URL('/og-image.png', Astro.site)} />
     
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -478,8 +482,8 @@ const sectionContainsCurrent = (sectionId: string) => {
       </main>
     </div>
     
-    <!-- Mermaid.js -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- Mermaid.js (pinned to 10.9.3 for stability) -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
     
     <script define:vars={{ navSections }}>
       // Mobile sidebar

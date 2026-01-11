@@ -34,7 +34,7 @@ try {
   </span>
 </a>
 
-<script define:vars={{ repo }}>
+<script is:inline define:vars={{ repo }}>
   // Fetch star count client-side for real-time updates
   if (typeof window !== 'undefined') {
     fetch(`https://api.github.com/repos/${repo}`)

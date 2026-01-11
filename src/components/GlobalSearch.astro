@@ -131,9 +131,11 @@
   // Close search modal
   function closeSearch() {
     modal?.classList.add('hidden');
-    input.value = '';
-    resultsContainer.innerHTML = '';
-    resultsContainer.classList.add('hidden');
+    if (input) input.value = '';
+    if (resultsContainer) {
+      resultsContainer.innerHTML = '';
+      resultsContainer.classList.add('hidden');
+    }
     initialState?.classList.remove('hidden');
     noResultsState?.classList.add('hidden');
     selectedIndex = -1;
@@ -142,10 +144,12 @@
   }
   
   // Perform search
-  function performSearch(query) {
-    if (!query) {
-      resultsContainer.innerHTML = '';
-      resultsContainer.classList.add('hidden');
+  function performSearch(query: string) {
+    if (!query || !resultsContainer) {
+      if (resultsContainer) {
+        resultsContainer.innerHTML = '';
+        resultsContainer.classList.add('hidden');
+      }
       initialState?.classList.remove('hidden');
       noResultsState?.classList.add('hidden');
       return;
@@ -172,17 +176,17 @@
   }
   
   // Display search results
-  function displayResults(results) {
+  function displayResults(results: typeof searchIndex) {
     initialState?.classList.add('hidden');
-    
+
     if (results.length === 0) {
       noResultsState?.classList.remove('hidden');
-      resultsContainer.classList.add('hidden');
+      resultsContainer?.classList.add('hidden');
       return;
     }
-    
+
     noResultsState?.classList.add('hidden');
-    resultsContainer.classList.remove('hidden');
+    resultsContainer?.classList.remove('hidden');
     
     const grouped = {};
     results.forEach(result => {
@@ -208,8 +212,8 @@
             <a href="${item.url}" class="search-result block px-4 py-3 hover:bg-slate-800 transition-colors" data-index="${searchResults.indexOf(item)}">
               <div class="flex items-center justify-between">
                 <div class="flex-1">
-                  <div class="font-medium text-white">${highlightMatch(item.title, input.value)}</div>
-                  <div class="text-sm text-slate-400 mt-1">${highlightMatch(item.content, input.value)}</div>
+                  <div class="font-medium text-white">${highlightMatch(item.title, input?.value || '')}</div>
+                  <div class="text-sm text-slate-400 mt-1">${highlightMatch(item.content, input?.value || '')}</div>
                 </div>
                 <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -221,7 +225,7 @@
       `;
     });
     
-    resultsContainer.innerHTML = html;
+    if (resultsContainer) resultsContainer.innerHTML = html;
     selectedIndex = -1;
   }
   
@@ -233,7 +237,8 @@
   }
   
   // Keyboard navigation
-  function navigateResults(direction) {
+  function navigateResults(direction: 'up' | 'down') {
+    if (!resultsContainer) return;
     const results = resultsContainer.querySelectorAll('.search-result');
     if (results.length === 0) return;
     
@@ -280,7 +285,7 @@
   
   // Search input
   input?.addEventListener('input', (e) => {
-    performSearch(e.target.value);
+    performSearch((e.target as HTMLInputElement).value);
   });
   
   // Keyboard shortcuts
@@ -306,8 +311,8 @@
         navigateResults('up');
       } else if (e.key === 'Enter' && selectedIndex >= 0) {
         e.preventDefault();
-        const results = resultsContainer.querySelectorAll('.search-result');
-        results[selectedIndex]?.click();
+        const results = resultsContainer?.querySelectorAll('.search-result');
+        (results?.[selectedIndex] as HTMLElement)?.click();
       }
     }
   });
