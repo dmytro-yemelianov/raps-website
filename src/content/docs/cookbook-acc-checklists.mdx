@@ -12,36 +12,46 @@ Export ACC checklists for reporting, compliance, and integration with other syst
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Source["ACC Checklists"]
-        A[Checklist Templates]
-        B[Checklist Instances]
-        C[Checklist Items]
-        D[Attachments]
-    end
-
-    subgraph Extract["Extraction"]
-        E[List Checklists]
-        F[Get Items]
-        G[Get Responses]
-    end
-
-    subgraph Export["Export"]
-        H[JSON Export]
-        I[CSV Report]
-        J[PDF Report]
-    end
-
-    subgraph Integration["Integration"]
-        K[Quality System]
-        L[Compliance DB]
-        M[Dashboard]
-    end
-
-    A & B --> E --> F --> G --> H & I & J
-    H --> K & L & M
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">ACC Checklists</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Checklist Templates</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Checklist Instances</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Checklist Items</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Attachments</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Extraction</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">List Checklists</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Get Items</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Get Responses</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Export</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">JSON Export</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">CSV Report</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">PDF Report</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Integration</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Quality System</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Compliance DB</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Dashboard</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Checklists → Extraction → Export → Integration</div>
+  </div>
+</div>
 
 ---
 
@@ -200,26 +210,32 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Trigger"]
-        A[Daily/Manual]
-    end
-
-    subgraph Export["Export"]
-        B[List Checklists]
-        C[Export Each]
-        D[Get Items]
-    end
-
-    subgraph Report["Reports"]
-        E[summary.md]
-        F[all-items.csv]
-        G[Individual JSONs]
-    end
-
-    A --> B --> C --> D --> E & F & G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Trigger</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Daily/Manual</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Export</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">List Checklists</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Export Each</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get Items</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Reports</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">summary.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">all-items.csv</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Individual JSONs</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -231,24 +247,56 @@ flowchart LR
 User: "What's the status of our quality checklists?"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant ACC as ACC Cloud
-
-    User->>AI: Quality checklist status
-
-    AI->>MCP: aps_acc_checklist_list(project_id)
-    MCP->>ACC: Get checklists
-    ACC-->>MCP: Checklist list
-
-    AI->>AI: Group by status
-    AI->>AI: Calculate completion rates
-
-    AI->>User: Status summary
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">User</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI Assistant</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">User</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Quality checklist status</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_checklist_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Get checklists</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Checklist list</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Group by status + Calculate completion rates</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Status summary</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">User</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > **Quality Checklist Status:**

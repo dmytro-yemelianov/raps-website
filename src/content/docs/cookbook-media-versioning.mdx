@@ -12,32 +12,35 @@ Track 3D asset versions with organized storage and comparison.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Versions["Version History"]
-        A["assets/hero/v1.0/model.fbx"]
-        B["assets/hero/v1.1/model.fbx"]
-        C["assets/hero/v2.0/model.fbx"]
-        D["assets/hero/latest/model.fbx"]
-    end
-
-    subgraph Translate["Translations"]
-        E[SVF2 v1.0]
-        F[SVF2 v1.1]
-        G[SVF2 v2.0]
-    end
-
-    subgraph Compare["Comparison"]
-        H[Polygon Count]
-        I[Material Count]
-        J[File Size]
-    end
-
-    A --> E
-    B --> F
-    C --> G
-    E & F & G --> H & I & J
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Version History</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/v1.0/model.fbx</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/v1.1/model.fbx</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/v2.0/model.fbx</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/latest/model.fbx</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Translations</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 v1.0</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 v1.1</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 v2.0</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Comparison</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Polygon Count</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Material Count</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">File Size</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -225,29 +228,36 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Git Push"]
-        A[Assets changed]
-    end
-
-    subgraph Version["Versioning"]
-        B[Calculate version]
-        C[Upload v-X.Y.Z]
-        D[Update latest]
-    end
-
-    subgraph Process["Process"]
-        E[Translate]
-        F[Generate report]
-    end
-
-    subgraph Tag["Release"]
-        G[Git tag]
-    end
-
-    A --> B --> C --> D --> E --> F --> G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Assets changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Versioning</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Calculate version</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload v-X.Y.Z</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Update latest</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Process</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate report</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Release</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Git tag</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -259,32 +269,90 @@ flowchart LR
 User: "Upload the updated hero model as a new version"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Upload as new version
-
-    AI->>MCP: aps_object_list(prefix="assets/hero/v")
-    MCP->>APS: List versions
-    APS-->>MCP: Current versions
-
-    AI->>AI: Determine next version (v2.1)
-
-    AI->>MCP: aps_object_upload(key="assets/hero/v2.1/...")
-    MCP->>APS: Upload versioned
-
-    AI->>MCP: aps_object_upload(key="assets/hero/latest/...")
-    MCP->>APS: Update latest
-
-    AI->>MCP: aps_translate_start(urn)
-    MCP->>APS: Translate
-
-    AI->>User: Uploaded as v2.1
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Upload as new version</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_list(prefix="assets/hero/v")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">List versions</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Current versions</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Determine next version (v2.1)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(key="assets/hero/v2.1/...")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Upload versioned</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(key="assets/hero/latest/...")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Update latest</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Translate</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Uploaded as v2.1</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Uploaded hero-character.fbx as version v2.1:

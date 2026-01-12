@@ -12,36 +12,46 @@ Aggregate and analyze data across multiple ACC projects for portfolio insights.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Projects["Multiple Projects"]
-        A[Project A]
-        B[Project B]
-        C[Project C]
-    end
-
-    subgraph Data["Data Collection"]
-        D[Issues]
-        E[RFIs]
-        F[Submittals]
-        G[Checklists]
-    end
-
-    subgraph Aggregate["Aggregation"]
-        H[Combine Data]
-        I[Normalize Fields]
-        J[Add Project Context]
-    end
-
-    subgraph Report["Reports"]
-        K[Portfolio Summary]
-        L[Cross-Project Metrics]
-        M[Executive Dashboard]
-    end
-
-    A & B & C --> D & E & F & G
-    D & E & F & G --> H --> I --> J --> K & L & M
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Multiple Projects</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Project A</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Project B</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Project C</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Data Collection</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Issues</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">RFIs</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Submittals</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Checklists</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Aggregation</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Combine Data</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Normalize Fields</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Add Project Context</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Reports</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Portfolio Summary</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Cross-Project Metrics</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Executive Dashboard</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Projects → Data → Aggregation → Reports</div>
+  </div>
+</div>
 
 ---
 
@@ -230,32 +240,39 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TB
-    subgraph Trigger["Weekly Monday"]
-        A[Schedule]
-    end
-
-    subgraph Collect["Data Collection"]
-        B[List Projects]
-        C[Get Issues]
-        D[Get RFIs]
-        E[Get Submittals]
-    end
-
-    subgraph Aggregate["Aggregation"]
-        F[Combine Data]
-        G[Add Project Context]
-    end
-
-    subgraph Report["Reports"]
-        H[report.md]
-        I[all-issues.json]
-        J[portfolio metrics]
-    end
-
-    A --> B --> C & D & E --> F --> G --> H & I & J
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Weekly Monday</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Schedule</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Data Collection</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">List Projects</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get Issues/RFIs/Submittals</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Aggregation</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Combine Data</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Add Project Context</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Reports</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">all-issues.json</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">portfolio metrics</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -267,30 +284,59 @@ flowchart TB
 User: "Give me a summary across all our active construction projects"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant ACC as ACC Cloud
-
-    User->>AI: Portfolio summary
-
-    AI->>MCP: aps_hub_list()
-    MCP-->>AI: Hubs
-
-    AI->>MCP: aps_project_list(hub_id)
-    MCP-->>AI: Projects
-
-    loop For each project
-        AI->>MCP: aps_acc_issue_list(project_id)
-        AI->>MCP: aps_acc_rfi_list(project_id)
-        AI->>MCP: aps_acc_submittal_list(project_id)
-    end
-
-    AI->>AI: Aggregate and analyze
-    AI->>User: Portfolio dashboard
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">User</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI Assistant</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">User</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Portfolio summary</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_hub_list()</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_project_list(hub_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-purple-900/20 rounded text-purple-300 text-xs">Loop: For each project</span>
+      </div>
+      <div class="flex items-center gap-2 ml-4">
+        <span class="w-12 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono text-xs">aps_acc_issue_list, rfi_list, submittal_list</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-12 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Aggregate and analyze</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Portfolio dashboard</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">User</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > **Portfolio Summary - 5 Active Projects**

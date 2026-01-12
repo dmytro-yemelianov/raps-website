@@ -12,37 +12,40 @@ Process common 3D formats (FBX, OBJ, glTF) for web-based viewing.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["3D Formats"]
-        A[FBX]
-        B[OBJ + MTL]
-        C[glTF/GLB]
-        D[3DS]
-        E[DAE]
-    end
-
-    subgraph Upload["RAPS Upload"]
-        F[raps object upload]
-    end
-
-    subgraph Storage["APS Storage"]
-        G[(OSS Bucket)]
-    end
-
-    subgraph Translation["Model Derivative"]
-        H[SVF2 Translation]
-    end
-
-    subgraph Output["Outputs"]
-        I[Web Viewable]
-        J[Thumbnails]
-        K[Metadata]
-    end
-
-    A & B & C & D & E --> F --> G --> H
-    H --> I & J & K
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">3D Formats</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">FBX</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OBJ + MTL</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">glTF/GLB</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3DS</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">DAE</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">RAPS Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">raps object upload</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-amber-500/30 p-4">
+      <div class="text-amber-400 text-xs font-semibold uppercase tracking-wider mb-3">APS Storage</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OSS Bucket</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Model Derivative</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 Translation</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Outputs</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Web Viewable</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Thumbnails</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Metadata</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -189,24 +192,28 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Git Push"]
-        A[3D files changed]
-    end
-
-    subgraph Process["Processing"]
-        B[Upload assets]
-        C[Translate to SVF2]
-        D[Generate thumbnails]
-    end
-
-    subgraph Output["Artifacts"]
-        E[thumbnails/]
-    end
-
-    A --> B --> C --> D --> E
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3D files changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Processing</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload assets</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate to SVF2</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate thumbnails</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Artifacts</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">thumbnails/</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -218,34 +225,91 @@ flowchart LR
 User: "Upload and translate the new character model for web viewing"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Translate character.fbx
-
-    AI->>MCP: aps_object_upload(bucket, file)
-    MCP->>APS: Upload FBX
-    APS-->>MCP: Complete
-
-    AI->>MCP: aps_object_urn(bucket, key)
-    MCP-->>AI: URN
-
-    AI->>MCP: aps_translate_start(urn, format="svf2")
-    MCP->>APS: Start translation
-
-    loop Wait
-        AI->>MCP: aps_translate_manifest(urn)
-    end
-
-    AI->>MCP: aps_derivative_thumbnail(urn)
-    MCP-->>AI: Thumbnail
-
-    AI->>User: Asset ready with preview
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Translate character.fbx</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, file)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Upload FBX</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Complete</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_urn(bucket, key)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">URN</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn, format="svf2")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Start translation</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_thumbnail(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Thumbnail</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Asset ready with preview</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > character.fbx has been uploaded and translated:

@@ -12,35 +12,42 @@ Process drone photos and site photography into 3D environments.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Capture["Site Capture"]
-        A[Drone Photos]
-        B[Ground Photos]
-        C[360 Photos]
-    end
-
-    subgraph Upload["RAPS Upload"]
-        D[Create Photoscene]
-        E[Upload Images]
-    end
-
-    subgraph Process["RC Processing"]
-        F[Aerial Mode]
-        G[Point Cloud Generation]
-        H[Mesh Reconstruction]
-    end
-
-    subgraph Output["Outputs"]
-        I[Orthophoto]
-        J[3D Mesh]
-        K[Point Cloud]
-        L[DSM/DTM]
-    end
-
-    A & B & C --> D --> E --> F --> G --> H
-    H --> I & J & K & L
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Site Capture</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Drone Photos</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Ground Photos</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">360 Photos</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">RAPS Upload</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create Photoscene</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload Images</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">RC Processing</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Aerial Mode</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Point Cloud Generation</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Mesh Reconstruction</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Outputs</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Orthophoto</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3D Mesh</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Point Cloud</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">DSM/DTM</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -228,33 +235,41 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TB
-    subgraph Input["Manual Trigger"]
-        A[site_name + photos_path]
-    end
-
-    subgraph Create["Setup"]
-        B[Create Aerial Photoscene]
-    end
-
-    subgraph Upload["Upload"]
-        C[Upload Drone Photos]
-    end
-
-    subgraph Process["Processing"]
-        D[Start RC Processing]
-        E[Wait for Completion]
-    end
-
-    subgraph Download["Download"]
-        F[Orthophoto]
-        G[3D Mesh]
-        H[Point Cloud]
-    end
-
-    A --> B --> C --> D --> E --> F & G & H
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Manual Trigger</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">site_name + photos_path</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Setup</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create Aerial Photoscene</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload Drone Photos</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Processing</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Start RC Processing</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Wait for Completion</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Download</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Orthophoto</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3D Mesh</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Point Cloud</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -266,33 +281,86 @@ flowchart TB
 User: "Process the drone photos from today's site survey"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant RC as Reality Capture
-
-    User->>AI: Process drone photos
-
-    AI->>MCP: aps_rc_photoscene_create(name, type="aerial")
-    MCP->>RC: Create photoscene
-    RC-->>MCP: Scene ID
-
-    AI->>AI: Find drone photos
-
-    loop Upload photos
-        AI->>MCP: aps_rc_photoscene_upload(scene_id, photo)
-        MCP->>RC: Upload
-    end
-
-    AI->>User: 245 photos uploaded
-
-    AI->>MCP: aps_rc_photoscene_process(scene_id, quality="high")
-    MCP->>RC: Start processing
-
-    AI->>User: Processing started (est. 45 min)
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">Reality Capture</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Process drone photos</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_create(name, type="aerial")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Create photoscene</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Scene ID</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Find drone photos</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_upload(scene_id, photo)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Upload</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">245 photos uploaded</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_process(scene_id, quality="high")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Start processing</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Processing started (est. 45 min)</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Processing site survey from drone photos:

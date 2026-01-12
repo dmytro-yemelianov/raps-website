@@ -12,34 +12,38 @@ Process OBJ files with MTL materials and texture files correctly.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["OBJ Package"]
-        A[model.obj]
-        B[model.mtl]
-        C[textures/]
-    end
-
-    subgraph Package["Packaging"]
-        D[Create ZIP]
-    end
-
-    subgraph Upload["Upload"]
-        E[Upload Package]
-    end
-
-    subgraph Translate["Translation"]
-        F[Specify Root File]
-        G[Resolve References]
-        H[Process Textures]
-    end
-
-    subgraph Output["Output"]
-        I[SVF2 with Textures]
-    end
-
-    A & B & C --> D --> E --> F --> G --> H --> I
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">OBJ Package</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">model.obj</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">model.mtl</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">textures/</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Packaging</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create ZIP</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload Package</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Translation</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Specify Root File</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Resolve References</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Process Textures</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Output</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 with Textures</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -181,29 +185,38 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Git Push"]
-        A[OBJ/MTL changed]
-    end
-
-    subgraph Package["Package"]
-        B[Find OBJ files]
-        C[Create ZIP with MTL + textures]
-    end
-
-    subgraph Upload["Upload & Translate"]
-        D[Upload package]
-        E[Translate with root]
-    end
-
-    subgraph Verify["Verify"]
-        F[Check textures loaded]
-        G[Generate thumbnails]
-    end
-
-    A --> B --> C --> D --> E --> F --> G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OBJ/MTL changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Package</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Find OBJ files</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create ZIP with MTL + textures</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Upload & Translate</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload package</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate with root</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Verify</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Check textures loaded</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate thumbnails</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -215,34 +228,91 @@ flowchart LR
 User: "Upload the character model with all its textures"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Upload character with textures
-
-    AI->>AI: Find OBJ, MTL, and texture files
-    AI->>AI: Create ZIP package
-
-    AI->>MCP: aps_object_upload(bucket, package.zip)
-    MCP->>APS: Upload package
-    APS-->>MCP: Complete
-
-    AI->>MCP: aps_translate_start(urn, root="character.obj")
-    MCP->>APS: Translate with root
-
-    loop Wait
-        AI->>MCP: aps_translate_manifest(urn)
-    end
-
-    AI->>MCP: aps_derivative_thumbnail(urn)
-    MCP-->>AI: Thumbnail with textures
-
-    AI->>User: Model ready with textures
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Upload character with textures</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Find OBJ, MTL, and texture files</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Create ZIP package</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, package.zip)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Upload package</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Complete</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn, root="character.obj")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Translate with root</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_thumbnail(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Thumbnail with textures</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Model ready with textures</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Uploaded character model with textures:

@@ -12,35 +12,41 @@ Process 3D files with embedded animation data.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["Animated Assets"]
-        A[FBX with Animation]
-        B[glTF with Animation]
-        C[DAE with Animation]
-    end
-
-    subgraph Upload["Upload"]
-        D[raps object upload]
-    end
-
-    subgraph Translate["Translation"]
-        E[SVF2 with Animation Data]
-    end
-
-    subgraph Extract["Animation Data"]
-        F[Animation Clips]
-        G[Keyframes]
-        H[Bone Hierarchy]
-    end
-
-    subgraph Output["Playback"]
-        I[Forge Viewer]
-        J[Custom Player]
-    end
-
-    A & B & C --> D --> E --> F & G & H --> I & J
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Animated Assets</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">FBX with Animation</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">glTF with Animation</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">DAE with Animation</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">raps object upload</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Translation</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 with Animation Data</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Animation Data</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Animation Clips</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Keyframes</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Bone Hierarchy</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Playback</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Forge Viewer</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Custom Player</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -176,28 +182,35 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Git Push"]
-        A[Animation files changed]
-    end
-
-    subgraph Process["Processing"]
-        B[Upload FBX/glTF]
-        C[Translate to SVF2]
-    end
-
-    subgraph Extract["Extract Info"]
-        D[Get animation clips]
-        E[Get bone hierarchy]
-    end
-
-    subgraph Report["Report"]
-        F[Animation report]
-    end
-
-    A --> B --> C --> D & E --> F
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Animation files changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Processing</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload FBX/glTF</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate to SVF2</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Extract Info</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Get animation clips</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Get bone hierarchy</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Report</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Animation report</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -209,32 +222,85 @@ flowchart LR
 User: "Upload the character animation and tell me about the clips"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Upload and analyze animation
-
-    AI->>MCP: aps_object_upload(bucket, file)
-    MCP->>APS: Upload FBX
-    APS-->>MCP: Complete
-
-    AI->>MCP: aps_translate_start(urn)
-    MCP->>APS: Translate
-
-    loop Wait
-        AI->>MCP: aps_translate_manifest(urn)
-    end
-
-    AI->>MCP: aps_derivative_metadata(urn)
-    MCP->>APS: Get metadata
-    APS-->>MCP: Animation data
-
-    AI->>User: Animation details
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Upload and analyze animation</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, file)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Upload FBX</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Complete</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Translate</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_metadata(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Get metadata</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Animation data</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Animation details</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Uploaded and analyzed character_hero.fbx:

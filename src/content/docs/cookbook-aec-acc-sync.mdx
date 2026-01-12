@@ -12,41 +12,70 @@ Download models from BIM 360/ACC and process locally.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph ACC["BIM 360 / ACC Cloud"]
-        A[Hub]
-        B[Project]
-        C[Folder]
-        D[Item]
-        E[Version]
-
-        A --> B --> C --> D --> E
-    end
-
-    subgraph Auth["Authentication"]
-        F[3-Legged OAuth]
-        G[raps auth login]
-    end
-
-    subgraph Operations["RAPS Operations"]
-        H[List/Navigate]
-        I[Download]
-        J[Get Metadata]
-        K[Get Versions]
-    end
-
-    subgraph Local["Local Processing"]
-        L[Local Files]
-        M[Translate]
-        N[Extract Data]
-    end
-
-    F --> G --> H
-    H --> I & J & K
-    I --> L --> M --> N
-    ACC -.-> Operations
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">BIM 360 / ACC Cloud</div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+          <span class="text-sm text-slate-300">Hub</span>
+        </div>
+        <div class="ml-4 border-l border-blue-500/30 pl-3 space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+            <span class="text-sm text-slate-300">Project</span>
+          </div>
+          <div class="ml-4 border-l border-blue-500/30 pl-3 space-y-2">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+              <span class="text-sm text-slate-300">Folder</span>
+            </div>
+            <div class="ml-4 border-l border-blue-500/30 pl-3 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                <span class="text-sm text-slate-300">Item</span>
+              </div>
+              <div class="ml-4 border-l border-blue-500/30 pl-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                  <span class="text-sm text-slate-300">Version</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Authentication</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">3-Legged OAuth</div>
+        <div class="flex justify-center text-amber-500">&#8595;</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm font-mono text-amber-300">raps auth login</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">RAPS Operations</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">List/Navigate</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Download</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Get Metadata</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Get Versions</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Local Processing</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Local Files</div>
+        <div class="flex justify-center text-emerald-500">&#8595;</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate</div>
+        <div class="flex justify-center text-emerald-500">&#8595;</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Extract Data</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -198,35 +227,43 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Schedule/Manual"]
-        A[Daily 6 AM]
-    end
-
-    subgraph Auth["Authentication"]
-        B[Refresh Token]
-    end
-
-    subgraph Sync["ACC Sync"]
-        C[List Folder]
-        D[Download Models]
-    end
-
-    subgraph Process["OSS Processing"]
-        E[Upload to Bucket]
-        F[Translate SVF2]
-    end
-
-    subgraph Report["Output"]
-        G[sync-report.md]
-        H[synced-models/]
-    end
-
-    A --> B --> C --> D --> E --> F
-    D --> H
-    F --> G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Schedule/Manual</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Daily 6 AM</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-amber-500/50 bg-amber-950/30 p-3">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">Authentication</div>
+      <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Refresh Token</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">ACC Sync</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">List Folder</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Download Models</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">OSS Processing</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Upload to Bucket</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate SVF2</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Output</div>
+      <div class="space-y-1">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">sync-report.md</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">synced-models/</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -238,38 +275,88 @@ flowchart LR
 User: "Download the latest architectural model from the Main Street project in ACC"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant ACC as ACC Cloud
-
-    User->>AI: Download Main Street architectural model
-
-    AI->>MCP: aps_hub_list()
-    MCP->>ACC: Get hubs
-    ACC-->>MCP: Hub list
-
-    AI->>MCP: aps_project_list(hub_id)
-    MCP->>ACC: Get projects
-    ACC-->>MCP: Project list (finds "Main Street")
-
-    AI->>MCP: aps_folder_list(project_id, top=true)
-    MCP->>ACC: Get top folders
-
-    AI->>MCP: aps_folder_list(project_id, folder_id)
-    MCP->>ACC: Get folder contents
-    ACC-->>MCP: Items (finds architectural.rvt)
-
-    AI->>MCP: aps_item_versions(project_id, item_id)
-    MCP->>ACC: Get versions
-
-    AI->>MCP: aps_item_download(project_id, item_id)
-    MCP->>ACC: Download file
-
-    AI->>User: Download complete with details
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">ACC Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Download Main Street model</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_hub_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Get hubs</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_project_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Get projects</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_folder_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Get contents</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_item_download()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Download file</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Download complete</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Downloaded 'MainStreet-Architectural-v42.rvt' (156 MB)

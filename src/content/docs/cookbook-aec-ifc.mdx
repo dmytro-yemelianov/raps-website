@@ -12,41 +12,58 @@ Process IFC files for open BIM collaboration with external partners.
 
 ## Workflow Overview
 
-```mermaid
-flowchart LR
-    subgraph Partners["External Partners"]
-        A[ArchiCAD]
-        B[Tekla]
-        C[Bentley]
-        D[Other BIM]
-    end
-
-    subgraph Exchange["IFC Exchange"]
-        E[IFC Files]
-    end
-
-    subgraph RAPS["RAPS Processing"]
-        F[Upload]
-        G[Translate SVF2]
-    end
-
-    subgraph APS["APS Cloud"]
-        H[(OSS Bucket)]
-        I[Viewables]
-        J[Metadata]
-    end
-
-    subgraph Output["Coordination"]
-        K[Forge Viewer]
-        L[Reports]
-    end
-
-    A & B & C & D --> E
-    E --> F --> H
-    H --> G --> I & J
-    I --> K
-    J --> L
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">External Partners</div>
+      <div class="space-y-2">
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">ArchiCAD</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Tekla</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Bentley</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Other BIM</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">IFC Exchange</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">IFC Files</div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">RAPS Processing</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Upload</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate SVF2</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">APS Cloud</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">OSS Bucket</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Viewables</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Metadata</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Coordination</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Forge Viewer</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Reports</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Partners</span>
+      <span>&#8594;</span>
+      <span>IFC</span>
+      <span>&#8594;</span>
+      <span>Process</span>
+      <span>&#8594;</span>
+      <span>Cloud</span>
+      <span>&#8594;</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -177,29 +194,34 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TB
-    subgraph Trigger["Git Push"]
-        A[ifc/**/*.ifc changed]
-    end
-
-    subgraph Process["For Each IFC"]
-        B[Upload to OSS]
-        C[Translate SVF2]
-        D[Extract Metadata]
-        E[Generate Report]
-    end
-
-    subgraph Output["Artifacts"]
-        F[metadata.json]
-        G[properties.json]
-        H[report.md]
-    end
-
-    A --> B --> C --> D --> E
-    D --> F & G
-    E --> H
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Git Push</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm font-mono text-blue-300">ifc/**/*.ifc changed</div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">For Each IFC</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Upload to OSS</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate SVF2</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Extract Metadata</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Generate Report</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Artifacts</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">metadata.json</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">properties.json</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">report.md</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -211,32 +233,77 @@ flowchart TB
 User: "We received IFC files from the structural engineer. Upload them and check if they translated correctly."
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Process partner IFC files
-
-    AI->>MCP: aps_object_upload(bucket, file)
-    MCP->>APS: Upload IFC
-
-    AI->>MCP: aps_translate_start(urn, format="svf2")
-    MCP->>APS: Start translation
-
-    loop Wait for completion
-        AI->>MCP: aps_translate_manifest(urn)
-        MCP->>APS: Check status
-    end
-
-    AI->>MCP: aps_derivative_properties(urn)
-    MCP->>APS: Get properties
-    APS-->>MCP: IFC data
-
-    AI->>User: Translation complete + summary
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Process partner IFC files</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_upload()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Upload IFC</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_translate_start()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="border-l-2 border-purple-500/30 ml-4 pl-4 py-2 my-2">
+        <div class="text-xs text-purple-400 mb-2">Wait for completion:</div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1 text-right text-purple-400">aps_translate_manifest()</div>
+          <div class="text-slate-500">&#8594;</div>
+          <div class="flex-1 text-amber-400">Check status</div>
+          <div class="text-slate-500">&#8594;</div>
+          <div class="flex-1 text-emerald-400"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Get properties</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400">IFC data</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Translation complete + summary</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > The structural IFC file has been uploaded and translated successfully.

@@ -12,36 +12,59 @@ Create shareable CAD packages with temporary download links for suppliers.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Select["File Selection"]
-        A[CAD Models]
-        B[Drawings]
-        C[Specifications]
-    end
-
-    subgraph Organize["Organization"]
-        D[Create Folder Structure]
-        E[Apply Naming Convention]
-    end
-
-    subgraph Upload["Upload to OSS"]
-        F[Upload Files]
-        G[Organize by Supplier/PO]
-    end
-
-    subgraph Share["Generate Links"]
-        H[Create Signed URLs]
-        I[Set Expiration]
-    end
-
-    subgraph Deliver["Delivery"]
-        J[Email Package]
-        K[Download Page]
-    end
-
-    A & B & C --> D --> E --> F --> G --> H --> I --> J & K
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">File Selection</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">CAD Models</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Drawings</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Specifications</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Organization</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create Folder Structure</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Apply Naming Convention</div>
+      </div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Upload to OSS</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Files</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Organize by Supplier/PO</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Generate Links</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create Signed URLs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Set Expiration</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Delivery</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Email Package</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Download Page</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Select</span>
+      <span class="text-slate-600">→</span>
+      <span>Organize</span>
+      <span class="text-slate-600">→</span>
+      <span>Upload</span>
+      <span class="text-slate-600">→</span>
+      <span>Share</span>
+      <span class="text-slate-600">→</span>
+      <span>Deliver</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -209,28 +232,35 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Input["Manual Trigger"]
-        A[supplier + PO + files]
-    end
-
-    subgraph Upload["Upload"]
-        B[Upload files to OSS]
-        C[Organize by supplier/PO]
-    end
-
-    subgraph Links["Generate Links"]
-        D[Create signed URLs]
-        E[Set expiration]
-    end
-
-    subgraph Output["Package"]
-        F[package.md]
-    end
-
-    A --> B --> C --> D --> E --> F
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Manual Trigger</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">supplier + PO + files</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-amber-500/50 rounded-lg p-3 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-xs mb-2">Upload</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload files to OSS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Organize by supplier/PO</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Generate Links</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create signed URLs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Set expiration</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Package</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">package.md</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -242,29 +272,58 @@ flowchart LR
 User: "Create a supplier package for Acme Corp with the bracket files for PO-2024-100"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Create package for Acme Corp
-
-    AI->>AI: Identify files for package
-
-    loop Upload files
-        AI->>MCP: aps_object_upload(bucket, file, key)
-        MCP->>APS: Upload
-    end
-
-    loop Generate links
-        AI->>MCP: aps_object_signed_url(key, minutes=1440)
-        MCP-->>AI: Signed URL
-    end
-
-    AI->>User: Package ready with download links
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Create package for Acme Corp</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Identify files for package</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Upload files</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file, key)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Upload</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Generate links</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_signed_url(key, minutes=1440)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Signed URL</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Package ready with download links</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Created supplier package for Acme Corp - PO-2024-100:

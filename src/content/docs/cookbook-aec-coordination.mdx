@@ -12,43 +12,52 @@ Upload multiple discipline models and prepare them for coordination review.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Sources["Source Models"]
-        A[Revit ARCH]
-        B[Revit STRUCT]
-        C[Revit MEP]
-        D[IFC Other]
-    end
-
-    subgraph Upload["RAPS Upload"]
-        E[raps object upload]
-    end
-
-    subgraph Storage["APS Storage"]
-        F[(OSS Bucket)]
-    end
-
-    subgraph Translation["Model Derivative"]
-        G[Translation SVF2]
-    end
-
-    subgraph Output["Outputs"]
-        H[Metadata JSON]
-        I[Viewables SVF2]
-        J[Thumbnails PNG]
-    end
-
-    A --> E
-    B --> E
-    C --> E
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    G --> I
-    G --> J
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Source Models</div>
+      <div class="space-y-2">
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Revit ARCH</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Revit STRUCT</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Revit MEP</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">IFC Other</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">RAPS Upload</div>
+      <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">raps object upload</div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">APS Storage</div>
+      <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">OSS Bucket</div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Model Derivative</div>
+      <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translation SVF2</div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Outputs</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Metadata JSON</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Viewables SVF2</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Thumbnails PNG</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Sources</span>
+      <span>&#8594;</span>
+      <span>Upload</span>
+      <span>&#8594;</span>
+      <span>Storage</span>
+      <span>&#8594;</span>
+      <span>Translate</span>
+      <span>&#8594;</span>
+      <span>Outputs</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -166,27 +175,31 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Trigger"]
-        A[Push to models/]
-    end
-
-    subgraph Jobs["GitHub Actions"]
-        B[Checkout]
-        C[Install RAPS]
-        D[Create Bucket]
-        E[Upload Models]
-        F[Translate]
-        G[Generate Report]
-    end
-
-    subgraph Artifacts["Output"]
-        H[coordination-report.md]
-    end
-
-    A --> B --> C --> D --> E --> F --> G --> H
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Trigger</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Push to models/</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">GitHub Actions</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Checkout</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Install RAPS</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Create Bucket</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Upload Models</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Translate</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Generate Report</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Output</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">coordination-report.md</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -200,26 +213,65 @@ Use natural language with AI assistants to coordinate models.
 User: "Upload all the Revit models from the models folder and translate them for coordination review"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Upload models for coordination
-    AI->>MCP: aps_bucket_create()
-    MCP->>APS: Create bucket
-
-    loop For each model
-        AI->>MCP: aps_object_upload()
-        MCP->>APS: Upload file
-        AI->>MCP: aps_translate_start()
-        MCP->>APS: Start translation
-    end
-
-    AI->>User: All 3 models uploaded and translating
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Upload models for coordination</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_bucket_create()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Create bucket</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="border-l-2 border-purple-500/30 ml-4 pl-4 py-2 my-2">
+        <div class="text-xs text-purple-400 mb-2">For each model:</div>
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 text-right text-purple-400">aps_object_upload()</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-amber-400">Upload file</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-emerald-400"></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 text-right text-purple-400">aps_translate_start()</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-amber-400">Start translation</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-emerald-400"></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">All 3 models uploaded and translating</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### Check Translation Status
 

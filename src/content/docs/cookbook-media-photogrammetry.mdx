@@ -12,39 +12,46 @@ Create 3D models from photographs using the Reality Capture API.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Capture["Photo Capture"]
-        A[Camera/Phone]
-        B[Drone]
-        C[Scanner]
-    end
-
-    subgraph Photos["Photo Set"]
-        D[20-200+ Images]
-    end
-
-    subgraph Upload["RAPS Upload"]
-        E[Create Photoscene]
-        F[Upload Photos]
-    end
-
-    subgraph Process["RC Processing"]
-        G[Feature Detection]
-        H[Point Cloud]
-        I[Mesh Generation]
-        J[Texture Mapping]
-    end
-
-    subgraph Output["Outputs"]
-        K[OBJ Mesh]
-        L[Point Cloud]
-        M[Orthophoto]
-    end
-
-    A & B & C --> D --> E --> F --> G --> H --> I --> J
-    J --> K & L & M
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Photo Capture</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Camera/Phone</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Drone</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Scanner</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Photo Set</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">20-200+ Images</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">RAPS Upload</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create Photoscene</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload Photos</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">RC Processing</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Feature Detection</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Point Cloud</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Mesh Generation</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Texture Mapping</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Outputs</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OBJ Mesh</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Point Cloud</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Orthophoto</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -218,32 +225,40 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TB
-    subgraph Input["Manual Trigger"]
-        A[photos_path + name]
-    end
-
-    subgraph Create["Setup"]
-        B[Create Photoscene]
-    end
-
-    subgraph Upload["Upload"]
-        C[Upload Photos]
-    end
-
-    subgraph Process["Processing"]
-        D[Start Processing]
-        E[Wait for Completion]
-    end
-
-    subgraph Download["Output"]
-        F[Download OBJ]
-        G[Download Point Cloud]
-    end
-
-    A --> B --> C --> D --> E --> F & G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Manual Trigger</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">photos_path + name</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Setup</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create Photoscene</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload Photos</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Processing</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Start Processing</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Wait for Completion</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Output</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Download OBJ</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Download Point Cloud</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -255,41 +270,112 @@ flowchart TB
 User: "Create a 3D model from the photos in the product-shoot folder"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant RC as Reality Capture
-
-    User->>AI: Create 3D model from photos
-
-    AI->>MCP: aps_rc_photoscene_create(name, type)
-    MCP->>RC: Create photoscene
-    RC-->>MCP: Scene ID
-
-    AI->>AI: Find photos in folder
-
-    loop Upload photos
-        AI->>MCP: aps_rc_photoscene_upload(scene_id, photo)
-        MCP->>RC: Upload
-    end
-
-    AI->>User: 45 photos uploaded
-
-    AI->>MCP: aps_rc_photoscene_process(scene_id)
-    MCP->>RC: Start processing
-
-    loop Monitor
-        AI->>MCP: aps_rc_photoscene_status(scene_id)
-        MCP->>RC: Check status
-    end
-
-    AI->>MCP: aps_rc_photoscene_download(scene_id, format="obj")
-    MCP-->>AI: OBJ file
-
-    AI->>User: 3D model ready
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">Reality Capture</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Create 3D model from photos</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_create(name, type)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Create photoscene</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Scene ID</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Find photos in folder</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_upload(scene_id, photo)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Upload</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">45 photos uploaded</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_process(scene_id)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Start processing</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_status(scene_id)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Check status</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_download(scene_id, format="obj")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">OBJ file</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">3D model ready</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Created 3D model from product photos:

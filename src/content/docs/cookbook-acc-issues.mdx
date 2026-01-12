@@ -12,37 +12,46 @@ Manage issues and RFIs with bulk operations, exports, and automation.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Source["ACC Issues"]
-        A[Issues API]
-        B[RFIs]
-        C[Attachments]
-    end
-
-    subgraph Operations["Operations"]
-        D[List/Filter]
-        E[Export]
-        F[Update]
-        G[Create]
-    end
-
-    subgraph Export["Export Formats"]
-        H[JSON]
-        I[CSV]
-        J[Report]
-    end
-
-    subgraph Analysis["Analysis"]
-        K[Status Summary]
-        L[Overdue Tracking]
-        M[Assignee Report]
-    end
-
-    A & B --> D --> E --> H & I & J
-    D --> F & G
-    H & I --> K & L & M
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">ACC Issues</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Issues API</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">RFIs</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Attachments</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Operations</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">List/Filter</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Export</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Update</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Create</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Export Formats</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">JSON</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">CSV</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Report</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Analysis</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Status Summary</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Overdue Tracking</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Assignee Report</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Issues → Operations → Export → Analysis</div>
+  </div>
+</div>
 
 ---
 
@@ -218,30 +227,39 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Schedule"]
-        A[Daily 8 AM]
-    end
-
-    subgraph Export["Export"]
-        B[Get Issues]
-        C[Get RFIs]
-    end
-
-    subgraph Analyze["Analysis"]
-        D[Count by Status]
-        E[Find Overdue]
-    end
-
-    subgraph Report["Reports"]
-        F[report.md]
-        G[issues.csv]
-        H[rfis.csv]
-    end
-
-    A --> B & C --> D & E --> F & G & H
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Schedule</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Daily 8 AM</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Export</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get Issues</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get RFIs</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Analysis</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Count by Status</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Find Overdue</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Reports</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">issues.csv</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">rfis.csv</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -253,24 +271,56 @@ flowchart LR
 User: "How many open issues do we have on the Main Street project?"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant ACC as ACC Cloud
-
-    User->>AI: Open issues count for Main Street
-
-    AI->>MCP: aps_acc_issue_list(project_id)
-    MCP->>ACC: Get all issues
-    ACC-->>MCP: Issues JSON
-
-    AI->>AI: Filter by status == "open"
-    AI->>AI: Group by priority/assignee
-
-    AI->>User: Issue summary
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">User</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI Assistant</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">User</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Open issues count for Main Street</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_issue_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Get all issues</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Issues JSON</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Filter + Group by priority/assignee</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Issue summary</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">User</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > **Main Street Project - Open Issues:**

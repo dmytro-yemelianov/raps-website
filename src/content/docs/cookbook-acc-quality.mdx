@@ -12,38 +12,46 @@ Automate quality control inspection tracking and reporting.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Inspection["QC Inspection"]
-        A[Create Checklist]
-        B[Assign Inspector]
-        C[Perform Inspection]
-        D[Record Results]
-    end
-
-    subgraph Results["Results"]
-        E[Pass]
-        F[Fail]
-        G[N/A]
-    end
-
-    subgraph Actions["Follow-up"]
-        H[Attach Photos]
-        I[Create Issue]
-        J[Schedule Re-inspect]
-    end
-
-    subgraph Report["Reporting"]
-        K[QC Report]
-        L[Deficiency Log]
-        M[Metrics Dashboard]
-    end
-
-    A --> B --> C --> D
-    D --> E & F & G
-    F --> H & I & J
-    E & F & G --> K & L & M
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">QC Inspection</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Create Checklist</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Assign Inspector</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Perform Inspection</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Record Results</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Results</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-emerald-800/50 rounded text-sm text-emerald-300">Pass</div>
+        <div class="px-3 py-2 bg-red-800/50 rounded text-sm text-red-300">Fail</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">N/A</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Follow-up</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Attach Photos</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Create Issue</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Schedule Re-inspect</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Reporting</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">QC Report</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Deficiency Log</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Metrics Dashboard</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Inspection → Results → Follow-up → Reporting</div>
+  </div>
+</div>
 
 ---
 
@@ -223,29 +231,38 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["End of Day"]
-        A[5 PM Weekdays]
-    end
-
-    subgraph Export["Export"]
-        B[Get QC Checklists]
-        C[Get All Items]
-    end
-
-    subgraph Analyze["Analysis"]
-        D[Calculate Pass Rate]
-        E[Find Deficiencies]
-    end
-
-    subgraph Actions["Actions"]
-        F[Generate Report]
-        G[Create Issues]
-    end
-
-    A --> B --> C --> D & E --> F & G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">End of Day</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">5 PM Weekdays</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Export</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get QC Checklists</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get All Items</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Analysis</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Calculate Pass Rate</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Find Deficiencies</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Actions</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Generate Report</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Create Issues</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -257,28 +274,52 @@ flowchart LR
 User: "What's our quality status for the current inspections?"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant ACC as ACC Cloud
-
-    User->>AI: QC status for inspections
-
-    AI->>MCP: aps_acc_checklist_list(project_id)
-    MCP->>ACC: Get checklists
-    ACC-->>MCP: Checklist list
-
-    loop For each QC checklist
-        AI->>MCP: aps_acc_checklist_items(project_id, checklist_id)
-        MCP->>ACC: Get items
-        ACC-->>MCP: Items with status
-    end
-
-    AI->>AI: Calculate metrics
-    AI->>User: QC summary
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">User</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI Assistant</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">User</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">QC status for inspections</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_checklist_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-purple-900/20 rounded text-purple-300 text-xs">Loop: For each QC checklist</span>
+      </div>
+      <div class="flex items-center gap-2 ml-4">
+        <span class="w-12 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono text-xs">aps_acc_checklist_items(...)</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-12 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Calculate metrics</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">QC summary</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">User</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > **Quality Control Status:**

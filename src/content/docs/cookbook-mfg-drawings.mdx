@@ -12,33 +12,46 @@ Generate 2D drawings from 3D models using the Design Automation API.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["Input"]
-        A[3D Model<br/>Inventor/Revit]
-    end
-
-    subgraph DA["Design Automation"]
-        B[App Bundle<br/>Drawing Plugin]
-        C[Activity<br/>GenerateDrawing]
-        D[Work Item<br/>Execute]
-    end
-
-    subgraph Process["Processing"]
-        E[Load Model]
-        F[Apply Template]
-        G[Generate Views]
-        H[Add Annotations]
-    end
-
-    subgraph Output["Output"]
-        I[2D Drawing<br/>.idw/.dwg/.pdf]
-    end
-
-    A --> D
-    B --> C --> D
-    D --> E --> F --> G --> H --> I
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Input</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">3D Model Inventor/Revit</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Design Automation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">App Bundle Drawing Plugin</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Activity GenerateDrawing</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Work Item Execute</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Processing</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Load Model</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Apply Template</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Generate Views</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Add Annotations</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Output</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">2D Drawing .idw/.dwg/.pdf</div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>DA Setup</span>
+      <span class="text-slate-600">→</span>
+      <span>Process</span>
+      <span class="text-slate-600">→</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -205,29 +218,38 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TB
-    subgraph Trigger["Manual Trigger"]
-        A[model + template inputs]
-    end
-
-    subgraph Setup["Setup"]
-        B[Generate signed URLs]
-        C[Create output bucket]
-    end
-
-    subgraph DA["Design Automation"]
-        D[Submit work item]
-        E[Wait for completion]
-    end
-
-    subgraph Output["Output"]
-        F[Download drawing]
-        G[Upload artifact]
-    end
-
-    A --> B --> C --> D --> E --> F --> G
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Manual Trigger</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">model + template inputs</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Setup</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Generate signed URLs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Create output bucket</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Design Automation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Submit work item</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Wait for completion</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Output</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Download drawing</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload artifact</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -239,29 +261,66 @@ flowchart TB
 User: "Generate a 2D drawing from the gearbox assembly"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant DA as Design Automation
-
-    User->>AI: Generate drawing from gearbox.iam
-
-    AI->>MCP: aps_object_signed_url(input)
-    MCP-->>AI: Input URL
-
-    AI->>MCP: aps_da_workitem_create(activity, input, output)
-    MCP->>DA: Submit work item
-    DA-->>MCP: Work item ID
-
-    loop Wait for completion
-        AI->>MCP: aps_da_workitem_status(id)
-        MCP->>DA: Check status
-    end
-
-    AI->>User: Drawing generated successfully
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">Design Automation</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Generate drawing from gearbox.iam</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_signed_url(input)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Input URL</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_da_workitem_create(activity, input, output)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Submit work item</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">DA</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Work item ID</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Wait for completion</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_da_workitem_status(id)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Check status</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Drawing generated successfully</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Generated 2D drawing from gearbox.iam:

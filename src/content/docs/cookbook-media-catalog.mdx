@@ -12,33 +12,38 @@ Create visual catalogs of 3D assets with auto-generated thumbnails and metadata.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Assets["Asset Library"]
-        A[3D Models]
-    end
-
-    subgraph Process["Processing"]
-        B[Translate to SVF2]
-        C[Generate Thumbnails]
-        D[Extract Metadata]
-    end
-
-    subgraph Catalog["Catalog Generation"]
-        E[Create Index]
-        F[Build Grid View]
-        G[Add Search]
-    end
-
-    subgraph Output["Output"]
-        H[HTML Gallery]
-        I[JSON API]
-        J[Static Site]
-    end
-
-    A --> B --> C & D
-    C & D --> E --> F --> G --> H & I & J
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Asset Library</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3D Models</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Processing</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate to SVF2</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate Thumbnails</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Extract Metadata</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Catalog Generation</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create Index</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Build Grid View</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Add Search</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Output</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">HTML Gallery</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">JSON API</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Static Site</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -233,25 +238,29 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Daily 3 AM"]
-        A[Schedule]
-    end
-
-    subgraph Generate["Generation"]
-        B[List Assets]
-        C[Generate Thumbnails]
-        D[Extract Metadata]
-        E[Build HTML]
-    end
-
-    subgraph Deploy["Deploy"]
-        F[GitHub Pages]
-    end
-
-    A --> B --> C --> D --> E --> F
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Daily 3 AM</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Schedule</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Generation</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">List Assets</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate Thumbnails</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Extract Metadata</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Build HTML</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Deploy</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">GitHub Pages</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -263,27 +272,68 @@ flowchart LR
 User: "Create a visual catalog of all our 3D assets"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Generate asset catalog
-
-    AI->>MCP: aps_object_list(bucket)
-    MCP->>APS: List objects
-    APS-->>MCP: Object list
-
-    loop For each asset
-        AI->>MCP: aps_derivative_thumbnail(urn)
-        AI->>MCP: aps_derivative_metadata(urn)
-    end
-
-    AI->>AI: Generate HTML gallery
-    AI->>User: Catalog ready
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Generate asset catalog</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_list(bucket)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">List objects</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Object list</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_thumbnail(urn)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_metadata(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Generate HTML gallery</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Catalog ready</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Generated asset catalog with 78 items:

@@ -12,31 +12,38 @@ Navigate through ACC/BIM 360 project hierarchy to find and access resources.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Auth["Authentication"]
-        A[3-Legged OAuth]
-    end
-
-    subgraph Hierarchy["Project Hierarchy"]
-        B[Hubs]
-        C[Projects]
-        D[Top Folders]
-        E[Subfolders]
-        F[Items]
-        G[Versions]
-    end
-
-    subgraph Operations["Operations"]
-        H[List]
-        I[Details]
-        J[Download]
-    end
-
-    A --> B --> C --> D --> E --> F --> G
-    B & C & D & E & F --> H & I
-    F & G --> J
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Authentication</div>
+      <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">3-Legged OAuth</div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Project Hierarchy</div>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Hubs</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Projects</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Top Folders</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Subfolders</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Items</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Versions</span>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Operations</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">List</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Details</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Download</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -206,27 +213,35 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Input["Input"]
-        A[project_name]
-        B[folder_path]
-    end
-
-    subgraph Navigate["Navigation"]
-        C[Authenticate]
-        D[Find Hub]
-        E[Find Project]
-        F[Navigate Path]
-    end
-
-    subgraph Output["Output"]
-        G[Folder Contents]
-        H[Report]
-    end
-
-    A & B --> C --> D --> E --> F --> G --> H
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Input</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">project_name</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">folder_path</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Navigation</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Authenticate</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Find Hub</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Find Project</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Navigate Path</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Output</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Folder Contents</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Report</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -238,31 +253,56 @@ flowchart LR
 User: "Show me what's in the Main Street project"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant ACC as ACC Cloud
-
-    User->>AI: Show Main Street project contents
-
-    AI->>MCP: aps_hub_list()
-    MCP->>ACC: Get hubs
-    ACC-->>MCP: Hub list
-
-    AI->>MCP: aps_project_list(hub_id)
-    MCP->>ACC: Get projects
-    ACC-->>MCP: Project list
-
-    AI->>AI: Find "Main Street" project
-
-    AI->>MCP: aps_folder_list(project_id, top=true)
-    MCP->>ACC: Get top folders
-    ACC-->>MCP: Folder list
-
-    AI->>User: Project structure
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">User</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI Assistant</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">User</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Show Main Street project contents</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_hub_list()</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_project_list(hub_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Find "Main Street" project</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_folder_list(project_id, top=true)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Project structure</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">User</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > **Main Street Project Structure:**

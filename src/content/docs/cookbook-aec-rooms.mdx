@@ -12,36 +12,55 @@ Extract room schedules and spatial data from Revit models.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["Input"]
-        A[Revit Model<br/>with Rooms]
-    end
-
-    subgraph Process["Processing"]
-        B[Translate to SVF2]
-        C[Extract Properties]
-        D[Filter by Category<br/>Revit Rooms]
-    end
-
-    subgraph Data["Room Data"]
-        E[Name]
-        F[Number]
-        G[Area]
-        H[Level]
-        I[Department]
-    end
-
-    subgraph Export["Export Formats"]
-        J[CSV Schedule]
-        K[JSON Export]
-        L[Database Import]
-    end
-
-    A --> B --> C --> D
-    D --> E & F & G & H & I
-    E & F & G & H & I --> J & K & L
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Input</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">
+        Revit Model<br/><span class="text-blue-400 text-xs">with Rooms</span>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Processing</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate to SVF2</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Extract Properties</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Filter by Category<br/><span class="text-purple-400 text-xs">Revit Rooms</span></div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Room Data</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Name</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Number</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Area</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Level</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Department</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Export Formats</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">CSV Schedule</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">JSON Export</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Database Import</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Input</span>
+      <span>&#8594;</span>
+      <span>Process</span>
+      <span>&#8594;</span>
+      <span>Data</span>
+      <span>&#8594;</span>
+      <span>Export</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -173,30 +192,37 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Manual Trigger"]
-        A[bucket + model inputs]
-    end
-
-    subgraph Extract["Extraction"]
-        B[Get URN]
-        C[Get Properties]
-        D[Filter Rooms]
-    end
-
-    subgraph Export["Export"]
-        E[rooms.json]
-        F[rooms.csv]
-        G[summary.md]
-    end
-
-    subgraph Artifact["Output"]
-        H[room-schedule.zip]
-    end
-
-    A --> B --> C --> D --> E & F & G --> H
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Manual Trigger</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">bucket + model inputs</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Extraction</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Get URN</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Get Properties</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Filter Rooms</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-amber-500/50 bg-amber-950/30 p-3">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">Export</div>
+      <div class="space-y-1">
+        <div class="bg-amber-900/30 rounded px-3 py-1.5 text-sm font-mono text-amber-300">rooms.json</div>
+        <div class="bg-amber-900/30 rounded px-3 py-1.5 text-sm font-mono text-amber-300">rooms.csv</div>
+        <div class="bg-amber-900/30 rounded px-3 py-1.5 text-sm font-mono text-amber-300">summary.md</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Output</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">room-schedule.zip</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -208,26 +234,73 @@ flowchart LR
 User: "Get me a room schedule from the office building model with areas by department"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Export room schedule by department
-
-    AI->>MCP: aps_object_urn(bucket, key)
-    MCP-->>AI: URN
-
-    AI->>MCP: aps_derivative_properties(urn)
-    MCP->>APS: Get all properties
-    APS-->>MCP: Properties JSON
-    MCP-->>AI: All elements
-
-    AI->>AI: Filter rooms, group by department
-    AI->>User: Room schedule table
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Export room schedule by department</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_urn()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-amber-400">URN</div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Get all properties</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-emerald-400">Properties JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-center text-purple-400 italic">Filter rooms, group by department</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Room schedule table</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Room Schedule for Office Building:

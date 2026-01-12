@@ -12,37 +12,53 @@ Process various CAD formats (Inventor, Fusion, STEP, IGES) for web viewing.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["CAD Sources"]
-        A[Inventor IAM/IPT]
-        B[Fusion 360]
-        C[STEP/STP]
-        D[IGES/IGS]
-        E[SolidWorks]
-    end
-
-    subgraph Upload["RAPS Upload"]
-        F[raps object upload]
-    end
-
-    subgraph Storage["APS Storage"]
-        G[(OSS Bucket)]
-    end
-
-    subgraph Translation["Model Derivative"]
-        H[Translation Engine]
-    end
-
-    subgraph Output["Outputs"]
-        I[SVF2 Viewable]
-        J[Thumbnails]
-        K[Metadata]
-    end
-
-    A & B & C & D & E --> F --> G --> H
-    H --> I & J & K
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">CAD Sources</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Inventor IAM/IPT</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Fusion 360</div>
+        <div class="bg-slate-800 rounded px-2 py-1">STEP/STP</div>
+        <div class="bg-slate-800 rounded px-2 py-1">IGES/IGS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">SolidWorks</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">RAPS Upload</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1 font-mono">raps object upload</div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">APS Storage</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">OSS Bucket</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Model Derivative</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Translation Engine</div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Outputs</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">SVF2 Viewable</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Thumbnails</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Metadata</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>Upload</span>
+      <span class="text-slate-600">→</span>
+      <span>Storage</span>
+      <span class="text-slate-600">→</span>
+      <span>Translate</span>
+      <span class="text-slate-600">→</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -176,24 +192,28 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Git Push"]
-        A[CAD files changed]
-    end
-
-    subgraph Process["Processing"]
-        B[Upload to OSS]
-        C[Start Translation]
-        D[Wait for Complete]
-    end
-
-    subgraph Report["Output"]
-        E[translation-report.md]
-    end
-
-    A --> B --> C --> D --> E
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Git Push</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">CAD files changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Processing</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload to OSS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Start Translation</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Wait for Complete</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Output</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">translation-report.md</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -205,32 +225,76 @@ flowchart LR
 User: "Upload and translate the new assembly.iam file for web viewing"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Translate assembly.iam
-
-    AI->>MCP: aps_object_upload(bucket, file)
-    MCP->>APS: Upload file
-    APS-->>MCP: Upload complete
-
-    AI->>MCP: aps_object_urn(bucket, key)
-    MCP-->>AI: URN
-
-    AI->>MCP: aps_translate_start(urn, format="svf2")
-    MCP->>APS: Start translation
-
-    loop Wait for completion
-        AI->>MCP: aps_translate_manifest(urn)
-        MCP->>APS: Check status
-    end
-
-    AI->>User: Translation complete
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Translate assembly.iam</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Upload file</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Upload complete</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_urn(bucket, key)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">URN</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(urn, format="svf2")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Start translation</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Wait for completion</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_manifest(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Check status</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Translation complete</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > assembly.iam has been uploaded and translated successfully.

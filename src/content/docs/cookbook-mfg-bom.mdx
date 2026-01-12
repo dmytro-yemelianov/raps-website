@@ -12,39 +12,55 @@ Extract Bill of Materials (BOM) data from Inventor and other CAD assemblies.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["Assembly Input"]
-        A[Inventor Assembly<br/>.iam]
-    end
-
-    subgraph Translate["Translation"]
-        B[Translate to SVF2]
-    end
-
-    subgraph Extract["Data Extraction"]
-        C[Model Tree<br/>Hierarchy]
-        D[Properties<br/>Part Data]
-    end
-
-    subgraph Process["BOM Processing"]
-        E[Flatten Hierarchy]
-        F[Aggregate Quantities]
-        G[Extract Properties]
-    end
-
-    subgraph Output["Export Formats"]
-        H[CSV]
-        I[JSON]
-        J[Excel]
-        K[ERP Import]
-    end
-
-    A --> B --> C & D
-    C --> E --> F
-    D --> G
-    F & G --> H & I & J & K
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Assembly Input</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Inventor Assembly .iam</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Translation</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Translate to SVF2</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Data Extraction</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Model Tree Hierarchy</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Properties Part Data</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">BOM Processing</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Flatten Hierarchy</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Aggregate Quantities</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Extract Properties</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Export Formats</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">CSV</div>
+        <div class="bg-slate-800 rounded px-2 py-1">JSON</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Excel</div>
+        <div class="bg-slate-800 rounded px-2 py-1">ERP Import</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>Translate</span>
+      <span class="text-slate-600">→</span>
+      <span>Extract</span>
+      <span class="text-slate-600">→</span>
+      <span>Process</span>
+      <span class="text-slate-600">→</span>
+      <span>Export</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -181,32 +197,41 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Input["Manual Trigger"]
-        A[bucket + assembly]
-    end
-
-    subgraph Extract["Extraction"]
-        B[Get URN]
-        C[Extract Tree]
-        D[Extract Properties]
-    end
-
-    subgraph Process["Processing"]
-        E[Flatten Hierarchy]
-        F[Calculate Quantities]
-        G[Merge Properties]
-    end
-
-    subgraph Output["Exports"]
-        H[bom.csv]
-        I[bom-summary.json]
-        J[report.md]
-    end
-
-    A --> B --> C & D --> E --> F --> G --> H & I & J
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Manual Trigger</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">bucket + assembly</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Extraction</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Get URN</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Extract Tree</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Extract Properties</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Processing</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Flatten Hierarchy</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Calculate Quantities</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Merge Properties</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Exports</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">bom.csv</div>
+        <div class="bg-slate-800 rounded px-2 py-1">bom-summary.json</div>
+        <div class="bg-slate-800 rounded px-2 py-1">report.md</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -218,29 +243,72 @@ flowchart LR
 User: "Extract the bill of materials from the gearbox assembly"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Extract BOM from gearbox assembly
-
-    AI->>MCP: aps_object_urn(bucket, "gearbox.iam")
-    MCP-->>AI: URN
-
-    AI->>MCP: aps_derivative_tree(urn)
-    MCP->>APS: Get model tree
-    APS-->>MCP: Tree JSON
-
-    AI->>MCP: aps_derivative_properties(urn)
-    MCP->>APS: Get properties
-    APS-->>MCP: Properties JSON
-
-    AI->>AI: Process and aggregate BOM
-    AI->>User: BOM table with quantities
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Extract BOM from gearbox assembly</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_urn(bucket, "gearbox.iam")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">URN</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_tree(urn)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Get model tree</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Tree JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_properties(urn)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Get properties</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Properties JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Process and aggregate BOM</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">BOM table with quantities</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Bill of Materials for Gearbox Assembly:

@@ -12,48 +12,72 @@ Process multiple CAD formats in bulk with parallel translation.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["CAD Directory"]
-        A[*.iam]
-        B[*.ipt]
-        C[*.stp]
-        D[*.igs]
-        E[*.sldprt]
-    end
-
-    subgraph Scan["File Discovery"]
-        F[Scan Directory]
-        G[Filter Supported]
-    end
-
-    subgraph Upload["Parallel Upload"]
-        H[Upload Worker 1]
-        I[Upload Worker 2]
-        J[Upload Worker N]
-    end
-
-    subgraph Translate["Parallel Translation"]
-        K[Translate Job 1]
-        L[Translate Job 2]
-        M[Translate Job N]
-    end
-
-    subgraph Monitor["Status Tracking"]
-        N[Monitor Progress]
-        O[Collect Results]
-    end
-
-    subgraph Report["Output"]
-        P[Status Report]
-        Q[Error Log]
-    end
-
-    A & B & C & D & E --> F --> G
-    G --> H & I & J
-    H & I & J --> K & L & M
-    K & L & M --> N --> O --> P & Q
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">CAD Directory</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">*.iam</div>
+        <div class="bg-slate-800 rounded px-2 py-1">*.ipt</div>
+        <div class="bg-slate-800 rounded px-2 py-1">*.stp</div>
+        <div class="bg-slate-800 rounded px-2 py-1">*.igs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">*.sldprt</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">File Discovery</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Scan Directory</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Filter Supported</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Parallel Upload</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker 1</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker 2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker N</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Parallel Translation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job 1</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job 2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job N</div>
+      </div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Status Tracking</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Monitor Progress</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Collect Results</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Output</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Status Report</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Error Log</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>Discovery</span>
+      <span class="text-slate-600">→</span>
+      <span>Upload</span>
+      <span class="text-slate-600">→</span>
+      <span>Translate</span>
+      <span class="text-slate-600">→</span>
+      <span>Monitor</span>
+      <span class="text-slate-600">→</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -232,33 +256,43 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TB
-    subgraph Trigger["Trigger"]
-        A[Push to cad-files/]
-    end
-
-    subgraph Setup["Setup"]
-        B[Create temp bucket]
-    end
-
-    subgraph Upload["Parallel Upload"]
-        C[Find CAD files]
-        D[Upload all files]
-    end
-
-    subgraph Translate["Parallel Translation"]
-        E[Start all jobs]
-        F[Wait for completion]
-    end
-
-    subgraph Report["Report"]
-        G[Generate status report]
-        H[Upload artifact]
-    end
-
-    A --> B --> C --> D --> E --> F --> G --> H
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Trigger</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Push to cad-files/</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Setup</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Create temp bucket</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Parallel Upload</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Find CAD files</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload all files</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Parallel Translation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Start all jobs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Wait for completion</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Report</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Generate status report</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload artifact</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -270,37 +304,76 @@ flowchart TB
 User: "Process all CAD files in the supplier-parts folder"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Process supplier-parts folder
-
-    AI->>AI: Scan directory for CAD files
-
-    loop For each file
-        AI->>MCP: aps_object_upload(bucket, file)
-        MCP->>APS: Upload
-    end
-
-    AI->>User: Uploaded 15 files
-
-    loop Start translations
-        AI->>MCP: aps_translate_start(urn)
-        MCP->>APS: Start job
-    end
-
-    AI->>User: All translations started
-
-    loop Monitor
-        AI->>MCP: aps_translate_manifest(urn)
-    end
-
-    AI->>User: Final status report
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Process supplier-parts folder</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Scan directory for CAD files</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: For each file</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Upload</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Uploaded 15 files</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Start translations</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Start job</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">All translations started</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Monitor</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_manifest(urn)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Final status report</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Processing supplier-parts folder...

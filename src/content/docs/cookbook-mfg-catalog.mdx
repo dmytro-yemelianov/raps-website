@@ -12,37 +12,49 @@ Create visual catalogs of CAD parts with auto-generated thumbnails.
 
 ## Workflow Overview
 
-```mermaid
-flowchart TB
-    subgraph Input["CAD Library"]
-        A[Parts Collection]
-    end
-
-    subgraph Process["Processing"]
-        B[Translate to SVF2]
-        C[Extract Thumbnails]
-        D[Extract Metadata]
-    end
-
-    subgraph Generate["Catalog Generation"]
-        E[Create Thumbnail Grid]
-        F[Build Index Page]
-        G[Generate Search Data]
-    end
-
-    subgraph Output["Catalog"]
-        H[HTML Gallery]
-        I[JSON Index]
-        J[PDF Catalog]
-    end
-
-    A --> B --> C & D
-    C & D --> E & F & G
-    E --> H
-    F --> H
-    G --> I
-    H & I --> J
-```
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">CAD Library</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Parts Collection</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Processing</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Translate to SVF2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Extract Thumbnails</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Extract Metadata</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Catalog Generation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create Thumbnail Grid</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Build Index Page</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Generate Search Data</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Catalog Output</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">HTML Gallery</div>
+        <div class="bg-slate-800 rounded px-2 py-1">JSON Index</div>
+        <div class="bg-slate-800 rounded px-2 py-1">PDF Catalog</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>Process</span>
+      <span class="text-slate-600">→</span>
+      <span>Generate</span>
+      <span class="text-slate-600">→</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -237,25 +249,29 @@ jobs:
 
 ### Pipeline Flow
 
-```mermaid
-flowchart LR
-    subgraph Trigger["Schedule/Manual"]
-        A[Daily 2 AM]
-    end
-
-    subgraph Generate["Generation"]
-        B[List all parts]
-        C[Generate thumbnails]
-        D[Extract metadata]
-        E[Build HTML]
-    end
-
-    subgraph Deploy["Deploy"]
-        F[GitHub Pages]
-    end
-
-    A --> B --> C --> D --> E --> F
-```
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Schedule/Manual</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Daily 2 AM</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Generation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">List all parts</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Generate thumbnails</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Extract metadata</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Build HTML</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Deploy</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">GitHub Pages</div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -267,32 +283,80 @@ flowchart LR
 User: "Create a visual catalog of all parts in the CAD library"
 ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AI as AI Assistant
-    participant MCP as RAPS MCP
-    participant APS as APS Cloud
-
-    User->>AI: Create parts catalog
-
-    AI->>MCP: aps_object_list(bucket="cad-library")
-    MCP->>APS: List objects
-    APS-->>MCP: Object list
-
-    loop For each part
-        AI->>MCP: aps_derivative_thumbnail(urn)
-        MCP->>APS: Get thumbnail
-        APS-->>MCP: PNG data
-
-        AI->>MCP: aps_derivative_properties(urn)
-        MCP->>APS: Get properties
-        APS-->>MCP: Properties JSON
-    end
-
-    AI->>AI: Generate HTML catalog
-    AI->>User: Catalog ready with link
-```
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Create parts catalog</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_list(bucket="cad-library")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">List objects</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Object list</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: For each part</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_thumbnail(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Get thumbnail</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">PNG data</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_properties(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Get properties</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Properties JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Generate HTML catalog</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Catalog ready with link</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **AI Response:**
 > Generated parts catalog with 45 items:
