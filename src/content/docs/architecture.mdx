@@ -22,55 +22,96 @@ The microkernel architecture separates RAPS into:
 
 ## Architecture Layers
 
-```mermaid
-graph TB
-    subgraph "User Interfaces"
-        CLI[CLI<br/>clap]
-        MCP[MCP Server<br/>rmcp]
-        ACT[GitHub Action<br/>yaml]
-        DOC[Docker<br/>container]
-        TUI[TUI<br/>ratatui]
-    end
-    
-    subgraph "RAPS Application"
-        APP[raps<br/>Main Application]
-        KER[raps-kernel<br/>Core Kernel]
-    end
-    
-    subgraph "Service Crates"
-        OSS[raps-oss]
-        DER[raps-derivative]
-        DM[raps-dm]
-        DA[raps-da]
-        ACC[raps-acc]
-        WH[raps-webhooks]
-        RC[raps-reality]
-    end
-    
-    CLI --> APP
-    MCP --> APP
-    ACT --> APP
-    DOC --> APP
-    TUI --> APP
-    
-    APP --> KER
-    
-    OSS --> KER
-    DER --> KER
-    DM --> KER
-    DA --> KER
-    ACC --> KER
-    WH --> KER
-    RC --> KER
+<div class="not-prose my-8">
+  {/* User Interfaces Layer */}
+  <div class="relative">
+    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">User Interfaces</div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="flex flex-col items-center p-3 bg-slate-900 rounded-md border border-slate-600 hover:border-blue-500/50 transition-colors">
+        <span class="text-sm font-semibold text-white">CLI</span>
+        <span class="text-xs text-slate-400">clap</span>
+      </div>
+      <div class="flex flex-col items-center p-3 bg-slate-900 rounded-md border border-slate-600 hover:border-purple-500/50 transition-colors">
+        <span class="text-sm font-semibold text-white">MCP Server</span>
+        <span class="text-xs text-slate-400">rmcp</span>
+      </div>
+      <div class="flex flex-col items-center p-3 bg-slate-900 rounded-md border border-slate-600 hover:border-green-500/50 transition-colors">
+        <span class="text-sm font-semibold text-white">GitHub Action</span>
+        <span class="text-xs text-slate-400">yaml</span>
+      </div>
+      <div class="flex flex-col items-center p-3 bg-slate-900 rounded-md border border-slate-600 hover:border-cyan-500/50 transition-colors">
+        <span class="text-sm font-semibold text-white">Docker</span>
+        <span class="text-xs text-slate-400">container</span>
+      </div>
+      <div class="flex flex-col items-center p-3 bg-slate-900 rounded-md border border-slate-600 hover:border-amber-500/50 transition-colors">
+        <span class="text-sm font-semibold text-white">TUI</span>
+        <span class="text-xs text-slate-400">ratatui</span>
+      </div>
+    </div>
+  </div>
 
-    APP --> OSS
-    APP --> DER
-    APP --> DM
-    APP --> DA
-    APP --> ACC
-    APP --> WH
-    APP --> RC
-```
+  {/* Arrow Down */}
+  <div class="flex justify-center my-2">
+    <svg class="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+    </svg>
+  </div>
+
+  {/* RAPS Application Layer */}
+  <div class="relative">
+    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">RAPS Application</div>
+    <div class="p-4 bg-gradient-to-b from-blue-900/30 to-blue-950/30 rounded-lg border border-blue-800/50">
+      <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+        <div class="flex flex-col items-center p-4 bg-slate-900 rounded-md border border-blue-600/50 min-w-[160px]">
+          <span class="text-sm font-bold text-blue-400">raps</span>
+          <span class="text-xs text-slate-400">Main Application</span>
+        </div>
+        <svg class="w-5 h-5 text-slate-500 rotate-90 sm:rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
+        <div class="flex flex-col items-center p-4 bg-slate-900 rounded-md border-2 border-amber-500/50 min-w-[160px]">
+          <span class="text-sm font-bold text-amber-400">raps-kernel</span>
+          <span class="text-xs text-slate-400">Core Kernel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Arrow Down */}
+  <div class="flex justify-center my-2">
+    <svg class="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+    </svg>
+  </div>
+
+  {/* Service Crates Layer */}
+  <div class="relative">
+    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Service Crates</div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-oss</code>
+      </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-derivative</code>
+      </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-dm</code>
+      </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-da</code>
+      </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-acc</code>
+      </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-webhooks</code>
+      </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-reality</code>
+      </div>
+    </div>
+  </div>
+</div>
 
 ## Kernel (`raps-kernel`)
 
