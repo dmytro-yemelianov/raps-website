@@ -75,6 +75,8 @@ function processContent(html: string): string {
 
   // Track which tags we're currently inside
   const tagStack: string[] = [];
+  // Track if we're inside a mermaid div
+  let insideMermaid = false;
 
   const processedSegments = segments.map(segment => {
     // Check if this segment is an HTML tag
@@ -90,6 +92,10 @@ function processContent(html: string): string {
         if (lastIndex !== -1) {
           tagStack.splice(lastIndex, 1);
         }
+        // Check if we're closing a mermaid div
+        if (tagName === 'div' && insideMermaid) {
+          insideMermaid = false;
+        }
       } else if (openingMatch) {
         // Opening tag - check if self-closing
         const tagName = openingMatch[1].toLowerCase();
@@ -99,14 +105,19 @@ function processContent(html: string): string {
         if (!isSelfClosing) {
           tagStack.push(tagName);
         }
+        
+        // Check if this is a div with class="mermaid"
+        if (tagName === 'div' && segment.includes('class="mermaid"')) {
+          insideMermaid = true;
+        }
       }
 
       // Return tag unchanged
       return segment;
     }
 
-    // This is text content - check if we're inside a skip tag
-    const shouldSkip = tagStack.some(tag => skipTags.includes(tag));
+    // This is text content - check if we're inside a skip tag or mermaid div
+    const shouldSkip = tagStack.some(tag => skipTags.includes(tag)) || insideMermaid;
 
     if (shouldSkip || !segment.trim()) {
       return segment;

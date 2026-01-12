@@ -22,6 +22,32 @@ When your daily workflow involves processing files larger than most people's pho
 
 We ran a benchmark parsing a **3.4GB JSON metadata extract** from a large stadium model to settle this question definitively.
 
+```mermaid
+flowchart LR
+    subgraph nodejs["Node.js"]
+        direction TB
+        A[Load 3.4GB JSON] --> B[Parse to Objects]
+        B --> C[45M+ Objects]
+        C --> D[GC Thrashing]
+        D --> E[4+ min...]
+        E --> F[OOM Crash]
+    end
+    
+    subgraph rust["Rust/RAPS"]
+        direction TB
+        G[Stream JSON] --> H[Parse Chunk]
+        H --> I[Process]
+        I --> J[Discard]
+        J --> K[14 sec total]
+        K --> L[~100MB RAM]
+    end
+    
+    style nodejs fill:#991b1b,stroke:#dc2626,color:#fff
+    style rust fill:#065f46,stroke:#10b981,color:#fff
+    style F fill:#ff6b6b,color:#fff,stroke:#dc2626,stroke-width:3px
+    style L fill:#51cf66,color:#000,stroke:#10b981,stroke-width:3px
+```
+
 ### Node.js Script Results
 ```bash
 $ node --max-old-space-size=8192 parse-metadata.js stadium-model.json

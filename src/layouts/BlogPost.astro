@@ -14,6 +14,8 @@ interface Props {
     image?: string;
     series?: string;
     seriesOrder?: number;
+    featured?: boolean;
+    draft?: boolean;
   };
 }
 
@@ -64,14 +66,6 @@ const relatedPosts = allPosts
   .sort((a, b) => b.score - a.score)
   .slice(0, 3)
   .map(({ post }) => post);
-
-// Calculate reading time
-const getReadingTime = (content: string) => {
-  const wordsPerMinute = 200;
-  const words = content.split(/\s+/).length;
-  const minutes = Math.ceil(words / wordsPerMinute);
-  return minutes;
-};
 ---
 
 <BaseLayout 
@@ -87,8 +81,8 @@ const getReadingTime = (content: string) => {
       <header class="mb-12">
         <!-- Meta -->
         <div class="flex flex-wrap items-center gap-3 mb-6">
-          <time class="text-sm text-slate-500" datetime={frontmatter.pubDate.toISOString()}>
-            {formatDate(frontmatter.pubDate)}
+          <time class="text-sm text-slate-500" datetime={new Date(frontmatter.pubDate).toISOString()}>
+            {formatDate(new Date(frontmatter.pubDate))}
           </time>
           {frontmatter.updatedDate && (
             <span class="text-sm text-slate-600">
@@ -146,8 +140,6 @@ const getReadingTime = (content: string) => {
         prose-p:text-slate-300 prose-p:leading-relaxed
         prose-a:text-primary-400 prose-a:no-underline hover:prose-a:text-primary-300
         prose-strong:text-white prose-strong:font-semibold
-        prose-code:text-primary-300 prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-        prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-800
         prose-blockquote:border-primary-500 prose-blockquote:bg-slate-900/50 prose-blockquote:py-1 prose-blockquote:px-6 prose-blockquote:rounded-r-lg
         prose-ul:text-slate-300 prose-ol:text-slate-300
         prose-li:marker:text-slate-500
@@ -209,8 +201,8 @@ const getReadingTime = (content: string) => {
                   >
                     <div class="flex items-start justify-between mb-3">
                       <div class="flex items-center gap-3 text-sm text-slate-500">
-                        <time datetime={post.data.pubDate.toISOString()}>
-                          {formatDate(post.data.pubDate)}
+                        <time datetime={new Date(post.data.pubDate).toISOString()}>
+                          {formatDate(new Date(post.data.pubDate))}
                         </time>
                         <span>•</span>
                         <span>5 min read</span>
@@ -292,3 +284,26 @@ const getReadingTime = (content: string) => {
     </div>
   </article>
 </BaseLayout>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  
+  mermaid.initialize({ 
+    startOnLoad: false,
+    theme: 'dark',
+  });
+
+  const mermaidNodes = document.querySelectorAll('.mermaid');
+  
+  for (const node of mermaidNodes) {
+      const code = node.textContent;
+      
+      try {
+        const { svg } = await mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, code);
+        node.innerHTML = svg;
+      } catch (e) {
+        console.error("Mermaid error:", e);
+        node.innerHTML = `<pre class="text-red-500 p-4 border border-red-500 rounded bg-red-900/20">${e.message}</pre>`;
+      }
+  }
+</script>

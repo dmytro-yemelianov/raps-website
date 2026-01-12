@@ -248,68 +248,144 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     </main>
     <Footer />
     
-    <!-- Global Copy Button Functionality -->
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+
+    <!-- Global Code Block Enhancement -->
     <script>
-      // Add copy buttons to all pre code blocks
-      function addCopyButtons() {
-        const codeBlocks = document.querySelectorAll('pre code, pre');
-        
-        codeBlocks.forEach((block) => {
-          // Skip if already has a copy button
-          if (block.parentNode.querySelector('.copy-btn')) return;
-          
-          const button = document.createElement('button');
-          button.className = 'copy-btn absolute top-2 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-rapeseed-400';
-          button.setAttribute('aria-label', 'Copy code to clipboard');
-          button.innerHTML = `
-            <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <svg class="w-4 h-4 check-icon hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-          `;
-          
-          // Make parent relative for positioning
-          const parent = block.tagName === 'CODE' ? block.parentNode : block;
-          if (!parent.style.position && !parent.classList.contains('relative')) {
-            parent.classList.add('relative', 'group');
-          }
-          
-          parent.appendChild(button);
-          
-          // Add click handler
-          button.addEventListener('click', async () => {
-            const text = block.textContent || '';
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Mermaid
+        if (typeof mermaid !== 'undefined') {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            themeVariables: {
+              primaryColor: '#1e293b',
+              primaryBorderColor: '#f5c542',
+              primaryTextColor: '#f1f5f9',
+              secondaryColor: '#0f172a',
+              lineColor: '#64748b',
+              textColor: '#f1f5f9',
+              mainBkg: '#1e293b',
+              nodeBorder: '#f5c542',
+            },
+            flowchart: { curve: 'basis', padding: 20 },
+          });
+
+          // Find and render mermaid blocks
+          document.querySelectorAll('pre[data-language="mermaid"]').forEach(async (pre, i) => {
+            const code = pre.querySelector('code')?.textContent || pre.textContent || '';
+            const container = document.createElement('div');
+            container.className = 'mermaid-diagram';
             try {
-              await navigator.clipboard.writeText(text);
-              
-              // Show check icon
-              const copyIcon = button.querySelector('.copy-icon');
-              const checkIcon = button.querySelector('.check-icon');
-              copyIcon.classList.add('hidden');
-              checkIcon.classList.remove('hidden');
-              
-              // Reset after 2 seconds
-              setTimeout(() => {
-                copyIcon.classList.remove('hidden');
-                checkIcon.classList.add('hidden');
-              }, 2000);
-            } catch (err) {
-              console.error('Failed to copy: ', err);
+              const { svg } = await mermaid.render(`mermaid-${i}`, code);
+              container.innerHTML = svg;
+              pre.parentNode.replaceChild(container, pre);
+            } catch (e) {
+              console.error('Mermaid error:', e);
             }
           });
+        }
+
+        // Enhance code blocks with header and copy button
+        document.querySelectorAll('pre:not([data-language="mermaid"])').forEach((pre) => {
+          if (pre.parentNode.classList.contains('code-block-wrapper')) return;
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'code-block-wrapper';
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+
+          const lang = pre.getAttribute('data-language') || '';
+
+          const header = document.createElement('div');
+          header.className = 'code-block-header';
+          header.innerHTML = `
+            <span class="code-lang">${lang}</span>
+            <button class="copy-btn" aria-label="Copy code">
+              <svg class="copy-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+              <svg class="check-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none;color:#4ade80">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </button>
+          `;
+
+          const copyBtn = header.querySelector('.copy-btn');
+          copyBtn.addEventListener('click', async () => {
+            const code = pre.querySelector('code')?.textContent || pre.textContent || '';
+            await navigator.clipboard.writeText(code);
+            const copyIcon = header.querySelector('.copy-icon');
+            const checkIcon = header.querySelector('.check-icon');
+            copyIcon.style.display = 'none';
+            checkIcon.style.display = 'block';
+            setTimeout(() => {
+              copyIcon.style.display = 'block';
+              checkIcon.style.display = 'none';
+            }, 2000);
+          });
+
+          wrapper.insertBefore(header, pre);
         });
-      }
-      
-      // Run on load
-      document.addEventListener('DOMContentLoaded', addCopyButtons);
-      
-      // Also run when content changes (for dynamic content)
-      if (typeof MutationObserver !== 'undefined') {
-        const observer = new MutationObserver(addCopyButtons);
-        observer.observe(document.body, { childList: true, subtree: true });
-      }
+      });
     </script>
+
+    <style is:global>
+      .code-block-wrapper {
+        margin-bottom: 1rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        border: 1px solid #1e293b;
+      }
+      .code-block-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+      }
+      .code-lang {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .copy-btn {
+        display: flex;
+        padding: 0.375rem;
+        color: #94a3b8;
+        background: transparent;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .copy-btn:hover {
+        color: white;
+        background: #334155;
+      }
+      .code-block-wrapper pre {
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+      }
+      .mermaid-diagram {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border: 1px solid #334155;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        overflow-x: auto;
+        display: flex;
+        justify-content: center;
+      }
+      .mermaid-diagram svg {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
   </body>
 </html>
