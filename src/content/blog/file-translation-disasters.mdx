@@ -8,6 +8,9 @@ featured: true
 draft: false
 ---
 
+import PerformanceChart from '@/components/PerformanceChart.astro';
+
+
 <div className="not-prose mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
   <p className="text-sm text-green-800 dark:text-green-200">
     <strong>Validated:</strong> Translation performance claims are tested via automated benchmarks.
@@ -139,6 +142,17 @@ RAPS solves these problems through systems-level engineering:
 - Robust retry logic with circuit breaker patterns
 - Queue management and concurrent job handling
 - Webhook endpoint validation and debugging tools
+
+### The Cost of Polling Blindly
+
+<PerformanceChart 
+  title="Translation Visibility"
+  subtitle="Developer time spent waiting vs. progress visibility"
+  data={[
+    { label: "Onshape (Blind Wait)", value: 35, suffix: " min", color: "bg-gradient-to-r from-red-500 to-rose-600" },
+    { label: "RAPS (Smart Polling)", value: 2, suffix: " min check", color: "bg-gradient-to-r from-emerald-400 to-emerald-600" }
+  ]}
+/>
 
 **Production-Ready Reliability**
 ```bash

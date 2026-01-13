@@ -8,6 +8,9 @@ series: "DevOps for Design"
 seriesOrder: 1
 ---
 
+import PerformanceChart from '@/components/PerformanceChart.astro';
+
+
 <div className="not-prose mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
   <p className="text-sm text-green-800 dark:text-green-200">
     <strong>Validated:</strong> Time savings claims are continuously tested via automated benchmarks.
@@ -157,6 +160,17 @@ jobs:
           slack-notify "✅ $model processed and ready for review"
         done
 ```
+
+### The ROI of Automation
+
+<PerformanceChart 
+  title="Time Per Model Upload"
+  subtitle="Active developer time spent on manual vs automated tasks"
+  data={[
+    { label: "Manual Process", value: 45, suffix: " min", color: "bg-gradient-to-r from-red-500 to-rose-600" },
+    { label: "RAPS Automated", value: 1, suffix: " min", color: "bg-gradient-to-r from-emerald-400 to-emerald-600" }
+  ]}
+/>
 
 When this runs in a GitHub Actions workflow, it happens automatically every time a model changes. The team is notified through Slack or Teams. Errors are caught immediately. The status is visible in a dashboard, not someone's inbox.
 

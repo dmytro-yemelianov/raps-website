@@ -8,6 +8,9 @@ featured: true
 draft: false
 ---
 
+import PerformanceChart from '@/components/PerformanceChart.astro';
+
+
 
 
 <div className="not-prose mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
@@ -138,10 +141,23 @@ AEC files aren't just big — they're **structurally complex**:
 ```
 
 JavaScript creates **individual objects** for each property, material, and vertex. For a 2.8M element model:
+### The 45,000,000 Object Problem
+
+JavaScript creates **individual objects** for each property, material, and vertex. For a 2.8M element model:
 - ~2.8M element objects
 - ~15M material property objects  
 - ~28M geometry objects
 - **Total: 45M+ JavaScript objects in memory**
+
+<PerformanceChart 
+  title="Memory Usage (1GB Metadata)"
+  subtitle="RAPS maintains constant memory while Node.js scales with file size"
+  data={[
+    { label: "Node.js (In-Memory)", value: 2500, suffix: " MB", color: "bg-gradient-to-r from-red-500 to-rose-600" },
+    { label: "Node.js (Streaming)", value: 300, suffix: " MB", color: "bg-gradient-to-r from-orange-400 to-orange-600" },
+    { label: "RAPS (Rust)", value: 100, suffix: " MB", color: "bg-gradient-to-r from-emerald-400 to-emerald-600" }
+  ]}
+/>
 
 Rust processes this as a **stream**, parsing each element, extracting needed data, and discarding the rest. Memory usage stays flat.
 
@@ -228,6 +244,17 @@ Here's how the tools perform across typical AEC workflows:
 | Extract material data | 1.8GB JSON | 120s (2.1GB RAM) | 12s (110MB RAM) | 19x less |
 | Generate summary report | 3.4GB JSON | Crashed | 14s (100MB RAM) | ∞x better |
 | Batch process models | 5x 800MB files | Crashed | 42s (150MB RAM) | ∞x better |
+
+<PerformanceChart 
+  title="Processing Speed Comparison"
+  subtitle="Seconds to filter Revit metadata (lower is better)"
+  data={[
+    { label: "Node.js (500MB)", value: 45, suffix: "s", color: "bg-gradient-to-r from-amber-400 to-amber-600" },
+    { label: "RAPS (500MB)", value: 3, suffix: "s", color: "bg-gradient-to-r from-emerald-400 to-emerald-600" },
+    { label: "Node.js (1.8GB)", value: 120, suffix: "s", color: "bg-gradient-to-r from-amber-400 to-amber-600" },
+    { label: "RAPS (1.8GB)", value: 12, suffix: "s", color: "bg-gradient-to-r from-emerald-400 to-emerald-600" }
+  ]}
+/>
 
 ### Automated Benchmark Results
 

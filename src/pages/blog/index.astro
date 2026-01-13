@@ -5,7 +5,7 @@ import { getCollection } from 'astro:content';
 // Get all blog posts, sorted by date
 const allPosts = (await getCollection('blog'))
   .filter(post => !post.data.draft)
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+  .sort((a, b) => new Date(b.data.pubDate).valueOf() - new Date(a.data.pubDate).valueOf());
 
 // Get featured posts
 const featuredPosts = allPosts.filter(post => post.data.featured);
@@ -135,8 +135,8 @@ const getReadingTime = (content: string) => {
               <a href={`/blog/${post.id.replace(/\.mdx?$/, '')}`} class="block">
                 <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 transition-all hover:bg-slate-900">
                   <div class="flex flex-wrap items-center gap-3 mb-3">
-                    <time class="text-sm text-slate-500" datetime={post.data.pubDate.toISOString()}>
-                      {formatDate(post.data.pubDate)}
+                    <time class="text-sm text-slate-500" datetime={new Date(post.data.pubDate).toISOString()}>
+                      {formatDate(new Date(post.data.pubDate))}
                     </time>
                     {post.data.tags?.map((tag: string) => (
                       <span class="px-2 py-0.5 text-xs font-medium bg-primary-500/10 text-primary-400 rounded">

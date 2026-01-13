@@ -36,7 +36,13 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
+
+      - name: Install Playwright
+        run: pnpm add -D @playwright/test@latest
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build with Astro
         run: pnpm run build
