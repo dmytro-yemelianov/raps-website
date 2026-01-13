@@ -147,12 +147,13 @@ $ raps model metadata extract stadium-model.json --materials
 Processed 3.2GB file in 11 seconds. Found 2,847,392 elements.
 
 # Batch processing handles entire project datasets
-$ raps translate batch-start *.rvt --format svf2 --wait
+$ raps translate start *.rvt --format svf2 --wait
 Processing 12 models (28GB total)...
 ✅ All translations completed in 24m15s
 
 # Memory usage stays predictable
-$ raps translate status --all --format json | jq '.[] | select(.status == "failed")'
+$ raps translate status $URN --format json | jq '.status'
+"success"
 # Processes 500MB+ JSON responses without breaking a sweat
 ```
 
