@@ -1,0 +1,263 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Manual Tax Calculator"
+  description="Calculate the hidden cost of manual processes in your AEC workflow. Find out how much time and money you can save with APS automation."
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-12">
+        <h1 class="text-4xl sm:text-5xl font-display font-bold text-white mb-6">
+          Calculate Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-rapeseed-400 to-amber-400">Manual Tax</span>
+        </h1>
+        <p class="text-xl text-slate-300">
+          The cumulative cost of human intervention in processes that could be automated.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Input Panel -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8">
+          <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5 text-rapeseed-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Workflow Inputs
+          </h2>
+
+          <div class="space-y-6">
+            <div>
+              <label for="uploads" class="block text-sm font-medium text-slate-400 mb-2">
+                Model Uploads per Week (per person)
+              </label>
+              <input 
+                type="number" 
+                id="uploads" 
+                value="10" 
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rapeseed-500 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="minutes" class="block text-sm font-medium text-slate-400 mb-2">
+                Minutes per Manual Upload
+              </label>
+              <div class="relative">
+                <input 
+                  type="number" 
+                  id="minutes" 
+                  value="45" 
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rapeseed-500 transition-colors"
+                />
+                <span class="absolute right-4 top-3.5 text-slate-500 text-sm">min</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Includes waiting and periodic status checks.</p>
+            </div>
+
+            <div>
+              <label for="team" class="block text-sm font-medium text-slate-400 mb-2">
+                Team Size (people doing this)
+              </label>
+              <input 
+                type="number" 
+                id="team" 
+                value="5" 
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rapeseed-500 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="rate" class="block text-sm font-medium text-slate-400 mb-2">
+                Average Hourly Rate
+              </label>
+              <div class="relative">
+                <span class="absolute left-4 top-3.5 text-slate-500 text-sm">$</span>
+                <input 
+                  type="number" 
+                  id="rate" 
+                  value="75" 
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-rapeseed-500 transition-colors"
+                />
+                <span class="absolute right-4 top-3.5 text-slate-500 text-sm">/ hr</span>
+              </div>
+            </div>
+            
+            <div class="pt-4 border-t border-slate-800">
+               <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" id="contextSwitch" checked class="w-5 h-5 rounded border-slate-800 bg-slate-950 text-rapeseed-500 focus:ring-rapeseed-500" />
+                <span class="text-sm text-slate-300 group-hover:text-white transition-colors">
+                  Include Context Switching Tax (23 min per task)
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="space-y-6">
+          <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-rapeseed-500/5 rounded-full -translate-y-16 translate-x-16 group-hover:bg-rapeseed-500/10 transition-colors"></div>
+            
+            <h2 class="text-xl font-bold text-white mb-8 flex items-center gap-2 relative">
+              <svg class="w-5 h-5 text-rapeseed-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Manual Tax Results
+            </h2>
+
+            <div class="space-y-8 relative">
+              <div class="grid grid-cols-2 gap-6">
+                <div>
+                  <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Weekly Cost</div>
+                  <div id="weeklyCost" class="text-2xl font-bold text-white">$0</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Weekly Time Lost</div>
+                  <div id="weeklyTime" class="text-2xl font-bold text-white">0 hrs</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Annual Manual Tax</div>
+                <div id="annualCost" class="text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-rapeseed-400 to-amber-400">$0</div>
+              </div>
+
+              <div class="pt-6 border-t border-slate-800">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-sm text-slate-400 font-medium">Potential Productivity Gain</span>
+                  <span id="efficiencyGain" class="text-sm text-green-400 font-bold">+0%</span>
+                </div>
+                <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div id="efficiencyBar" class="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROI Insight -->
+          <div class="bg-rapeseed-500/10 border border-rapeseed-500/20 rounded-2xl p-6">
+            <h3 class="text-rapeseed-400 font-bold mb-3 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              ROI Insight
+            </h3>
+            <p id="roiText" class="text-sm text-slate-300 leading-relaxed">
+              Automating this workflow with RAPS could save your team approximately <span class="font-bold text-white">0 days</span> of manual labor per year.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Section -->
+      <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="p-6 bg-slate-900/30 border border-slate-800 rounded-xl">
+          <h3 class="text-lg font-bold text-white mb-4">Manual Workflow</h3>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 font-bold">✕</span>
+              <span>Context switching interruptions</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 font-bold">✕</span>
+              <span>Potential for manual entry errors</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-500 font-bold">✕</span>
+              <span>Variable wait times and monitoring</span>
+            </li>
+          </ul>
+        </div>
+        <div class="p-6 bg-slate-900/30 border border-slate-800 rounded-xl">
+          <h3 class="text-lg font-bold text-white mb-4 italic">Automated with RAPS</h3>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 font-bold">✓</span>
+              <span>"Set and forget" background processing</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 font-bold">✓</span>
+              <span>Consistent, repeatable results</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-500 font-bold">✓</span>
+              <span>Proactive notifications upon completion</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="mt-16 text-center">
+        <h3 class="text-2xl font-display font-bold text-white mb-6">Stop paying the manual tax.</h3>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a 
+            href="/quickstart" 
+            class="px-8 py-4 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-bold rounded-xl transition-colors shadow-lg shadow-rapeseed-500/20"
+          >
+            Start Automating with RAPS
+          </a>
+          <a 
+            href="/blog/manual-tax" 
+            class="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors"
+          >
+            Read the Article
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  function calculate() {
+    const uploads = parseFloat((document.getElementById('uploads') as HTMLInputElement).value) || 0;
+    const minutes = parseFloat((document.getElementById('minutes') as HTMLInputElement).value) || 0;
+    const team = parseFloat((document.getElementById('team') as HTMLInputElement).value) || 0;
+    const rate = parseFloat((document.getElementById('rate') as HTMLInputElement).value) || 0;
+    const contextSwitchEnabled = (document.getElementById('contextSwitch') as HTMLInputElement).checked;
+    
+    const contextSwitchMinutes = 23;
+    const effectiveMinutes = minutes + (contextSwitchEnabled ? contextSwitchMinutes : 0);
+    
+    // Weekly
+    const weeklyMinutes = uploads * effectiveMinutes * team;
+    const weeklyHours = weeklyMinutes / 60;
+    const weeklyCostValue = weeklyHours * rate;
+    
+    // Annual (52 weeks)
+    const annualCostValue = weeklyCostValue * 52;
+    const annualDaysLost = (weeklyHours * 52) / 8; // 8-hour work days
+    
+    // Automation potential (assumes 95% efficiency gain)
+    const efficiency = 95;
+    
+    // Update UI
+    const weeklyCostEl = document.getElementById('weeklyCost');
+    const weeklyTimeEl = document.getElementById('weeklyTime');
+    const annualCostEl = document.getElementById('annualCost');
+    const efficiencyGainEl = document.getElementById('efficiencyGain');
+    const efficiencyBarEl = document.getElementById('efficiencyBar');
+    const roiTextEl = document.getElementById('roiText');
+    
+    if (weeklyCostEl) weeklyCostEl.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(weeklyCostValue);
+    if (weeklyTimeEl) weeklyTimeEl.textContent = `${Math.round(weeklyHours)} hrs`;
+    if (annualCostEl) annualCostEl.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(annualCostValue);
+    if (efficiencyGainEl) efficiencyGainEl.textContent = `+${efficiency}% Efficiency`;
+    if (efficiencyBarEl) efficiencyBarEl.style.width = `${efficiency}%`;
+    if (roiTextEl) {
+      roiTextEl.innerHTML = `Automating this workflow with RAPS could save your team approximately <span class="font-bold text-white">${Math.round(annualDaysLost)} days</span> of manual labor per year.`;
+    }
+  }
+
+  // Add listeners
+  ['uploads', 'minutes', 'team', 'rate'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', calculate);
+  });
+  document.getElementById('contextSwitch')?.addEventListener('change', calculate);
+
+  // Initial calculation
+  calculate();
+</script>
