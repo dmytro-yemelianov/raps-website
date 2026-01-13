@@ -8,9 +8,49 @@ featured: true
 draft: false
 ---
 
+<div className="not-prose mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <p className="text-sm text-green-800 dark:text-green-200">
+    <strong>Validated:</strong> Translation performance claims are tested via automated benchmarks.
+    <a href="https://github.com/dmytro-yemelianov/raps-examples/actions/workflows/run-benchmarks.yml" className="ml-2 underline">View latest results</a>
+  </p>
+</div>
+
 ## The Cross-Platform Translation Crisis That Makes Developers Question Their Career Choices
 
 Picture this: You upload a 31MB STEP assembly to Onshape. You wait. And wait. No progress bar. No status update. After 30 minutes, you assume something's wrong and re-upload. Sound familiar?
+
+```mermaid
+flowchart LR
+    subgraph "Translation Crisis"
+        A[Upload File] --> B[Submit Job]
+        B --> C{Wait...}
+        C -->|No Progress| C
+        C -->|30+ min| D{Status?}
+        D -->|Failed| E[7 Years to Fix Bug]
+        D -->|Timeout| F[Re-upload]
+        F --> B
+        D -->|Success| G[Finally!]
+    end
+    
+    subgraph "Platform Issues"
+        H[Onshape: No Progress Bar]
+        I[SOLIDWORKS: 90min+ Times]
+        J[NX: License Roulette]
+    end
+    
+    subgraph "RAPS Solution"
+        K[raps translate start] --> L[Smart Polling]
+        L --> M[Progress Estimation]
+        M --> N[Auto Retry]
+        N --> O[✅ Success]
+    end
+    
+    style E fill:#ffcccc
+    style H fill:#ffe6cc
+    style I fill:#ffe6cc
+    style J fill:#ffe6cc
+    style O fill:#ccffcc
+```
 
 ### The Seven-Year Bug
 
@@ -121,6 +161,27 @@ The same patterns could revolutionize translation across:
 - SOLIDWORKS PDM conversions (batch process with proper error handling)
 - Teamcenter JT translations (manage license constraints automatically)
 - 3DEXPERIENCE format conversions (handle enterprise-scale datasets)
+
+### Before & After: Translation Workflow
+
+**Manual Translation (Node.js)**
+```javascript
+// 50+ lines of code, crashes on large files
+const token = await getToken(); // Handle refresh?
+const job = await startTranslation(urn);
+while (true) {
+  const status = await checkStatus(job.id);
+  if (status === 'complete') break;
+  if (status === 'failed') throw new Error('???');
+  await sleep(10000); // Hope this is enough
+}
+```
+
+**With RAPS**
+```bash
+# One command, handles everything
+raps translate start $URN --format svf2 --wait --timeout 1800
+```
 
 ### Market Validation
 

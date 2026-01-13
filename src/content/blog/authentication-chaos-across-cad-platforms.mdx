@@ -8,9 +8,50 @@ featured: true
 draft: false
 ---
 
+<div className="not-prose mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <p className="text-sm text-green-800 dark:text-green-200">
+    <strong>Validated:</strong> Authentication flow claims are tested via automated benchmarks.
+    <a href="https://github.com/dmytro-yemelianov/raps-examples/actions/workflows/run-benchmarks.yml" className="ml-2 underline">View latest results</a>
+  </p>
+</div>
+
 ## The OAuth Implementation Nightmare That Spans Every Major CAD Platform
 
 If you've ever thrown your keyboard after encountering yet another OAuth 401 error, you're not alone. Our research across Autodesk APS, PTC Onshape, Dassault 3DEXPERIENCE, and Siemens Teamcenter reveals that authentication complexity is the #1 developer complaint universally.
+
+```mermaid
+flowchart TB
+    subgraph "OAuth Authentication Chaos"
+        A[Developer] --> B{Which Platform?}
+        B --> C[Autodesk APS]
+        B --> D[PTC Onshape]
+        B --> E[Dassault 3DEXP]
+        B --> F[Siemens TC]
+        
+        C --> C1[2-leg vs 3-leg confusion]
+        D --> D1[URL encoding traps]
+        E --> E1[5 separate logins]
+        F --> F1[SSO complexity]
+        
+        C1 --> G[😤 401 Errors]
+        D1 --> G
+        E1 --> G
+        F1 --> G
+    end
+    
+    subgraph "RAPS Solution"
+        H[raps auth login] --> I[✅ Auto token management]
+        I --> J[✅ Refresh handling]
+        J --> K[✅ Secure storage]
+    end
+    
+    G -.->|Solved by| H
+    
+    style G fill:#ffcccc
+    style I fill:#ccffcc
+    style J fill:#ccffcc
+    style K fill:#ccffcc
+```
 
 ### The Authentication Hall of Shame
 
@@ -61,6 +102,16 @@ With authentication pain points affecting **~70% of the enterprise CAD/PLM marke
 3. **Enterprise SSO adds complexity**—not simplicity
 4. **Session management is universally poor**—crashes and lockouts are common
 5. **CLI tools can abstract this pain**—RAPS proves the model works
+
+### Manual OAuth vs RAPS
+
+| Step | Manual Approach | With RAPS |
+|------|----------------|----------|
+| Get token | Base64 encode credentials, POST to /authentication/v2/token | `raps auth login` |
+| Refresh token | Implement refresh logic, handle race conditions | Automatic |
+| Store credentials | Build secure storage, handle encryption | Built-in keychain |
+| Check status | Decode JWT, parse expiry | `raps auth status` |
+| Multiple environments | Manage separate credential files | `raps auth login --profile prod` |
 
 ### What's Next?
 

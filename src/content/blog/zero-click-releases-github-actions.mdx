@@ -8,6 +8,13 @@ featured: true
 draft: false
 ---
 
+<div className="not-prose mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+  <p className="text-sm text-green-800 dark:text-green-200">
+    <strong>Validated:</strong> Design Automation workflow claims are tested via automated benchmarks.
+    <a href="https://github.com/dmytro-yemelianov/raps-examples/actions/workflows/run-benchmarks.yml" className="ml-2 underline">View latest results</a>
+  </p>
+</div>
+
 ## From 20 Minutes to 0 Minutes: The Manual Tax
 
 In our previous exploration of AEC development pain points, we discussed "The Manual Tax" — the hidden cost of manual deployments. Today, we kill the manual process entirely.
@@ -25,6 +32,42 @@ If you do this manually, you **will** eventually upload a debug build to product
 ## The Zero-Click Workflow
 
 We'll create a pipeline that runs on every git push to the main branch, transforming your "time to deploy" from **20 minutes of clicking to 0 minutes**.
+
+```mermaid
+flowchart LR
+    subgraph "Developer"
+        A[git push] --> B[Go Get Coffee]
+    end
+    
+    subgraph "GitHub Actions"
+        C[Checkout] --> D[Setup .NET]
+        D --> E[Build Release]
+        E --> F[Install RAPS]
+        F --> G[raps auth login]
+        G --> H[raps da bundle create]
+        H --> I[raps da appbundle update]
+        I --> J[raps da activity update]
+    end
+    
+    subgraph "APS Design Automation"
+        K[AppBundle Updated]
+        L[Activity Ready]
+        M[Production Alias Set]
+    end
+    
+    subgraph "Notifications"
+        N[Slack: Deployed!]
+    end
+    
+    B -.->|Triggered| C
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    
+    style A fill:#4c9aff
+    style N fill:#36b37e
+```
 
 ### 1. Define the RAPS Configuration
 
