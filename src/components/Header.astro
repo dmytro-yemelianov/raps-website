@@ -266,59 +266,81 @@ const isSubmenuActive = (submenu: any[]) => {
 </header>
 
 <script>
-  const button = document.getElementById('mobile-menu-button');
-  const menu = document.getElementById('mobile-menu');
-  const backdrop = document.getElementById('mobile-menu-backdrop');
-  const openIcon = document.getElementById('menu-open-icon');
-  const closeIcon = document.getElementById('menu-close-icon');
-  
-  let isOpen = false;
-  
-  function toggleMenu() {
-    isOpen = !isOpen;
-    
-    if (isOpen) {
-      // Open menu
-      menu?.classList.remove('translate-x-full');
-      menu?.classList.add('translate-x-0');
-      backdrop?.classList.remove('opacity-0', 'invisible');
-      backdrop?.classList.add('opacity-100', 'visible');
-      openIcon?.classList.add('hidden');
-      closeIcon?.classList.remove('hidden');
-      button?.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-    } else {
-      // Close menu
-      menu?.classList.add('translate-x-full');
-      menu?.classList.remove('translate-x-0');
-      backdrop?.classList.add('opacity-0', 'invisible');
-      backdrop?.classList.remove('opacity-100', 'visible');
-      openIcon?.classList.remove('hidden');
-      closeIcon?.classList.add('hidden');
-      button?.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
+  function initMobileMenu() {
+    const button = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+    const backdrop = document.getElementById('mobile-menu-backdrop');
+    const openIcon = document.getElementById('menu-open-icon');
+    const closeIcon = document.getElementById('menu-close-icon');
+
+    if (!button || !menu || !backdrop) return;
+
+    let isOpen = false;
+
+    function toggleMenu() {
+      isOpen = !isOpen;
+
+      if (isOpen) {
+        // Open menu
+        menu.classList.remove('translate-x-full');
+        menu.classList.add('translate-x-0');
+        backdrop.classList.remove('opacity-0', 'invisible');
+        backdrop.classList.add('opacity-100', 'visible');
+        openIcon?.classList.add('hidden');
+        closeIcon?.classList.remove('hidden');
+        button.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      } else {
+        // Close menu
+        menu.classList.add('translate-x-full');
+        menu.classList.remove('translate-x-0');
+        backdrop.classList.add('opacity-0', 'invisible');
+        backdrop.classList.remove('opacity-100', 'visible');
+        openIcon?.classList.remove('hidden');
+        closeIcon?.classList.add('hidden');
+        button.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      }
     }
+
+    function closeMenu() {
+      if (isOpen) {
+        toggleMenu();
+      }
+    }
+
+    // Toggle menu on button click
+    button.addEventListener('click', toggleMenu);
+
+    // Close menu on backdrop click
+    backdrop.addEventListener('click', closeMenu);
+
+    // Close menu on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        closeMenu();
+      }
+    });
+
+    // Close menu on window resize to desktop
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 768 && isOpen) {
+        closeMenu();
+      }
+    });
+
+    // Close menu when clicking on a navigation link
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
   }
-  
-  // Toggle menu on button click
-  button?.addEventListener('click', toggleMenu);
-  
-  // Close menu on backdrop click
-  backdrop?.addEventListener('click', toggleMenu);
-  
-  // Close menu on escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isOpen) {
-      toggleMenu();
-    }
-  });
-  
-  // Close menu on window resize to desktop
-  window.addEventListener('resize', () => {
-    if (window.innerWidth >= 768 && isOpen) {
-      toggleMenu();
-    }
-  });
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileMenu);
+  } else {
+    initMobileMenu();
+  }
 </script>
 
 <!-- Spacer for fixed header -->
