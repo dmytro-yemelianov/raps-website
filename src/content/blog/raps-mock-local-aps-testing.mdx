@@ -1,0 +1,352 @@
+---
+title: "raps-mock: Your Local APS Testing Environment"
+description: "Stop waiting for rate limits, avoid hitting production APIs, and debug APS integrations offline. raps-mock brings the entire Autodesk Platform Services API to your local machine."
+pubDate: 2026-01-13
+author: "Dmytro Yemelianov"
+tags: ["testing", "debugging", "mock-server", "development"]
+series: "RAPS Ecosystem"
+seriesOrder: 1
+---
+
+## The APS Development Dilemma
+
+Every APS developer knows the pain. You're debugging a model translation workflow at 11 PM, and suddenly:
+
+```
+HTTP 429 Too Many Requests
+Rate limit exceeded. Please retry after 60 seconds.
+```
+
+Or you're on a flight with no WiFi, wanting to test your authentication flow. Or you're running integration tests in CI and don't want to burn through your APS tokens on mock data.
+
+The traditional solutions are unsatisfying:
+
+- **Use production APIs**: Hit rate limits, consume tokens, need constant connectivity
+- **Write custom mocks**: Tedious, incomplete, drift from real API behavior
+- **Skip testing**: Ship bugs to production (please don't)
+
+There had to be a better way.
+
+## Introducing raps-mock
+
+**raps-mock** is a local mock server that simulates the entire Autodesk Platform Services API. It auto-generates routes from official OpenAPI specifications, ensuring your tests match production behavior.
+
+```bash
+# Start the mock server
+raps-mock --port 3000 --mode stateful
+
+# Point raps-cli at it
+export APS_BASE_URL=http://localhost:3000
+raps auth test
+raps bucket create my-test-bucket
+raps object upload my-test-bucket model.rvt
+```
+
+No internet required. No rate limits. No token costs.
+
+## Two Modes for Different Needs
+
+### Stateless Mode: Quick Validation
+
+Stateless mode returns fixed example responses directly from OpenAPI specs. Perfect for:
+
+- Validating request/response formats
+- Quick smoke tests
+- Checking error handling paths
+
+```bash
+raps-mock --mode stateless --port 3000
+```
+
+Every `GET /oss/v2/buckets` returns the same example bucket list. Every `POST /authentication/v2/token` returns a valid-looking token. Fast, predictable, no setup.
+
+### Stateful Mode: Real Workflows
+
+Stateful mode maintains in-memory state. Create a bucket, and it exists. Upload an object, and you can retrieve it. Start a translation, and the manifest updates.
+
+```bash
+raps-mock --mode stateful --port 3000
+```
+
+This is where the magic happens for integration testing:
+
+```bash
+# Create infrastructure
+raps bucket create ci-test-bucket
+raps object upload ci-test-bucket assembly.stp
+
+# Start translation  
+URN=$(raps object urn ci-test-bucket assembly.stp)
+raps translate start $URN --format svf2
+
+# Verify manifest exists
+raps translate manifest $URN
+```
+
+Each command affects state. The workflow mirrors production exactly.
+
+## Supported APIs
+
+raps-mock covers the core APS surface area:
+
+| API | Coverage | Notes |
+|-----|----------|-------|
+| **Authentication v2** | Full | OAuth 2.0 token flows |
+| **OSS v2** | Full | Buckets and objects |
+| **Data Management v1** | Full | Hubs, projects, folders, items |
+| **Model Derivative v2** | Full | Translation jobs, manifests |
+| **Webhooks v1** | Full | Event subscriptions |
+| **ACC Issues v1** | Full | Construction issues |
+| **ACC Account Admin v1** | Full | Account management |
+
+All routes are auto-generated from the same OpenAPI specs that power the official APS SDKs.
+
+## Debugging raps-cli Locally
+
+The primary use case for raps-mock is debugging raps-cli itself. Here's a typical workflow:
+
+### 1. Start the Mock Server
+
+```bash
+cd raps-mock
+cargo run -- --port 3000 --mode stateful --verbose
+```
+
+The `--verbose` flag logs every request, helping you see exactly what raps-cli sends:
+
+```
+2026-01-13T10:15:23.456Z INFO GenericHandler handling POST /authentication/v2/token
+2026-01-13T10:15:23.458Z INFO GenericHandler handling PUT /oss/v2/buckets/test-bucket
+2026-01-13T10:15:23.501Z INFO GenericHandler handling PUT /oss/v2/buckets/test-bucket/objects/model.rvt
+```
+
+### 2. Configure raps-cli to Use the Mock
+
+```bash
+# Set the base URL environment variable
+export APS_BASE_URL=http://localhost:3000
+
+# Or use the --base-url flag
+raps --base-url http://localhost:3000 bucket list
+```
+
+### 3. Run Your Commands
+
+Now every raps command hits your local mock instead of production:
+
+```bash
+# These all hit localhost:3000
+raps auth login
+raps bucket create debug-bucket
+raps object upload debug-bucket test-file.dwg
+raps translate start $URN --wait
+```
+
+### 4. Inspect and Debug
+
+With verbose logging enabled, you can see:
+
+- Exact request payloads raps-cli sends
+- Response data returned by the mock
+- Timing for each operation
+- Any errors or edge cases
+
+No more guessing what went wrong in production. No more "works on my machine."
+
+## Integration Testing Without the Cloud
+
+raps-mock shines in automated testing. Here's a GitHub Actions example:
+
+```yaml
+name: Integration Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      aps-mock:
+        image: ghcr.io/dmytro-yemelianov/raps-mock:latest
+        ports:
+          - 3000:3000
+        options: --health-cmd "curl -f http://localhost:3000/health"
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install raps
+        run: curl -fsSL https://rapscli.xyz/install.sh | sh
+      
+      - name: Run integration tests
+        env:
+          APS_BASE_URL: http://localhost:3000
+          APS_CLIENT_ID: mock-client-id
+          APS_CLIENT_SECRET: mock-client-secret
+        run: |
+          raps auth test
+          raps bucket create test-bucket
+          raps object upload test-bucket fixtures/sample.rvt
+          # ... more tests
+```
+
+Benefits:
+
+- **Fast**: No network latency, no waiting for real translations
+- **Free**: No token consumption, no API costs  
+- **Reliable**: No flaky tests from network issues or rate limits
+- **Isolated**: Each CI run gets fresh state
+
+## Using raps-mock as a Library
+
+For Rust projects, you can embed raps-mock directly in your test suite:
+
+```rust
+use raps_mock::{MockServer, MockServerConfig, MockMode};
+
+#[tokio::test]
+async fn test_upload_workflow() {
+    // Start embedded mock server
+    let config = MockServerConfig {
+        mode: MockMode::Stateful,
+        openapi_dir: "../aps-sdk-openapi".into(),
+        port: 0, // Random available port
+        ..Default::default()
+    };
+    
+    let server = MockServer::new(config).await.unwrap();
+    let addr = server.local_addr();
+    
+    tokio::spawn(async move {
+        server.start(&addr.to_string()).await.unwrap();
+    });
+    
+    // Run your tests against http://{addr}
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("http://{}/authentication/v2/token", addr))
+        .form(&[
+            ("grant_type", "client_credentials"),
+            ("client_id", "test"),
+            ("client_secret", "test"),
+        ])
+        .send()
+        .await
+        .unwrap();
+    
+    assert!(resp.status().is_success());
+}
+```
+
+## Extending with Custom Handlers
+
+Need mock behavior that goes beyond OpenAPI examples? Register custom handlers:
+
+```rust
+use raps_mock::{MockServer, CustomHandlerRegistry};
+use axum::{Json, response::IntoResponse};
+
+// Custom translation handler that simulates progress
+async fn mock_translation_status() -> impl IntoResponse {
+    Json(serde_json::json!({
+        "status": "inprogress",
+        "progress": "75%",
+        "region": "US"
+    }))
+}
+
+// Register before starting server
+let mut registry = CustomHandlerRegistry::new();
+registry.register("GET", "/modelderivative/v2/designdata/:urn/manifest", mock_translation_status);
+```
+
+This lets you simulate edge cases that rarely occur in production:
+
+- Translation failures with specific error codes
+- Partial manifest states during processing
+- Network timeouts and retries
+- Region-specific behavior
+
+## Comparison: Mock vs Production Testing
+
+| Aspect | Production APIs | raps-mock |
+|--------|-----------------|-----------|
+| **Speed** | Network latency + processing | Instant responses |
+| **Cost** | Consumes tokens | Free |
+| **Rate limits** | 20-500 req/min | Unlimited |
+| **Connectivity** | Required | Offline capable |
+| **State reset** | Manual cleanup | Restart server |
+| **Edge cases** | Wait for them to occur | Simulate on demand |
+| **CI/CD friendly** | Flaky, slow | Fast, reliable |
+
+## Getting Started
+
+### Installation
+
+```bash
+# From source
+git clone https://github.com/dmytro-yemelianov/raps-mock
+cd raps-mock
+cargo build --release
+
+# Binary will be at target/release/raps-mock
+```
+
+### First Run
+
+```bash
+# Clone the OpenAPI specs (required for route generation)
+git clone https://github.com/dmytro-yemelianov/aps-sdk-openapi ../aps-sdk-openapi
+
+# Start the server
+./target/release/raps-mock --port 3000 --mode stateful --verbose
+```
+
+### Verify It Works
+
+```bash
+# Get a mock token
+curl -X POST http://localhost:3000/authentication/v2/token \
+  -d "grant_type=client_credentials" \
+  -d "client_id=test" \
+  -d "client_secret=test"
+```
+
+You should see a valid-looking token response.
+
+## When to Use raps-mock
+
+**Use raps-mock when:**
+
+- Developing new raps-cli features
+- Writing integration tests
+- Debugging API interactions
+- Working offline
+- Running CI/CD pipelines
+- Avoiding rate limits during development
+
+**Use production APIs when:**
+
+- Final validation before release
+- Testing real file translations
+- Verifying production-specific behavior
+- End-to-end workflow testing
+
+The ideal workflow: develop and test with raps-mock, then validate critical paths against production.
+
+## What's Next
+
+raps-mock is under active development. Coming soon:
+
+- **Docker images** for easy CI/CD integration
+- **State persistence** to save/restore mock states
+- **Latency simulation** to test timeout handling
+- **Chaos mode** to randomly inject failures
+- **Recording mode** to capture production responses for replay
+
+The goal is comprehensive APS simulation that eliminates the friction between local development and production deployment.
+
+---
+
+*raps-mock is part of the RAPS ecosystem. [View on GitHub](https://github.com/dmytro-yemelianov/raps-mock) | [Install raps-cli](https://rapscli.xyz/docs/getting-started)*
+
+*Questions or feature requests? [Open an issue](https://github.com/dmytro-yemelianov/raps-mock/issues) or connect with me on [LinkedIn](https://www.linkedin.com/in/dmytro-yemelianov/).*
