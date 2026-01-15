@@ -9,6 +9,13 @@ const navItems = [
   },
   { href: '/blog', label: 'Blog' },
   {
+    label: 'Products',
+    submenu: [
+      { href: '/products/raps-mock', label: 'raps-mock', icon: '🧪', description: 'APS API mock server for testing' },
+      { href: '/products/raps-twin', label: 'raps-twin', icon: '🏭', description: 'Engineering Department Digital Twin' },
+    ]
+  },
+  {
     label: 'Developer',
     submenu: [
       { href: '/docs', label: 'Documentation', icon: '📚', description: 'Complete CLI reference' },
@@ -38,6 +45,7 @@ const isActive = (href: string) => {
   if (href === '/resources') return currentPath.startsWith('/resources');
   if (href === '/glossary') return currentPath.startsWith('/glossary');
   if (href === '/blog') return currentPath.startsWith('/blog');
+  if (href === '/products') return currentPath.startsWith('/products');
   return currentPath === href || currentPath === href + '/';
 };
 
@@ -71,6 +79,7 @@ const isSubmenuActive = (submenu: any[]) => {
                     isSubmenuActive(item.submenu)
                       ? 'bg-slate-800 text-white'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
+                    item.label === 'Products' && !isSubmenuActive(item.submenu) && 'text-purple-400 hover:text-purple-300',
                     item.label === 'Developer' && !isSubmenuActive(item.submenu) && 'text-emerald-400 hover:text-emerald-300',
                     item.label === 'Project' && !isSubmenuActive(item.submenu) && 'text-blue-400 hover:text-blue-300',
                   ]}
@@ -212,6 +221,7 @@ const isSubmenuActive = (submenu: any[]) => {
                 <summary class:list={[
                   'flex items-center justify-between px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer select-none transition-colors',
                   isSubmenuActive(item.submenu) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800/50',
+                  item.label === 'Products' && !isSubmenuActive(item.submenu) && 'text-purple-400',
                   item.label === 'Developer' && !isSubmenuActive(item.submenu) && 'text-emerald-400',
                   item.label === 'Project' && !isSubmenuActive(item.submenu) && 'text-blue-400',
                 ]}>
