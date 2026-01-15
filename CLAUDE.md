@@ -21,12 +21,14 @@ npm run preview      # Preview production build
 
 - **Blog posts**: `src/content/blog/*.mdx` - Technical articles with frontmatter (title, description, pubDate, tags, series, seriesOrder)
 - **Documentation**: `src/content/docs/*.mdx` - CLI docs with section-based navigation (section, order fields in frontmatter)
+- **Products**: `src/content/products/*.mdx` - Ecosystem product pages (raps-mock, raps-twin) with frontmatter (title, description, tagline, icon, github, order)
 
 ### Layouts
 
 - `BaseLayout.astro` - Root layout with SEO meta tags, OG/Twitter cards
 - `BlogPost.astro` - Blog article layout with author, tags, series navigation
 - `DocsLayout.astro` - Documentation layout with sidebar navigation organized by sections (getting-started, modes, commands, guides, cookbook)
+- `ProductLayout.astro` - Product page layout with hero section and Related Products
 
 ### Key Components
 
@@ -41,6 +43,7 @@ npm run preview      # Preview production build
 - `/quickstart` - Installation and setup guide
 - `/blog/` - Blog listing and posts
 - `/docs/` - Documentation with dynamic routes (`[...slug].astro`)
+- `/products/` - Ecosystem products (raps-mock, raps-twin) with dynamic routes
 - `/tools/` - Interactive developer tools (scope-builder, token-decoder, urn-encoder, etc.)
 - `/resources/` - Cheat sheets and guides
 - `/glossary` - APS/CAD/DevOps terminology
@@ -95,6 +98,21 @@ description: "Page description"
 section: "commands"        # getting-started, modes, commands, guides, cookbook
 order: 1                   # Sort order within section
 icon: "🔐"                 # Optional emoji icon
+---
+```
+
+### Product Page Frontmatter
+
+```yaml
+---
+title: "raps-mock"
+description: "APS API mock server for local development and CI/CD testing"
+tagline: "Test APS integrations without credentials"  # Optional hero subtitle
+icon: "🧪"                 # Optional emoji for navigation
+github: "https://github.com/dmytro-yemelianov/raps-mock"
+order: 1                   # Sort order in Products dropdown
+version: "0.2.0"           # Optional current version
+sourceVersion: "2026-01-15" # Optional README sync date
 ---
 ```
 

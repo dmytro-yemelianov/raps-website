@@ -102,10 +102,14 @@
     { title: 'Token Decoder', type: 'tool', url: '/tools/token-decoder', content: 'Decode tokens', tags: ['jwt', 'debug'] },
     { title: 'URN Encoder', type: 'tool', url: '/tools/urn-encoder', content: 'Encode URNs', tags: ['urn', 'encode'] },
     
-    // Pages  
+    // Pages
     { title: 'Quick Start', type: 'page', url: '/quickstart', content: 'Get started', tags: ['start', 'guide'] },
     { title: 'Roadmap', type: 'page', url: '/roadmap', content: 'Future features', tags: ['roadmap'] },
     { title: 'APS Hierarchy', type: 'page', url: '/resources/aps-hierarchy', content: 'Visual service map', tags: ['hierarchy', 'visual', 'architecture'] },
+
+    // Products
+    { title: 'raps-mock', type: 'product', url: '/products/raps-mock', content: 'APS API mock server for testing', tags: ['mock', 'server', 'testing', 'ci', 'local'] },
+    { title: 'raps-twin', type: 'product', url: '/products/raps-twin', content: 'Engineering Department Digital Twin simulation', tags: ['simulation', 'digital twin', 'mesa', 'simpy', 'eddt'] },
   ];
   
   // Search functionality
@@ -199,7 +203,8 @@
       docs: 'Documentation',
       tool: 'Tools',
       blog: 'Blog',
-      page: 'Pages'
+      page: 'Pages',
+      product: 'Products'
     };
     
     Object.entries(grouped).forEach(([type, items]) => {
