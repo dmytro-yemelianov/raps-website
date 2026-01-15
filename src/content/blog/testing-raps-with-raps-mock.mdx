@@ -1,0 +1,330 @@
+---
+title: "Testing RAPS with raps-mock: Our Integration Test Strategy"
+description: "How we use raps-mock to test raps-cli without hitting production APIs. A deep dive into our TestServer pattern and why we moved away from wiremock."
+pubDate: 2026-01-15
+author: "Dmytro Yemelianov"
+tags: ["testing", "rust", "integration-tests", "development"]
+series: "RAPS Ecosystem"
+seriesOrder: 2
+---
+
+## The Testing Challenge
+
+Testing a CLI that wraps external APIs is tricky. You need to verify:
+
+- Request formatting matches API specs
+- Response parsing handles all edge cases
+- Error handling works for various failure modes
+- Authentication flows function correctly
+
+The naive approach is to mock individual HTTP responses with libraries like [wiremock](https://crates.io/crates/wiremock). We did this for months. It worked, but had problems.
+
+## Why We Moved Away from wiremock
+
+Our original test setup looked like this:
+
+```rust
+use wiremock::{MockServer, Mock, ResponseTemplate};
+use wiremock::matchers::{method, path};
+
+#[tokio::test]
+async fn test_list_buckets() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/oss/v2/buckets"))
+        .respond_with(ResponseTemplate::new(200)
+            .set_body_json(json!({
+                "items": [
+                    {"bucketKey": "test-bucket", "createdDate": "2024-01-01"}
+                ]
+            })))
+        .mount(&server)
+        .await;
+
+    let client = create_client(&server.uri());
+    let buckets = client.list_buckets().await.unwrap();
+
+    assert_eq!(buckets.len(), 1);
+}
+```
+
+This worked, but we had **hundreds** of these mocks across 8 crates. The problems:
+
+1. **Maintenance burden**: Every API change required updating multiple mock responses
+2. **Drift from reality**: Our mock responses diverged from actual API behavior
+3. **Incomplete coverage**: We only mocked the happy path, missing edge cases
+4. **Duplication**: Same mock setup copy-pasted across test files
+
+The solution was obvious: use real API schemas.
+
+## Enter raps-mock
+
+[raps-mock](https://github.com/dmytro-yemelianov/raps-mock) auto-generates mock responses from official Autodesk OpenAPI specifications. Instead of hand-crafting JSON responses, we get realistic data that matches production.
+
+But the real game-changer was the `TestServer` helper added in v0.2.0.
+
+## The TestServer Pattern
+
+Here's our new test setup:
+
+```rust
+use raps_mock::TestServer;
+
+#[tokio::test]
+async fn test_list_buckets() {
+    // Start mock server on random port
+    let server = TestServer::start_default().await.unwrap();
+
+    // Point client at mock server
+    let client = create_client(&server.url);
+
+    // Make real API calls - responses come from OpenAPI specs
+    let buckets = client.list_buckets().await.unwrap();
+
+    // Verify behavior
+    assert!(buckets.is_ok());
+}
+```
+
+That's it. No mock setup. No response templates. No maintenance.
+
+### How It Works
+
+`TestServer::start_default()` does the heavy lifting:
+
+1. Binds to a random available port on localhost
+2. Parses OpenAPI specs from `aps-sdk-openapi`
+3. Generates routes for all documented endpoints
+4. Returns example responses from the specs
+5. Runs in a background task until dropped
+
+```rust
+pub struct TestServer {
+    pub url: String,           // e.g., "http://127.0.0.1:54321"
+    _task: JoinHandle<()>,     // Background server task
+}
+
+impl TestServer {
+    pub async fn start_default() -> Result<Self> {
+        let server = MockServer::new(MockServerConfig::default()).await?;
+        let app = server.router();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await?;
+        let addr = listener.local_addr()?;
+
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        Ok(Self { url: format!("http://{}", addr), _task: task })
+    }
+}
+```
+
+When the `TestServer` is dropped, the background task is automatically aborted.
+
+## Real Examples from RAPS
+
+### Authentication Tests
+
+```rust
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+
+    fn create_mock_auth_client(mock_url: &str) -> AuthClient {
+        let config = Config {
+            client_id: "test-client-id".to_string(),
+            client_secret: "test-client-secret".to_string(),
+            base_url: mock_url.to_string(),
+            ..Default::default()
+        };
+        AuthClient::new(config)
+    }
+
+    #[tokio::test]
+    async fn test_get_2leg_token_success() {
+        let server = raps_mock::TestServer::start_default().await.unwrap();
+        let client = create_mock_auth_client(&server.url);
+
+        let result = client.get_token().await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_is_logged_in_false_initially() {
+        let server = raps_mock::TestServer::start_default().await.unwrap();
+        let client = create_mock_auth_client(&server.url);
+
+        assert!(!client.is_logged_in().await);
+    }
+}
+```
+
+### OSS Client Tests
+
+```rust
+#[tokio::test]
+async fn test_list_buckets_with_mock_server() {
+    let server = raps_mock::TestServer::start_default().await.unwrap();
+    let client = create_mock_client(&server.url);
+
+    // raps-mock auto-generates bucket list from OpenAPI examples
+    let result = client.list_buckets(None, None).await;
+    // Response structure matches real API
+    let _ = result;
+}
+
+#[tokio::test]
+async fn test_create_bucket_with_mock_server() {
+    let server = raps_mock::TestServer::start_default().await.unwrap();
+    let client = create_mock_client(&server.url);
+
+    let result = client.create_bucket("test-bucket", BucketPolicy::Persistent).await;
+    // Mock server returns valid bucket response
+    let _ = result;
+}
+```
+
+### Webhook Tests
+
+```rust
+#[tokio::test]
+async fn test_list_webhooks_with_mock_server() {
+    let server = raps_mock::TestServer::start_default().await.unwrap();
+    let client = create_mock_webhooks_client(&server.url);
+
+    let result = client.list_webhooks("data", "dm.version.added").await;
+    // OpenAPI spec defines webhook response format
+    let _ = result;
+}
+```
+
+## Test Helper Pattern
+
+Each crate follows the same pattern:
+
+```rust
+/// Create a client configured to use the mock server
+fn create_mock_client(mock_url: &str) -> OssClient {
+    let config = Config {
+        client_id: "test-client-id".to_string(),
+        client_secret: "test-client-secret".to_string(),
+        base_url: mock_url.to_string(),
+        callback_url: "http://localhost:8080/callback".to_string(),
+        da_nickname: None,
+        http_config: HttpClientConfig::default(),
+    };
+    let auth = AuthClient::new(config.clone());
+    OssClient::new(config, auth)
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_client_creation() {
+        let server = raps_mock::TestServer::start_default().await.unwrap();
+        let client = create_mock_client(&server.url);
+
+        // Verify client is configured correctly
+        assert!(client.auth.config().base_url.starts_with("http://"));
+    }
+
+    // ... more tests
+}
+```
+
+## CI/CD Integration
+
+In our GitHub Actions workflow, raps-mock is pulled from GitHub:
+
+```toml
+# Cargo.toml
+[workspace.dependencies]
+raps-mock = {
+    git = "https://github.com/dmytro-yemelianov/raps-mock.git",
+    tag = "v0.2.0"
+}
+```
+
+Tests run without any special setup:
+
+```yaml
+- name: Run tests
+  run: cargo test --workspace
+```
+
+No mock server containers. No environment setup. Just `cargo test`.
+
+## Benefits of This Approach
+
+### Before (wiremock)
+- ~4000 lines of mock setup code
+- Manually maintained response JSON
+- Divergence from real API behavior
+- Copy-paste mock patterns
+
+### After (raps-mock)
+- ~300 lines of test code
+- Responses from official OpenAPI specs
+- Guaranteed API compatibility
+- Single `TestServer::start_default()` call
+
+The migration removed **3,700 lines** of test boilerplate while improving coverage.
+
+## When to Use Each Mode
+
+raps-mock supports two modes:
+
+### Stateless Mode (Default)
+Returns fixed example responses from OpenAPI specs. Perfect for:
+- Unit tests verifying request/response parsing
+- Quick smoke tests
+- CI pipelines
+
+```rust
+let server = TestServer::start_default().await.unwrap();
+```
+
+### Stateful Mode
+Maintains in-memory state. Create a bucket, it persists. Upload an object, you can retrieve it.
+
+```rust
+let config = MockServerConfig {
+    mode: MockMode::Stateful,
+    ..Default::default()
+};
+let server = TestServer::start(config).await.unwrap();
+```
+
+Use stateful mode for:
+- End-to-end workflow tests
+- State-dependent operations
+- Complex multi-step scenarios
+
+## Migration Tips
+
+If you're considering a similar migration:
+
+1. **Start with one crate**: Migrate incrementally, don't rewrite everything at once
+2. **Keep test assertions simple**: Trust the mock responses, test your code's behavior
+3. **Use the helper pattern**: Create `create_mock_client()` functions for consistency
+4. **Run `cargo fmt`**: The migration might introduce formatting changes
+
+## What's Next
+
+We're planning:
+
+- **Response customization**: Override specific responses for edge case testing
+- **Latency simulation**: Test timeout handling
+- **Failure injection**: Test retry logic with configurable errors
+- **Request recording**: Capture real API responses for replay
+
+---
+
+*raps-mock v0.2.0 is available now. [View on GitHub](https://github.com/dmytro-yemelianov/raps-mock)*
+
+*This post is part of the [RAPS Ecosystem series](/blog?series=RAPS+Ecosystem). See also: [raps-mock: Your Local APS Testing Environment](/blog/raps-mock-local-aps-testing)*

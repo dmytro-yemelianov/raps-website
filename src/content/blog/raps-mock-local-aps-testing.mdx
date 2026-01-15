@@ -198,32 +198,20 @@ Benefits:
 
 ## Using raps-mock as a Library
 
-For Rust projects, you can embed raps-mock directly in your test suite:
+For Rust projects, you can embed raps-mock directly in your test suite using the `TestServer` helper (added in v0.2.0):
 
 ```rust
-use raps_mock::{MockServer, MockServerConfig, MockMode};
+use raps_mock::TestServer;
 
 #[tokio::test]
-async fn test_upload_workflow() {
-    // Start embedded mock server
-    let config = MockServerConfig {
-        mode: MockMode::Stateful,
-        openapi_dir: "../aps-sdk-openapi".into(),
-        port: 0, // Random available port
-        ..Default::default()
-    };
-    
-    let server = MockServer::new(config).await.unwrap();
-    let addr = server.local_addr();
-    
-    tokio::spawn(async move {
-        server.start(&addr.to_string()).await.unwrap();
-    });
-    
-    // Run your tests against http://{addr}
+async fn test_api_call() {
+    // Start mock server on random available port
+    let server = TestServer::start_default().await.unwrap();
+
+    // Make requests against server.url
     let client = reqwest::Client::new();
     let resp = client
-        .post(format!("http://{}/authentication/v2/token", addr))
+        .post(format!("{}/authentication/v2/token", server.url))
         .form(&[
             ("grant_type", "client_credentials"),
             ("client_id", "test"),
@@ -232,8 +220,38 @@ async fn test_upload_workflow() {
         .send()
         .await
         .unwrap();
-    
+
     assert!(resp.status().is_success());
+    // Server automatically shuts down when `server` is dropped
+}
+```
+
+The `TestServer` helper handles all the boilerplate:
+- Binds to a random available port
+- Starts the server in a background task
+- Cleans up automatically on drop
+
+### Advanced Configuration
+
+For more control, use `TestServer::start()` with custom config:
+
+```rust
+use raps_mock::{TestServer, MockServerConfig, MockMode};
+
+#[tokio::test]
+async fn test_stateful_workflow() {
+    let config = MockServerConfig {
+        mode: MockMode::Stateful,  // Maintains in-memory state
+        openapi_dir: "../aps-sdk-openapi".into(),
+        verbose: true,  // Log requests
+        ..Default::default()
+    };
+
+    let server = TestServer::start(config).await.unwrap();
+
+    // Create a bucket - it persists in stateful mode
+    // Upload an object - you can retrieve it later
+    // Full CRUD operations work as expected
 }
 ```
 
@@ -348,5 +366,7 @@ The goal is comprehensive APS simulation that eliminates the friction between lo
 ---
 
 *raps-mock is part of the RAPS ecosystem. [View on GitHub](https://github.com/dmytro-yemelianov/raps-mock) | [Install raps-cli](https://rapscli.xyz/docs/getting-started)*
+
+*See also: [Testing RAPS with raps-mock](/blog/testing-raps-with-raps-mock) - How we use raps-mock in our own test suite.*
 
 *Questions or feature requests? [Open an issue](https://github.com/dmytro-yemelianov/raps-mock/issues) or connect with me on [LinkedIn](https://www.linkedin.com/in/dmytro-yemelianov/).*
