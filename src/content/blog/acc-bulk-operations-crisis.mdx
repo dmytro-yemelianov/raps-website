@@ -117,41 +117,79 @@ For a large enterprise with 200+ projects? **Over 2 hours of clicking.** Now mul
 
 ## Where Bulk Operations Are Missing
 
-```mermaid
-flowchart TB
-    subgraph users["👥 User Management"]
-        U1[Add to multiple projects]
-        U2[Remove from multiple projects]
-        U3[Update roles across projects]
-        U4[Copy team between projects]
-    end
+<div class="not-prose my-8">
+  <svg viewBox="0 0 800 420" class="w-full max-w-4xl mx-auto" role="img" aria-label="Four categories of missing bulk operations in ACC">
+    <defs>
+      <linearGradient id="userGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#3b82f6"/>
+        <stop offset="100%" style="stop-color:#1d4ed8"/>
+      </linearGradient>
+      <linearGradient id="photoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ec4899"/>
+        <stop offset="100%" style="stop-color:#be185d"/>
+      </linearGradient>
+      <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8b5cf6"/>
+        <stop offset="100%" style="stop-color:#6d28d9"/>
+      </linearGradient>
+      <linearGradient id="issueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#f59e0b"/>
+        <stop offset="100%" style="stop-color:#d97706"/>
+      </linearGradient>
+      <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3"/>
+      </filter>
+    </defs>
 
-    subgraph photos["📷 Photos & Media"]
-        P1[Bulk photo editing]
-        P2[Mass photo tagging]
-        P3[Batch downloads]
-        P4[Multi-photo deletion]
-    end
+    {/* User Management Card */}
+    <g filter="url(#cardShadow)">
+      <rect x="20" y="20" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="20" y="20" width="370" height="50" rx="16" fill="url(#userGrad)"/>
+      <rect x="20" y="54" width="370" height="16" fill="url(#userGrad)"/>
+      <text x="50" y="52" class="fill-white text-lg font-bold" style="font-size:18px">👥 User Management</text>
+      <text x="40" y="100" class="fill-slate-300" style="font-size:14px">• Add to multiple projects</text>
+      <text x="40" y="125" class="fill-slate-300" style="font-size:14px">• Remove from multiple projects</text>
+      <text x="40" y="150" class="fill-slate-300" style="font-size:14px">• Update roles across projects</text>
+      <text x="40" y="175" class="fill-slate-300" style="font-size:14px">• Copy team between projects</text>
+    </g>
 
-    subgraph docs["📄 Documents"]
-        D1[Bulk uploads with metadata]
-        D2[Mass status updates]
-        D3[Batch permission changes]
-        D4[Multi-file versioning]
-    end
+    {/* Photos & Media Card */}
+    <g filter="url(#cardShadow)">
+      <rect x="410" y="20" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="410" y="20" width="370" height="50" rx="16" fill="url(#photoGrad)"/>
+      <rect x="410" y="54" width="370" height="16" fill="url(#photoGrad)"/>
+      <text x="440" y="52" class="fill-white text-lg font-bold" style="font-size:18px">📷 Photos & Media</text>
+      <text x="430" y="100" class="fill-slate-300" style="font-size:14px">• Bulk photo editing</text>
+      <text x="430" y="125" class="fill-slate-300" style="font-size:14px">• Mass photo tagging</text>
+      <text x="430" y="150" class="fill-slate-300" style="font-size:14px">• Batch downloads</text>
+      <text x="430" y="175" class="fill-slate-300" style="font-size:14px">• Multi-photo deletion</text>
+    </g>
 
-    subgraph issues["⚠️ Issues & Submittals"]
-        I1[Bulk issue creation]
-        I2[Mass status updates]
-        I3[Batch assignee changes]
-        I4[Bulk CSV export]
-    end
+    {/* Documents Card */}
+    <g filter="url(#cardShadow)">
+      <rect x="20" y="220" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="20" y="220" width="370" height="50" rx="16" fill="url(#docGrad)"/>
+      <rect x="20" y="254" width="370" height="16" fill="url(#docGrad)"/>
+      <text x="50" y="252" class="fill-white text-lg font-bold" style="font-size:18px">📄 Documents</text>
+      <text x="40" y="300" class="fill-slate-300" style="font-size:14px">• Bulk uploads with metadata</text>
+      <text x="40" y="325" class="fill-slate-300" style="font-size:14px">• Mass status updates</text>
+      <text x="40" y="350" class="fill-slate-300" style="font-size:14px">• Batch permission changes</text>
+      <text x="40" y="375" class="fill-slate-300" style="font-size:14px">• Multi-file versioning</text>
+    </g>
 
-    style users fill:#3b82f6
-    style photos fill:#ec4899
-    style docs fill:#8b5cf6
-    style issues fill:#f59e0b
-```
+    {/* Issues & Submittals Card */}
+    <g filter="url(#cardShadow)">
+      <rect x="410" y="220" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="410" y="220" width="370" height="50" rx="16" fill="url(#issueGrad)"/>
+      <rect x="410" y="254" width="370" height="16" fill="url(#issueGrad)"/>
+      <text x="440" y="252" class="fill-white text-lg font-bold" style="font-size:18px">⚠️ Issues & Submittals</text>
+      <text x="430" y="300" class="fill-slate-300" style="font-size:14px">• Bulk issue creation</text>
+      <text x="430" y="325" class="fill-slate-300" style="font-size:14px">• Mass status updates</text>
+      <text x="430" y="350" class="fill-slate-300" style="font-size:14px">• Batch assignee changes</text>
+      <text x="430" y="375" class="fill-slate-300" style="font-size:14px">• Bulk CSV export</text>
+    </g>
+  </svg>
+</div>
 
 <PerformanceChart
   title="Bulk Operation Requests by Category"
@@ -396,21 +434,79 @@ jobs:
 
 ## The Broader Pattern
 
-```mermaid
-flowchart LR
-    A[UI-First Design] --> B[Works for 10 projects]
-    B --> C[Breaks at 100 projects]
-    C --> D[Fails at 500 projects]
+<div class="not-prose my-8">
+  <svg viewBox="0 0 800 280" class="w-full max-w-4xl mx-auto" role="img" aria-label="UI-First vs API-First design comparison showing scalability differences">
+    <defs>
+      <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#ef4444"/>
+        <stop offset="100%" style="stop-color:#dc2626"/>
+      </linearGradient>
+      <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#22c55e"/>
+        <stop offset="100%" style="stop-color:#16a34a"/>
+      </linearGradient>
+      <linearGradient id="grayGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#475569"/>
+        <stop offset="100%" style="stop-color:#334155"/>
+      </linearGradient>
+      <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
+      </marker>
+      <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+      </marker>
+    </defs>
 
-    E[API-First Design] --> F[Scales to any size]
-    F --> G[Automatable]
-    G --> H[CI/CD Ready]
+    {/* UI-First Row (Top) */}
+    <text x="400" y="30" text-anchor="middle" class="fill-red-400 font-bold" style="font-size:16px">❌ UI-First Design</text>
 
-    style A fill:#ef4444
-    style D fill:#ef4444
-    style E fill:#22c55e
-    style H fill:#22c55e
-```
+    <rect x="40" y="50" width="140" height="50" rx="8" fill="url(#redGrad)"/>
+    <text x="110" y="80" text-anchor="middle" class="fill-white font-semibold" style="font-size:13px">UI-First Design</text>
+
+    <line x1="180" y1="75" x2="230" y2="75" stroke="#ef4444" stroke-width="3" marker-end="url(#arrowRed)"/>
+
+    <rect x="240" y="50" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="310" y="72" text-anchor="middle" class="fill-white" style="font-size:12px">Works for</text>
+    <text x="310" y="88" text-anchor="middle" class="fill-amber-400 font-bold" style="font-size:14px">10 projects</text>
+
+    <line x1="380" y1="75" x2="430" y2="75" stroke="#ef4444" stroke-width="3" marker-end="url(#arrowRed)"/>
+
+    <rect x="440" y="50" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="510" y="72" text-anchor="middle" class="fill-white" style="font-size:12px">Breaks at</text>
+    <text x="510" y="88" text-anchor="middle" class="fill-amber-400 font-bold" style="font-size:14px">100 projects</text>
+
+    <line x1="580" y1="75" x2="630" y2="75" stroke="#ef4444" stroke-width="3" marker-end="url(#arrowRed)"/>
+
+    <rect x="640" y="50" width="140" height="50" rx="8" fill="url(#redGrad)"/>
+    <text x="710" y="72" text-anchor="middle" class="fill-white" style="font-size:12px">Fails at</text>
+    <text x="710" y="88" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">500 projects</text>
+
+    {/* Divider */}
+    <line x1="50" y1="140" x2="750" y2="140" stroke="#334155" stroke-width="2" stroke-dasharray="8,4"/>
+
+    {/* API-First Row (Bottom) */}
+    <text x="400" y="175" text-anchor="middle" class="fill-emerald-400 font-bold" style="font-size:16px">✓ API-First Design</text>
+
+    <rect x="40" y="195" width="140" height="50" rx="8" fill="url(#greenGrad)"/>
+    <text x="110" y="225" text-anchor="middle" class="fill-white font-semibold" style="font-size:13px">API-First Design</text>
+
+    <line x1="180" y1="220" x2="230" y2="220" stroke="#22c55e" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+    <rect x="240" y="195" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="310" y="217" text-anchor="middle" class="fill-white" style="font-size:12px">Scales to</text>
+    <text x="310" y="233" text-anchor="middle" class="fill-emerald-400 font-bold" style="font-size:14px">any size</text>
+
+    <line x1="380" y1="220" x2="430" y2="220" stroke="#22c55e" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+    <rect x="440" y="195" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="510" y="225" text-anchor="middle" class="fill-emerald-400 font-bold" style="font-size:14px">Automatable</text>
+
+    <line x1="580" y1="220" x2="630" y2="220" stroke="#22c55e" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+    <rect x="640" y="195" width="140" height="50" rx="8" fill="url(#greenGrad)"/>
+    <text x="710" y="225" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">CI/CD Ready</text>
+  </svg>
+</div>
 
 **UI-first design doesn't scale.** ACC was designed for small-to-medium projects. Enterprise contexts require API automation.
 
