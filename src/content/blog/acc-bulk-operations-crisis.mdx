@@ -10,18 +10,32 @@ featured: false
 draft: false
 ---
 
+import PerformanceChart from '@/components/PerformanceChart.astro';
+
 *This is Part 2 of our [ACC Pain Points series](/blog/acc-forum-analysis). We analyzed 4,295 feature requests from the ACC Ideas forum.*
 
 ---
 
-## The Numbers
+## The Numbers At a Glance
 
-| Metric | Value |
-|--------|-------|
-| Ideas mentioning bulk/batch operations | 490 |
-| Total votes on these ideas | 3,860 |
-| #1 most-voted idea overall | Bulk user management (344 kudos) |
-| Average implementation wait time | 4+ years (and counting) |
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div class="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">490</div>
+    <div class="text-amber-200 text-sm mt-1">Bulk Operation Ideas</div>
+  </div>
+  <div class="bg-gradient-to-br from-orange-600 to-orange-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">3,860</div>
+    <div class="text-orange-200 text-sm mt-1">Community Votes</div>
+  </div>
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">344</div>
+    <div class="text-red-200 text-sm mt-1">#1 Idea Kudos</div>
+  </div>
+  <div class="bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">6+</div>
+    <div class="text-slate-200 text-sm mt-1">Years Waiting</div>
+  </div>
+</div>
 
 Across every category — users, photos, documents, issues, submittals — the same request appears: **"Let us do this in bulk."**
 
@@ -29,122 +43,273 @@ Across every category — users, photos, documents, issues, submittals — the s
 
 ## The #1 Most-Voted Request
 
-> *"There is a major need to be able to add a new hire to many projects in ACC. Instead of wasting my time opening each project and manually adding a new user to 20 projects, we need a tool that will automate this process!"*
->
-> — [Forum post](https://forums.autodesk.com/t5/acc-ideas/allow-adding-a-user-s-to-multiple-projects/idi-p/12714729), April 2024
-
-**344 kudos.** The highest-voted request in the entire forum.
-
-But here's the kicker: this was originally submitted to BIM360 **six years ago**. When users migrated to ACC, they submitted it again. Still waiting.
+<div class="not-prose my-8 bg-gradient-to-r from-red-900/50 to-slate-900/50 rounded-2xl p-8 border border-red-700/50">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">#1 MOST VOTED</div>
+    <div class="px-3 py-1 bg-amber-500/20 text-amber-400 text-xs font-bold rounded-full">344 KUDOS</div>
+  </div>
+  <blockquote class="text-xl text-white italic border-l-4 border-red-500 pl-4 mb-4">
+    "There is a major need to be able to add a new hire to many projects in ACC. Instead of wasting my time opening each project and manually adding a new user to 20 projects, we need a tool that will automate this process!"
+  </blockquote>
+  <div class="flex items-center gap-4 text-sm text-slate-400">
+    <a href="https://forums.autodesk.com/t5/acc-ideas/allow-adding-a-user-s-to-multiple-projects/idi-p/12714729" class="text-blue-400 hover:underline">View on Forum</a>
+    <span>•</span>
+    <span>Originally submitted to BIM360 <strong class="text-red-400">6+ years ago</strong></span>
+  </div>
+</div>
 
 ---
 
 ## The Math of Manual Work
 
-Let's quantify the pain. Adding a new team member to 50 projects manually:
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-4">Adding 1 User to 50 Projects (Manual)</h3>
+    <div class="grid grid-cols-5 gap-2 mb-6">
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">🖱️</div>
+        <div class="text-white font-bold">15s</div>
+        <div class="text-xs text-slate-400">Navigate</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">📂</div>
+        <div class="text-white font-bold">5s</div>
+        <div class="text-xs text-slate-400">Open Panel</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">🔍</div>
+        <div class="text-white font-bold">10s</div>
+        <div class="text-xs text-slate-400">Search User</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">👤</div>
+        <div class="text-white font-bold">5s</div>
+        <div class="text-xs text-slate-400">Select Role</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">✓</div>
+        <div class="text-white font-bold">5s</div>
+        <div class="text-xs text-slate-400">Confirm</div>
+      </div>
+    </div>
+    <div class="flex items-center justify-between p-4 bg-red-900/30 rounded-xl border border-red-700/50">
+      <div>
+        <div class="text-slate-400 text-sm">Per project</div>
+        <div class="text-white font-bold">40 seconds</div>
+      </div>
+      <div class="text-4xl">×</div>
+      <div>
+        <div class="text-slate-400 text-sm">Projects</div>
+        <div class="text-white font-bold">50</div>
+      </div>
+      <div class="text-4xl">=</div>
+      <div>
+        <div class="text-slate-400 text-sm">Total time</div>
+        <div class="text-3xl font-black text-red-400">33 min</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-| Step | Time | Total |
-|------|------|-------|
-| Navigate to project | 15 sec | — |
-| Open Members panel | 5 sec | — |
-| Search for user | 10 sec | — |
-| Select role | 5 sec | — |
-| Confirm | 5 sec | — |
-| **Per project** | — | **40 sec** |
-| **50 projects** | — | **33 minutes** |
-
-And that's assuming no page load delays, no typos, no accidental wrong clicks.
-
-For a large enterprise with 200+ projects onboarding a new BIM manager? **Over 2 hours of clicking.**
-
-Now multiply by every new hire, every departing employee, every role change.
+For a large enterprise with 200+ projects? **Over 2 hours of clicking.** Now multiply by every new hire, every departing employee, every role change.
 
 ---
 
 ## Where Bulk Operations Are Missing
 
-Our analysis found bulk operation requests across every major category:
+```mermaid
+flowchart TB
+    subgraph users["👥 User Management"]
+        U1[Add to multiple projects]
+        U2[Remove from multiple projects]
+        U3[Update roles across projects]
+        U4[Copy team between projects]
+    end
 
-### User Management (175 ideas, 1,677 kudos)
-- Add users to multiple projects
-- Remove users from multiple projects
-- Update roles across projects
-- Copy team members between projects
+    subgraph photos["📷 Photos & Media"]
+        P1[Bulk photo editing]
+        P2[Mass photo tagging]
+        P3[Batch downloads]
+        P4[Multi-photo deletion]
+    end
 
-### Photos & Media (163 ideas, 1,969 kudos)
-- Bulk photo editing
-- Mass photo tagging
-- Batch photo downloads
-- Multi-photo deletion
+    subgraph docs["📄 Documents"]
+        D1[Bulk uploads with metadata]
+        D2[Mass status updates]
+        D3[Batch permission changes]
+        D4[Multi-file versioning]
+    end
 
-### Documents & Files (207 ideas, 1,353 kudos)
-- Bulk file uploads with metadata
-- Mass document status updates
-- Batch folder permission changes
-- Multi-file version management
+    subgraph issues["⚠️ Issues & Submittals"]
+        I1[Bulk issue creation]
+        I2[Mass status updates]
+        I3[Batch assignee changes]
+        I4[Bulk CSV export]
+    end
 
-### Issues & Submittals (296 ideas, 1,607 kudos)
-- Bulk issue creation from spreadsheets
-- Mass status updates
-- Batch assignee changes
-- Bulk export to CSV/Excel
+    style users fill:#3b82f6
+    style photos fill:#ec4899
+    style docs fill:#8b5cf6
+    style issues fill:#f59e0b
+```
+
+<PerformanceChart
+  title="Bulk Operation Requests by Category"
+  subtitle="Number of ideas requesting batch/bulk functionality"
+  data={[
+    { label: "User Management", value: 175, color: "bg-gradient-to-r from-blue-500 to-blue-600", suffix: " ideas" },
+    { label: "Photos & Media", value: 163, color: "bg-gradient-to-r from-pink-500 to-pink-600", suffix: " ideas" },
+    { label: "Documents & Files", value: 207, color: "bg-gradient-to-r from-purple-500 to-purple-600", suffix: " ideas" },
+    { label: "Issues & Submittals", value: 296, color: "bg-gradient-to-r from-amber-500 to-amber-600", suffix: " ideas" },
+  ]}
+  maxValue={350}
+/>
 
 ---
 
 ## Why This Matters for AEC
 
-Construction projects aren't small. A typical large project might have:
-
-- 200+ team members
-- 50+ subcontractors
-- 100+ folders with custom permissions
-- 10,000+ documents
-- 1,000+ issues
-
-When every operation is click-by-click, administrative overhead explodes. BIM managers become full-time data entry clerks.
-
----
-
-## The Workarounds Teams Use Today
-
-### Option 1: Manual Labor
-Assign an intern or admin to click through hundreds of operations. Expensive, error-prone, soul-crushing.
-
-### Option 2: Desktop Tools (Naviate)
-Third-party Windows applications that batch some operations. But:
-- Enterprise pricing (not published)
-- Windows-only
-- Can't be automated in CI/CD
-- Limited to specific features
-
-### Option 3: Custom Scripts
-Build your own automation using the APS API. But:
-- Requires developer resources
-- No standard patterns
-- Every team reinvents the wheel
-- Maintenance burden
-
-### Option 4: RAPS CLI
-What we built.
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-4">Typical Large Construction Project</h3>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="bg-gradient-to-br from-blue-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-blue-700/30">
+        <div class="text-3xl font-black text-blue-400">200+</div>
+        <div class="text-xs text-slate-400 mt-1">Team Members</div>
+      </div>
+      <div class="bg-gradient-to-br from-purple-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-purple-700/30">
+        <div class="text-3xl font-black text-purple-400">50+</div>
+        <div class="text-xs text-slate-400 mt-1">Subcontractors</div>
+      </div>
+      <div class="bg-gradient-to-br from-amber-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-amber-700/30">
+        <div class="text-3xl font-black text-amber-400">100+</div>
+        <div class="text-xs text-slate-400 mt-1">Folders</div>
+      </div>
+      <div class="bg-gradient-to-br from-emerald-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-emerald-700/30">
+        <div class="text-3xl font-black text-emerald-400">10K+</div>
+        <div class="text-xs text-slate-400 mt-1">Documents</div>
+      </div>
+      <div class="bg-gradient-to-br from-red-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-red-700/30">
+        <div class="text-3xl font-black text-red-400">1K+</div>
+        <div class="text-xs text-slate-400 mt-1">Issues</div>
+      </div>
+    </div>
+    <p class="text-slate-400 text-sm mt-4 text-center">When every operation is click-by-click, BIM managers become full-time data entry clerks.</p>
+  </div>
+</div>
 
 ---
 
-## The RAPS Approach
+## The Workarounds Comparison
 
-RAPS v4.0 introduced `raps admin` commands specifically to address bulk operations:
+<div class="not-prose my-8">
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="bg-red-900/20 rounded-xl p-6 border border-red-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">❌</div>
+        <h4 class="text-lg font-bold text-white">Manual Labor</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Assign intern to click through</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Expensive labor cost</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Error-prone</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Soul-crushing work</li>
+      </ul>
+    </div>
+    <div class="bg-amber-900/20 rounded-xl p-6 border border-amber-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">⚠️</div>
+        <h4 class="text-lg font-bold text-white">Desktop Tools (Naviate)</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Enterprise pricing (not published)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Windows-only (300MB+)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Can't automate in CI/CD</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Limited feature coverage</li>
+      </ul>
+    </div>
+    <div class="bg-blue-900/20 rounded-xl p-6 border border-blue-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">🔧</div>
+        <h4 class="text-lg font-bold text-white">Custom Scripts</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Requires developer resources</li>
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> No standard patterns</li>
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Every team reinvents wheel</li>
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Maintenance burden</li>
+      </ul>
+    </div>
+    <div class="bg-emerald-900/20 rounded-xl p-6 border border-emerald-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">✅</div>
+        <h4 class="text-lg font-bold text-white">RAPS CLI</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> Free & open source</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> Cross-platform (single binary)</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> CI/CD ready</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> 50 parallel operations</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+---
+
+## Performance Comparison
+
+<PerformanceChart
+  title="Time to Add User to 200 Projects"
+  subtitle="Comparison of different approaches"
+  data={[
+    { label: "Manual UI", value: 133, color: "bg-gradient-to-r from-red-500 to-red-600", suffix: " min" },
+    { label: "Naviate Desktop", value: 30, color: "bg-gradient-to-r from-amber-500 to-amber-600", suffix: " min" },
+    { label: "RAPS CLI", value: 0.75, color: "bg-gradient-to-r from-emerald-500 to-emerald-600", suffix: " min" },
+  ]}
+  maxValue={140}
+/>
+
+<div class="not-prose my-6 p-6 bg-gradient-to-r from-emerald-900/40 to-slate-900/40 rounded-xl border border-emerald-700/50">
+  <div class="flex items-center justify-between">
+    <div>
+      <div class="text-slate-400 text-sm">Manual UI</div>
+      <div class="text-3xl font-black text-red-400">2+ hours</div>
+    </div>
+    <div class="text-4xl text-slate-600">→</div>
+    <div>
+      <div class="text-slate-400 text-sm">RAPS CLI</div>
+      <div class="text-3xl font-black text-emerald-400">45 seconds</div>
+    </div>
+    <div class="text-right">
+      <div class="text-slate-400 text-sm">Speedup</div>
+      <div class="text-3xl font-black text-white">177x faster</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## The RAPS Solution
 
 ### Add User to All Projects
 
 ```bash
 # Add new hire to all 200 projects
 raps admin user add "$ACCOUNT_ID" "newhire@company.com" --role project_admin
-
-# Progress tracking built-in
-Adding user to projects...
-[████████████████████████████████████████] 200/200
 ```
 
-**Time: ~45 seconds** (vs. 2+ hours manual)
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">Output:</div>
+  <div class="text-emerald-400">Adding user to projects...</div>
+  <div class="flex items-center gap-2 my-2">
+    <div class="flex-1 bg-slate-700 rounded-full h-3 overflow-hidden">
+      <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+    </div>
+    <span class="text-white">200/200</span>
+  </div>
+  <div class="text-white">✓ Completed in 45 seconds</div>
+</div>
 
 ### Filter by Project Pattern
 
@@ -154,42 +319,37 @@ raps admin user add "$ACCOUNT_ID" "contractor@partner.com" \
   --role viewer --filter "^2024-"
 ```
 
-### Dry-Run First
+### Dry-Run Preview
 
 ```bash
-# Preview before executing
-raps admin user add "$ACCOUNT_ID" "user@company.com" \
-  --role project_admin --dry-run
-
-Dry run results:
-┌─────────────────────────────┬────────────┐
-│ Project                     │ Action     │
-├─────────────────────────────┼────────────┤
-│ Downtown Tower              │ Would add  │
-│ Hospital Wing               │ Would add  │
-│ University Library          │ Would skip │
-└─────────────────────────────┴────────────┘
+# See what would happen without executing
+raps admin user add "$ACCOUNT_ID" "user@company.com" --dry-run
 ```
 
-### Resumable Operations
-
-Network hiccup? Connection timeout? No problem:
-
-```bash
-# Resume from where you left off
-raps admin operation resume
-```
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">Dry run results:</div>
+  <table class="w-full text-left">
+    <thead class="text-slate-500 border-b border-slate-700">
+      <tr><th class="py-2">Project</th><th>Action</th></tr>
+    </thead>
+    <tbody class="text-slate-300">
+      <tr><td class="py-1">Downtown Tower</td><td class="text-emerald-400">Would add</td></tr>
+      <tr><td class="py-1">Hospital Wing</td><td class="text-emerald-400">Would add</td></tr>
+      <tr><td class="py-1">University Library</td><td class="text-amber-400">Would skip (exists)</td></tr>
+    </tbody>
+  </table>
+</div>
 
 ### CI/CD Integration
 
 ```yaml
-# Automated onboarding workflow
 name: User Onboarding
 on:
   workflow_dispatch:
     inputs:
       email:
         required: true
+        description: 'New user email'
 
 jobs:
   onboard:
@@ -197,58 +357,62 @@ jobs:
     steps:
       - name: Add to all projects
         run: |
-          raps admin user add "$ACCOUNT_ID" "$EMAIL" \
+          raps admin user add "$ACCOUNT_ID" "${{ github.event.inputs.email }}" \
             --role project_admin
 ```
 
 ---
 
-## Performance Comparison
+## What's Available Now
 
-| Method | 50 Projects | 200 Projects |
-|--------|-------------|--------------|
-| Manual UI | 33 minutes | 2+ hours |
-| Naviate | ~10 minutes | ~30 minutes |
-| RAPS CLI | **~15 seconds** | **~45 seconds** |
-
-RAPS processes up to 50 projects in parallel with automatic rate limit handling.
-
----
-
-## Beyond User Management
-
-The same pattern applies to other bulk operations we're building:
-
-### Coming Soon
-- `raps admin issue bulk-create` — Create issues from CSV
-- `raps admin photo bulk-tag` — Tag photos in bulk
-- `raps admin submittal bulk-update` — Mass status changes
-
-### Already Available
-- `raps admin user add/remove/update-role`
-- `raps admin folder rights`
-- `raps admin project list --filter`
-- `raps admin operation resume/cancel`
+<div class="not-prose my-8 grid md:grid-cols-2 gap-4">
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <h4 class="text-emerald-400 font-bold mb-4 flex items-center gap-2">
+      <span>✓</span> Available in RAPS 4.0
+    </h4>
+    <ul class="space-y-2 text-slate-300 text-sm">
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin user add</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin user remove</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin user update-role</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin folder rights</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin project list</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin operation resume</code></li>
+    </ul>
+  </div>
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <h4 class="text-amber-400 font-bold mb-4 flex items-center gap-2">
+      <span>🚧</span> Coming Soon
+    </h4>
+    <ul class="space-y-2 text-slate-300 text-sm">
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin issue bulk-create</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin photo bulk-tag</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin submittal bulk-update</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin document bulk-upload</code></li>
+    </ul>
+  </div>
+</div>
 
 ---
 
 ## The Broader Pattern
 
-This isn't just about RAPS. The bulk operations gap reveals a fundamental truth about enterprise software:
+```mermaid
+flowchart LR
+    A[UI-First Design] --> B[Works for 10 projects]
+    B --> C[Breaks at 100 projects]
+    C --> D[Fails at 500 projects]
 
-**UI-first design doesn't scale.**
+    E[API-First Design] --> F[Scales to any size]
+    F --> G[Automatable]
+    G --> H[CI/CD Ready]
 
-What works for 10 projects breaks at 100. What works for 5 team members fails at 500. ACC was designed for small-to-medium projects and is now being pushed into enterprise contexts.
+    style A fill:#ef4444
+    style D fill:#ef4444
+    style E fill:#22c55e
+    style H fill:#22c55e
+```
 
-The API exists. The data is accessible. The missing piece is tooling that treats bulk operations as first-class features, not afterthoughts.
-
----
-
-## Next Steps
-
-1. **Try RAPS** — [Installation guide](/docs/installation)
-2. **Read the cookbook** — [Bulk admin recipes](/docs/cookbook-acc-admin)
-3. **Request features** — [GitHub issues](https://github.com/dmytro-yemelianov/raps/issues)
+**UI-first design doesn't scale.** ACC was designed for small-to-medium projects. Enterprise contexts require API automation.
 
 ---
 
@@ -261,4 +425,5 @@ The API exists. The data is accessible. The missing piece is tooling that treats
 
 **Related:**
 - [Admin Commands Reference](/docs/admin)
+- [Account Admin Cookbook](/docs/cookbook-acc-admin)
 - [RAPS 4.0 Release Notes](/blog/raps-4-account-admin)
