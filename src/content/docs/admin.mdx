@@ -1,0 +1,377 @@
+---
+title: "Admin Commands"
+description: "Bulk account administration for ACC/BIM 360 accounts"
+section: "commands"
+order: 8
+icon: "👥"
+---
+
+# Admin Commands
+
+Perform bulk user management operations across ACC/BIM 360 accounts. These commands enable efficient onboarding, offboarding, and permission management at scale.
+
+> **Note:** Admin commands require 3-legged OAuth with account admin privileges. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps admin user add` | Add user to multiple projects |
+| `raps admin user remove` | Remove user from projects |
+| `raps admin user update-role` | Update user role across projects |
+| `raps admin folder rights` | Update folder permissions |
+| `raps admin project list` | List projects with filtering |
+| `raps admin operation status` | View operation progress |
+| `raps admin operation resume` | Resume interrupted operation |
+| `raps admin operation cancel` | Cancel in-progress operation |
+| `raps admin operation list` | List all operations |
+
+---
+
+## User Commands
+
+### raps admin user add
+
+Add a user to multiple projects with a specified role.
+
+```bash
+raps admin user add <ACCOUNT_ID> <EMAIL> --role <ROLE> [OPTIONS]
+```
+
+**Arguments:**
+- `ACCOUNT_ID` - ACC/BIM 360 account ID
+- `EMAIL` - User email address to add
+
+**Options:**
+- `--role <ROLE>` - Role to assign (required)
+  - `account_admin`, `project_admin`, `project_manager`, `viewer`
+- `--filter <REGEX>` - Filter projects by name pattern
+- `--dry-run` - Preview changes without executing
+- `--output <FORMAT>` - Output format (json, table)
+
+**Example:**
+
+```bash
+$ raps admin user add "acc-123" "user@company.com" --role project_admin
+Adding user to projects...
+[████████████████████████████████████████] 100/100
+
+Results:
+┌──────────────┬───────┐
+│ Status       │ Count │
+├──────────────┼───────┤
+│ Succeeded    │ 95    │
+│ Skipped      │ 3     │
+│ Failed       │ 2     │
+└──────────────┴───────┘
+```
+
+### raps admin user remove
+
+Remove a user from multiple projects.
+
+```bash
+raps admin user remove <ACCOUNT_ID> <EMAIL> [OPTIONS]
+```
+
+**Arguments:**
+- `ACCOUNT_ID` - ACC/BIM 360 account ID
+- `EMAIL` - User email address to remove
+
+**Options:**
+- `--filter <REGEX>` - Filter projects by name pattern
+- `--dry-run` - Preview changes without executing
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin user remove "acc-123" "departed@company.com"
+Removing user from projects...
+[████████████████████████████████████████] 100/100
+
+Results:
+┌──────────────┬───────┐
+│ Status       │ Count │
+├──────────────┼───────┤
+│ Succeeded    │ 45    │
+│ Skipped      │ 55    │
+└──────────────┴───────┘
+```
+
+### raps admin user update-role
+
+Update a user's role across multiple projects.
+
+```bash
+raps admin user update-role <ACCOUNT_ID> <EMAIL> --role <ROLE> [OPTIONS]
+```
+
+**Arguments:**
+- `ACCOUNT_ID` - ACC/BIM 360 account ID
+- `EMAIL` - User email address
+
+**Options:**
+- `--role <ROLE>` - New role to assign (required)
+- `--filter <REGEX>` - Filter projects by name pattern
+- `--dry-run` - Preview changes without executing
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin user update-role "acc-123" "user@company.com" --role viewer
+Updating user role...
+[████████████████████████████████████████] 50/50
+
+Results:
+┌──────────────┬───────┐
+│ Status       │ Count │
+├──────────────┼───────┤
+│ Succeeded    │ 48    │
+│ Skipped      │ 2     │
+└──────────────┴───────┘
+```
+
+---
+
+## Folder Commands
+
+### raps admin folder rights
+
+Update folder permissions for a user across multiple projects.
+
+```bash
+raps admin folder rights <ACCOUNT_ID> <EMAIL> --permission <LEVEL> --folder <TYPE> [OPTIONS]
+```
+
+**Arguments:**
+- `ACCOUNT_ID` - ACC/BIM 360 account ID
+- `EMAIL` - User email address
+
+**Options:**
+- `--permission <LEVEL>` - Permission level (required)
+  - `view`, `view_download`, `upload`, `edit`, `control`
+- `--folder <TYPE>` - Folder type (required)
+  - `project_files`, `plans`, or folder URN for custom
+- `--filter <REGEX>` - Filter projects by name pattern
+- `--dry-run` - Preview changes without executing
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin folder rights "acc-123" "contractor@partner.com" \
+    --permission edit --folder project_files
+Updating folder permissions...
+[████████████████████████████████████████] 75/75
+
+Results:
+┌──────────────┬───────┐
+│ Status       │ Count │
+├──────────────┼───────┤
+│ Succeeded    │ 72    │
+│ Failed       │ 3     │
+└──────────────┴───────┘
+```
+
+---
+
+## Project Commands
+
+### raps admin project list
+
+List projects in an account with optional filtering.
+
+```bash
+raps admin project list <ACCOUNT_ID> [OPTIONS]
+```
+
+**Arguments:**
+- `ACCOUNT_ID` - ACC/BIM 360 account ID
+
+**Options:**
+- `--filter <REGEX>` - Filter by project name
+- `--status <STATUS>` - Filter by status (`active`, `archived`, `pending`)
+- `--platform <PLATFORM>` - Filter by platform (`acc`, `bim360`)
+- `--limit <N>` - Limit number of results
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin project list "acc-123" --status active --limit 5
+Projects:
+┌────────────────────────────────────────┬─────────────────────────┬─────────┬──────────┐
+│ ID                                     │ Name                    │ Status  │ Platform │
+├────────────────────────────────────────┼─────────────────────────┼─────────┼──────────┤
+│ b.proj-001                             │ Downtown Tower          │ active  │ ACC      │
+│ b.proj-002                             │ Hospital Wing           │ active  │ ACC      │
+│ b.proj-003                             │ University Library      │ active  │ ACC      │
+│ b.proj-004                             │ Retail Plaza            │ active  │ BIM360   │
+│ b.proj-005                             │ Office Complex          │ active  │ ACC      │
+└────────────────────────────────────────┴─────────────────────────┴─────────┴──────────┘
+```
+
+---
+
+## Operation Commands
+
+### raps admin operation status
+
+View the status and progress of an operation.
+
+```bash
+raps admin operation status [OPTIONS]
+```
+
+**Options:**
+- `--id <UUID>` - Specific operation ID (default: most recent)
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin operation status
+Operation: 550e8400-e29b-41d4-a716-446655440000
+Type: AddUser
+Status: InProgress
+
+Progress:
+[████████████████████░░░░░░░░░░░░░░░░░░░░] 50/100
+
+Results so far:
+┌──────────────┬───────┐
+│ Status       │ Count │
+├──────────────┼───────┤
+│ Succeeded    │ 45    │
+│ Skipped      │ 3     │
+│ Failed       │ 2     │
+│ Pending      │ 50    │
+└──────────────┴───────┘
+```
+
+### raps admin operation resume
+
+Resume an interrupted operation.
+
+```bash
+raps admin operation resume [OPTIONS]
+```
+
+**Options:**
+- `--id <UUID>` - Operation ID to resume (default: most recent in-progress)
+
+**Example:**
+
+```bash
+$ raps admin operation resume
+Resuming operation: 550e8400-e29b-41d4-a716-446655440000
+Continuing from project 51 of 100...
+[████████████████████████████████████████] 100/100
+
+Operation completed successfully!
+```
+
+### raps admin operation cancel
+
+Cancel an in-progress operation.
+
+```bash
+raps admin operation cancel [OPTIONS]
+```
+
+**Options:**
+- `--id <UUID>` - Operation ID to cancel (default: most recent in-progress)
+
+**Example:**
+
+```bash
+$ raps admin operation cancel
+Cancelling operation: 550e8400-e29b-41d4-a716-446655440000
+Operation cancelled. 50 projects were processed before cancellation.
+```
+
+### raps admin operation list
+
+List all operations with optional filtering.
+
+```bash
+raps admin operation list [OPTIONS]
+```
+
+**Options:**
+- `--status <STATUS>` - Filter by status (`pending`, `in_progress`, `completed`, `failed`, `cancelled`)
+- `--limit <N>` - Limit results
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin operation list
+Operations:
+┌──────────────────────────────────────┬────────────┬─────────────┬───────┬─────────┬────────┐
+│ ID                                   │ Type       │ Status      │ Total │ Success │ Failed │
+├──────────────────────────────────────┼────────────┼─────────────┼───────┼─────────┼────────┤
+│ 550e8400-e29b-41d4-a716-446655440000 │ AddUser    │ Completed   │ 100   │ 95      │ 2      │
+│ 661f9511-f3ac-52e5-b827-557766551111 │ RemoveUser │ InProgress  │ 50    │ 25      │ 0      │
+│ 772a0622-a4bd-63f6-c938-668877662222 │ UpdateRole │ Cancelled   │ 75    │ 30      │ 1      │
+└──────────────────────────────────────┴────────────┴─────────────┴───────┴─────────┴────────┘
+```
+
+---
+
+## Common Workflows
+
+### Onboard New Team Member
+
+```bash
+# 1. Preview what projects will be affected
+raps admin user add "$ACCOUNT_ID" "new@company.com" \
+  --role project_admin --dry-run
+
+# 2. Add user to all projects
+raps admin user add "$ACCOUNT_ID" "new@company.com" \
+  --role project_admin
+
+# 3. Grant folder permissions
+raps admin folder rights "$ACCOUNT_ID" "new@company.com" \
+  --permission edit --folder project_files
+```
+
+### Offboard Departing Employee
+
+```bash
+# 1. Remove from all projects
+raps admin user remove "$ACCOUNT_ID" "departed@company.com"
+
+# 2. Verify removal
+raps admin operation status
+```
+
+### Bulk Role Update
+
+```bash
+# Update all viewers to project_admin on active 2024 projects
+raps admin user update-role "$ACCOUNT_ID" "user@company.com" \
+  --role project_admin --filter "^2024-"
+```
+
+---
+
+## Exit Codes
+
+| Code | Description |
+|------|-------------|
+| `0` | All operations succeeded |
+| `1` | Partial success (some items failed) |
+| `2` | Operation failed to start |
+| `3` | User cancelled operation |
+
+---
+
+## Next Steps
+
+- [Account Admin Cookbook](/docs/cookbook-acc-admin) - Detailed recipes and automation
+- [Data Management](/docs/data-management) - Browse hubs and projects
+- [Authentication](/docs/auth) - Configure OAuth
