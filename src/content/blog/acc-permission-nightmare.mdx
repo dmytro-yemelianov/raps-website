@@ -1,0 +1,288 @@
+---
+title: "The Permission Problem: When Basic Access Controls Are Missing"
+description: "504 ideas, 3,251 votes, and a fundamental gap: ACC users can't control who sees what. Here's what the forum data reveals about permission management pain."
+pubDate: 2026-01-16
+author: "Dmytro Yemelianov"
+tags: ["acc", "permissions", "security", "aec", "access-control"]
+series: "ACC Pain Points"
+seriesOrder: 3
+featured: false
+draft: false
+---
+
+*This is Part 3 of our [ACC Pain Points series](/blog/acc-forum-analysis). We analyzed 4,295 feature requests from the ACC Ideas forum.*
+
+---
+
+## The Permission Paradox
+
+ACC is enterprise software used by some of the world's largest construction projects. Multi-billion dollar developments with hundreds of subcontractors, sensitive bid documents, and strict compliance requirements.
+
+Yet users can't remove inherited folder permissions.
+
+---
+
+## The Numbers
+
+| Metric | Value |
+|--------|-------|
+| Ideas mentioning permissions | 504 |
+| Total votes on permission ideas | 3,251 |
+| #5 most-voted idea overall | Remove inherited permissions (175 kudos) |
+| Years waiting for basic controls | 2+ |
+
+---
+
+## The #5 Most-Voted Request
+
+> *"I would like the ability to control permissions on sub folders outside of what is inherited. For example, I give everyone EDIT access at the Project Files level, but we have some folders deep inside the project we want to remove full access and only VIEW access. Currently we cannot do this."*
+>
+> — [Forum post](https://forums.autodesk.com/t5/acc-ideas/folder-permissions-option-to-remove-inherited-permissions/idi-p/12421150), December 2023
+
+**175 kudos.** Status: **Future Consideration.**
+
+This is permission management 101. Every file system since the 1990s has supported it. Yet ACC doesn't.
+
+---
+
+## What Users Can't Do
+
+### Can't Remove Inherited Permissions
+
+If you give a user "Edit" access at the root folder, they have "Edit" everywhere beneath it. You can't create a restricted subfolder with "View Only" access.
+
+Real-world impact:
+- Bid documents visible to all subcontractors
+- HR folders accessible to the entire project team
+- Client-sensitive materials exposed to vendors
+
+### Can't Audit Who Has Access
+
+> *"Export overview of all granted permissions per folder"*
+> — 68 kudos, Implemented (finally)
+
+Users couldn't even see a comprehensive list of who had access to what. This basic audit capability took years of requests before implementation.
+
+### Can't Control Photo Permissions Separately
+
+> *"Permission for Photos"*
+> — 100 kudos, Accepted but not implemented
+
+Photos exist in a separate permission silo. You can't grant document access without photo access, or vice versa.
+
+### Can't Set Folder-Level Defaults
+
+> *"Default folder permissions for new projects"*
+> — 72 kudos, Gathering Support
+
+Every new project starts from scratch. No templates, no standards, no automation.
+
+---
+
+## The Real-World Consequences
+
+### Scenario 1: The Leaked Bid
+
+A general contractor creates subfolders for each trade's bid documents. They want subcontractors to see only their own folders.
+
+**What they want:**
+```
+/Project Files/
+  /Bids/
+    /Electrical/     ← Only ElectroCorp can see
+    /Plumbing/       ← Only PlumbWorks can see
+    /HVAC/           ← Only AirFlow Inc can see
+```
+
+**What ACC allows:**
+Everyone with Project Files access sees all bid folders.
+
+Result: Competitors see each other's pricing.
+
+### Scenario 2: The Compliance Audit
+
+An owner asks: "Who has access to our financial documents?"
+
+**What they need:**
+A report showing every user with access to `/Finance/` and their permission level.
+
+**What ACC provides:**
+Click into each folder manually and check. For 500 folders.
+
+### Scenario 3: The Departed Employee
+
+Someone leaves the company. Remove their access from 200 projects.
+
+**What should happen:**
+One command, instant removal.
+
+**What ACC requires:**
+200 individual project visits, manual removal each time.
+
+---
+
+## Why This Is a Security Issue
+
+Construction projects handle sensitive data:
+- **Financial**: Budgets, bids, change orders, payment applications
+- **Legal**: Contracts, insurance certificates, lien waivers
+- **Personnel**: Safety certifications, background checks
+- **Intellectual Property**: Design documents, specifications
+
+When permission controls are inadequate, data exposure isn't a bug — it's a feature of the system.
+
+---
+
+## The Workarounds
+
+### Option 1: Accept the Risk
+Many teams just... give up. Everyone gets broad access because granular control is impossible.
+
+### Option 2: Separate Projects
+Create separate projects for sensitive content. But this breaks document linking, creates version control nightmares, and multiplies administrative overhead.
+
+### Option 3: External Storage
+Keep sensitive files outside ACC entirely. SharePoint, Dropbox, network drives. Defeats the purpose of a unified platform.
+
+### Option 4: API Automation
+Build custom tooling to manage permissions programmatically. Which is what we did.
+
+---
+
+## The RAPS Approach
+
+RAPS v4.0 includes bulk folder permission management:
+
+### Grant Permissions Across Projects
+
+```bash
+# Give a user edit access to Project Files across all projects
+raps admin folder rights "$ACCOUNT_ID" "contractor@partner.com" \
+  --permission edit --folder project_files
+```
+
+### Different Levels for Different Folders
+
+```bash
+# View-only for Plans folder
+raps admin folder rights "$ACCOUNT_ID" "reviewer@client.com" \
+  --permission view --folder plans
+
+# Edit for Project Files
+raps admin folder rights "$ACCOUNT_ID" "reviewer@client.com" \
+  --permission edit --folder project_files
+```
+
+### Filter by Project
+
+```bash
+# Only apply to specific projects
+raps admin folder rights "$ACCOUNT_ID" "user@company.com" \
+  --permission control --folder project_files \
+  --filter "^2024-Confidential"
+```
+
+### Permission Levels
+
+| Level | Capabilities |
+|-------|--------------|
+| `view` | View files only |
+| `view_download` | View and download |
+| `upload` | Add new files |
+| `edit` | Modify existing files |
+| `control` | Full control including permissions |
+
+---
+
+## Auditing Access
+
+While ACC's native audit capabilities are limited, RAPS can help extract permission data:
+
+```bash
+# Export project list with user counts
+raps admin project list "$ACCOUNT_ID" --output json > projects.json
+
+# For each project, check specific folder permissions
+for project in $(jq -r '.[].id' projects.json); do
+  echo "Project: $project"
+  raps acc folder permissions "$project" --folder project_files
+done
+```
+
+---
+
+## What's Still Missing
+
+Even with RAPS, some permission issues require Autodesk to fix:
+
+1. **Inheritance Override** — API doesn't expose inheritance controls that don't exist in the product
+2. **Photo Permission Separation** — Requires product-level changes
+3. **Real-Time Audit Logs** — Not available via API
+4. **Cross-Project Permission Views** — No native endpoint for this
+
+We can automate what the API allows, but we can't fix what Autodesk hasn't built.
+
+---
+
+## The Broader Issue
+
+Permission management reflects a deeper architectural choice: ACC was designed for collaboration openness, not enterprise security controls.
+
+This works for small teams where everyone should see everything. It fails for:
+- Large enterprises with regulatory requirements
+- Projects with competitive bidding
+- Organizations with strict data classification
+- Any context where "least privilege" matters
+
+The 504 permission-related forum requests — with 3,251 votes — show users pushing a collaboration tool beyond its design constraints.
+
+---
+
+## Recommendations
+
+### For AEC Professionals
+1. Document your permission requirements before adopting ACC
+2. Plan folder structures with permission limitations in mind
+3. Use project segmentation when necessary (despite overhead)
+4. Implement automated permission management (RAPS or custom)
+
+### For Autodesk
+1. Implement inheritance override (the #5 most-voted request)
+2. Add comprehensive permission auditing
+3. Create project templates with permission defaults
+4. Separate photo permissions from document permissions
+
+### For Developers
+1. Build tooling that fills permission gaps
+2. Create audit reports that ACC doesn't provide
+3. Automate permission provisioning/deprovisioning
+4. Consider permission management in workflow design
+
+---
+
+## Next Steps
+
+1. **Try bulk permission management** — [RAPS Admin Cookbook](/docs/cookbook-acc-admin)
+2. **Learn the permission levels** — [Admin Commands Reference](/docs/admin)
+3. **Automate onboarding/offboarding** — [CI/CD Integration](/docs/cookbook-acc-admin#cicd-pipeline)
+
+---
+
+## Series Conclusion
+
+This series analyzed 4,295 feature requests from the ACC Ideas forum:
+
+- [Part 1: The 96.6% Problem](/blog/acc-forum-analysis) — Why 96.6% of requests go unanswered
+- [Part 2: The Bulk Operations Crisis](/blog/acc-bulk-operations-crisis) — The click-by-click productivity drain
+- **Part 3: The Permission Problem** — When basic access controls are missing
+
+The data reveals a systematic gap between enterprise needs and product capabilities. For developers and power users, the response is to build tooling that fills the vacuum.
+
+RAPS is our contribution. What will you build?
+
+---
+
+**Related:**
+- [Admin Commands Reference](/docs/admin)
+- [Account Admin Cookbook](/docs/cookbook-acc-admin)
+- [RAPS 4.0 Release Notes](/blog/raps-4-account-admin)

@@ -1,0 +1,264 @@
+---
+title: "The Bulk Operations Crisis: Why AEC Teams Waste Hours on Clicks"
+description: "490 feature requests. 3,860 votes. One consistent theme: ACC users desperately need bulk operations. Here's the data and the solution."
+pubDate: 2026-01-16
+author: "Dmytro Yemelianov"
+tags: ["acc", "automation", "bulk-operations", "productivity", "aec"]
+series: "ACC Pain Points"
+seriesOrder: 2
+featured: false
+draft: false
+---
+
+*This is Part 2 of our [ACC Pain Points series](/blog/acc-forum-analysis). We analyzed 4,295 feature requests from the ACC Ideas forum.*
+
+---
+
+## The Numbers
+
+| Metric | Value |
+|--------|-------|
+| Ideas mentioning bulk/batch operations | 490 |
+| Total votes on these ideas | 3,860 |
+| #1 most-voted idea overall | Bulk user management (344 kudos) |
+| Average implementation wait time | 4+ years (and counting) |
+
+Across every category — users, photos, documents, issues, submittals — the same request appears: **"Let us do this in bulk."**
+
+---
+
+## The #1 Most-Voted Request
+
+> *"There is a major need to be able to add a new hire to many projects in ACC. Instead of wasting my time opening each project and manually adding a new user to 20 projects, we need a tool that will automate this process!"*
+>
+> — [Forum post](https://forums.autodesk.com/t5/acc-ideas/allow-adding-a-user-s-to-multiple-projects/idi-p/12714729), April 2024
+
+**344 kudos.** The highest-voted request in the entire forum.
+
+But here's the kicker: this was originally submitted to BIM360 **six years ago**. When users migrated to ACC, they submitted it again. Still waiting.
+
+---
+
+## The Math of Manual Work
+
+Let's quantify the pain. Adding a new team member to 50 projects manually:
+
+| Step | Time | Total |
+|------|------|-------|
+| Navigate to project | 15 sec | — |
+| Open Members panel | 5 sec | — |
+| Search for user | 10 sec | — |
+| Select role | 5 sec | — |
+| Confirm | 5 sec | — |
+| **Per project** | — | **40 sec** |
+| **50 projects** | — | **33 minutes** |
+
+And that's assuming no page load delays, no typos, no accidental wrong clicks.
+
+For a large enterprise with 200+ projects onboarding a new BIM manager? **Over 2 hours of clicking.**
+
+Now multiply by every new hire, every departing employee, every role change.
+
+---
+
+## Where Bulk Operations Are Missing
+
+Our analysis found bulk operation requests across every major category:
+
+### User Management (175 ideas, 1,677 kudos)
+- Add users to multiple projects
+- Remove users from multiple projects
+- Update roles across projects
+- Copy team members between projects
+
+### Photos & Media (163 ideas, 1,969 kudos)
+- Bulk photo editing
+- Mass photo tagging
+- Batch photo downloads
+- Multi-photo deletion
+
+### Documents & Files (207 ideas, 1,353 kudos)
+- Bulk file uploads with metadata
+- Mass document status updates
+- Batch folder permission changes
+- Multi-file version management
+
+### Issues & Submittals (296 ideas, 1,607 kudos)
+- Bulk issue creation from spreadsheets
+- Mass status updates
+- Batch assignee changes
+- Bulk export to CSV/Excel
+
+---
+
+## Why This Matters for AEC
+
+Construction projects aren't small. A typical large project might have:
+
+- 200+ team members
+- 50+ subcontractors
+- 100+ folders with custom permissions
+- 10,000+ documents
+- 1,000+ issues
+
+When every operation is click-by-click, administrative overhead explodes. BIM managers become full-time data entry clerks.
+
+---
+
+## The Workarounds Teams Use Today
+
+### Option 1: Manual Labor
+Assign an intern or admin to click through hundreds of operations. Expensive, error-prone, soul-crushing.
+
+### Option 2: Desktop Tools (Naviate)
+Third-party Windows applications that batch some operations. But:
+- Enterprise pricing (not published)
+- Windows-only
+- Can't be automated in CI/CD
+- Limited to specific features
+
+### Option 3: Custom Scripts
+Build your own automation using the APS API. But:
+- Requires developer resources
+- No standard patterns
+- Every team reinvents the wheel
+- Maintenance burden
+
+### Option 4: RAPS CLI
+What we built.
+
+---
+
+## The RAPS Approach
+
+RAPS v4.0 introduced `raps admin` commands specifically to address bulk operations:
+
+### Add User to All Projects
+
+```bash
+# Add new hire to all 200 projects
+raps admin user add "$ACCOUNT_ID" "newhire@company.com" --role project_admin
+
+# Progress tracking built-in
+Adding user to projects...
+[████████████████████████████████████████] 200/200
+```
+
+**Time: ~45 seconds** (vs. 2+ hours manual)
+
+### Filter by Project Pattern
+
+```bash
+# Only add to 2024 projects
+raps admin user add "$ACCOUNT_ID" "contractor@partner.com" \
+  --role viewer --filter "^2024-"
+```
+
+### Dry-Run First
+
+```bash
+# Preview before executing
+raps admin user add "$ACCOUNT_ID" "user@company.com" \
+  --role project_admin --dry-run
+
+Dry run results:
+┌─────────────────────────────┬────────────┐
+│ Project                     │ Action     │
+├─────────────────────────────┼────────────┤
+│ Downtown Tower              │ Would add  │
+│ Hospital Wing               │ Would add  │
+│ University Library          │ Would skip │
+└─────────────────────────────┴────────────┘
+```
+
+### Resumable Operations
+
+Network hiccup? Connection timeout? No problem:
+
+```bash
+# Resume from where you left off
+raps admin operation resume
+```
+
+### CI/CD Integration
+
+```yaml
+# Automated onboarding workflow
+name: User Onboarding
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        required: true
+
+jobs:
+  onboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add to all projects
+        run: |
+          raps admin user add "$ACCOUNT_ID" "$EMAIL" \
+            --role project_admin
+```
+
+---
+
+## Performance Comparison
+
+| Method | 50 Projects | 200 Projects |
+|--------|-------------|--------------|
+| Manual UI | 33 minutes | 2+ hours |
+| Naviate | ~10 minutes | ~30 minutes |
+| RAPS CLI | **~15 seconds** | **~45 seconds** |
+
+RAPS processes up to 50 projects in parallel with automatic rate limit handling.
+
+---
+
+## Beyond User Management
+
+The same pattern applies to other bulk operations we're building:
+
+### Coming Soon
+- `raps admin issue bulk-create` — Create issues from CSV
+- `raps admin photo bulk-tag` — Tag photos in bulk
+- `raps admin submittal bulk-update` — Mass status changes
+
+### Already Available
+- `raps admin user add/remove/update-role`
+- `raps admin folder rights`
+- `raps admin project list --filter`
+- `raps admin operation resume/cancel`
+
+---
+
+## The Broader Pattern
+
+This isn't just about RAPS. The bulk operations gap reveals a fundamental truth about enterprise software:
+
+**UI-first design doesn't scale.**
+
+What works for 10 projects breaks at 100. What works for 5 team members fails at 500. ACC was designed for small-to-medium projects and is now being pushed into enterprise contexts.
+
+The API exists. The data is accessible. The missing piece is tooling that treats bulk operations as first-class features, not afterthoughts.
+
+---
+
+## Next Steps
+
+1. **Try RAPS** — [Installation guide](/docs/installation)
+2. **Read the cookbook** — [Bulk admin recipes](/docs/cookbook-acc-admin)
+3. **Request features** — [GitHub issues](https://github.com/dmytro-yemelianov/raps/issues)
+
+---
+
+## Next in Series
+
+- [Part 1: The 96.6% Problem](/blog/acc-forum-analysis) — Overview of ACC forum analysis
+- [Part 3: The Permission Problem](/blog/acc-permission-nightmare) — When basic access controls are missing
+
+---
+
+**Related:**
+- [Admin Commands Reference](/docs/admin)
+- [RAPS 4.0 Release Notes](/blog/raps-4-account-admin)
