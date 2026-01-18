@@ -84,7 +84,38 @@ This installs platform-specific wheels that bundle the RAPS binary.
 
 > **Note:** Linux ARM64 users should use the install script or download binaries directly.
 
+### Python Bindings
+
+For programmatic Python access (not the CLI), install the native bindings:
+
+```bash
+pip install raps-bindings
+```
+
+This provides a Python library with full type hints:
+
+```python
+from raps import Client
+
+client = Client.from_env()
+buckets = client.buckets.list()
+```
+
+📖 See [Python Bindings](/docs/python-bindings) for complete documentation.
+
 ## Package Managers
+
+### npm (Node.js)
+
+```bash
+npm install -g @dmytro-yemelianov/raps-cli
+```
+
+Or run without installing:
+
+```bash
+npx @dmytro-yemelianov/raps-cli --version
+```
 
 ### Homebrew (macOS/Linux)
 
@@ -198,7 +229,7 @@ raps --version
 You should see output like:
 
 ```
-raps 4.2.3
+raps 4.3.0
 ```
 
 ## Troubleshooting

@@ -1,6 +1,6 @@
 ---
 title: "Usage Modes"
-description: "Different ways to use RAPS: CLI, Interactive Shell, GitHub Actions, Docker, and MCP Server"
+description: "Different ways to use RAPS: CLI, Interactive Shell, Python, GitHub Actions, Docker, and MCP Server"
 section: "modes"
 order: 1
 icon: "🎯"
@@ -8,7 +8,7 @@ icon: "🎯"
 
 # Usage Modes
 
-RAPS offers five different ways to interact with Autodesk Platform Services. Choose the mode that best fits your workflow.
+RAPS offers six different ways to interact with Autodesk Platform Services. Choose the mode that best fits your workflow.
 
 ## At a Glance
 
@@ -16,6 +16,7 @@ RAPS offers five different ways to interact with Autodesk Platform Services. Cho
 |------|----------|--------------|
 | [**CLI**](/docs/mode-cli) | Scripts, automation | Full command set, piping, exit codes |
 | [**Interactive Shell**](/docs/interactive-shell) | Learning, exploration | TAB completion, hints, history |
+| [**Python Bindings**](/docs/python-bindings) | Python integration | Native library, type hints, exceptions |
 | [**GitHub Actions**](/docs/mode-github-actions) | GitHub CI/CD | Pre-built action, matrix builds |
 | [**Docker**](/docs/mode-docker) | Containerized workflows | No install, isolated, multi-arch |
 | [**MCP Server**](/docs/mcp-server) | AI assistants | Natural language, Claude/Cursor |
@@ -69,6 +70,35 @@ raps> bucket create my-test --retention transient
 - Built-in help command
 
 📖 [**Interactive Shell Documentation →**](/docs/interactive-shell)
+
+---
+
+## Python Bindings
+
+Native Python library for programmatic access.
+
+```python
+from raps import Client
+
+client = Client.from_env()
+
+# List buckets
+for bucket in client.buckets.list():
+    print(f"{bucket.key}: {bucket.policy}")
+
+# Upload and translate
+obj = client.objects("my-bucket").upload("model.rvt")
+job = client.translate(obj.urn)
+result = job.wait()
+```
+
+**Key features:**
+- Native Python library via PyO3
+- Full type hints for IDE support
+- Structured exceptions (AuthenticationError, NotFoundError, etc.)
+- Context manager support
+
+📖 [**Python Bindings Documentation →**](/docs/python-bindings)
 
 ---
 
@@ -163,16 +193,17 @@ Then ask Claude: *"List all my OSS buckets"*
 
 ## Comparison Matrix
 
-| Feature | CLI | Shell | Actions | Docker | MCP |
-|---------|:---:|:-----:|:-------:|:------:|:---:|
-| TAB completion | — | ✓ | — | — | — |
-| Parameter hints | — | ✓ | — | — | — |
-| Command history | — | ✓ | — | — | — |
-| Scripting | ✓ | — | ✓ | ✓ | — |
-| CI/CD native | ✓ | — | ✓ | ✓ | — |
-| Natural language | — | — | — | — | ✓ |
-| No install needed | — | — | ✓ | ✓ | — |
-| Isolated environment | — | — | ✓ | ✓ | — |
+| Feature | CLI | Shell | Python | Actions | Docker | MCP |
+|---------|:---:|:-----:|:------:|:-------:|:------:|:---:|
+| TAB completion | — | ✓ | IDE | — | — | — |
+| Type hints | — | — | ✓ | — | — | — |
+| Command history | — | ✓ | — | — | — | — |
+| Scripting | ✓ | — | ✓ | ✓ | ✓ | — |
+| CI/CD native | ✓ | — | ✓ | ✓ | ✓ | — |
+| Natural language | — | — | — | — | — | ✓ |
+| No install needed | — | — | — | ✓ | ✓ | — |
+| Isolated environment | — | — | — | ✓ | ✓ | — |
+| Exception handling | codes | codes | ✓ | codes | codes | — |
 
 ---
 
@@ -181,19 +212,18 @@ Then ask Claude: *"List all my OSS buckets"*
 ```
                     How will you use RAPS?
                             │
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-   ┌─────────┐        ┌──────────┐        ┌─────────┐
-   │Learning │        │Scripting │        │AI-assist│
-   │Exploring│        │  CI/CD   │        │Workflow │
-   └────┬────┘        └────┬─────┘        └────┬────┘
-        │                  │                   │
-        ▼                  ▼                   ▼
-  ┌──────────┐       ┌──────────┐       ┌──────────┐
-  │Interactive│       │   CLI    │       │   MCP    │
-  │   Shell  │       │  Docker  │       │  Server  │
-  │          │       │ Actions  │       │          │
-  └──────────┘       └──────────┘       └──────────┘
+    ┌───────────────┬───────┼───────┬───────────────┐
+    ▼               ▼       ▼       ▼               ▼
+┌────────┐    ┌─────────┐ ┌──────┐ ┌─────────┐ ┌────────┐
+│Learning│    │ Python  │ │Script│ │Container│ │   AI   │
+│Explore │    │  Code   │ │CI/CD │ │  K8s    │ │ Assist │
+└───┬────┘    └────┬────┘ └──┬───┘ └────┬────┘ └───┬────┘
+    │              │         │          │          │
+    ▼              ▼         ▼          ▼          ▼
+┌────────┐    ┌─────────┐ ┌──────┐ ┌─────────┐ ┌────────┐
+│  Shell │    │ Python  │ │ CLI  │ │ Docker  │ │  MCP   │
+│        │    │Bindings │ │Action│ │         │ │ Server │
+└────────┘    └─────────┘ └──────┘ └─────────┘ └────────┘
 ```
 
 ### Recommendations
@@ -202,6 +232,12 @@ Then ask Claude: *"List all my OSS buckets"*
 - New to RAPS and learning commands
 - Exploring available options
 - Debugging command syntax
+
+**Use Python Bindings if you're:**
+- Building Python applications
+- Need type safety and IDE support
+- Integrating with data pipelines
+- Want structured exception handling
 
 **Use CLI if you're:**
 - Writing shell scripts

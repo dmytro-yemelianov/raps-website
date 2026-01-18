@@ -1,0 +1,415 @@
+---
+title: "Python Bindings"
+description: "Native Python library for programmatic access to Autodesk Platform Services"
+section: "modes"
+order: 6
+icon: "🐍"
+---
+
+# Python Bindings
+
+RAPS provides native Python bindings via [PyO3](https://pyo3.rs/), allowing you to interact with Autodesk Platform Services directly from Python code. This is ideal for automation scripts, data pipelines, and integration with other Python tools.
+
+## Installation
+
+```bash
+pip install raps-bindings
+```
+
+**Supported platforms:**
+- Linux x64
+- macOS x64 and ARM64 (Apple Silicon)
+- Windows x64
+
+> **Note:** This is separate from `pip install raps` which installs the CLI binary. Use `raps-bindings` for the Python library.
+
+## Quick Start
+
+```python
+from raps import Client
+
+# Create client from environment variables
+client = Client.from_env()
+
+# Or with explicit credentials
+client = Client(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+
+# Test authentication
+if client.test_auth():
+    print("Authentication successful!")
+
+# List buckets
+for bucket in client.buckets.list():
+    print(f"{'{'}bucket.key{'}'}: {'{'}bucket.policy{'}'}")
+```
+
+## Authentication
+
+The Python bindings use **2-legged OAuth** (client credentials) for server-to-server operations.
+
+### Environment Variables
+
+Set your credentials as environment variables:
+
+```bash
+export APS_CLIENT_ID="your_client_id"
+export APS_CLIENT_SECRET="your_client_secret"
+```
+
+Then create a client:
+
+```python
+from raps import Client
+
+client = Client.from_env()
+```
+
+### Explicit Credentials
+
+```python
+client = Client(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+```
+
+### Custom Base URL
+
+For testing or using a proxy:
+
+```python
+client = Client(
+    client_id="xxx",
+    client_secret="yyy",
+    base_url="https://custom.api.endpoint"
+)
+```
+
+## Bucket Operations
+
+### List Buckets
+
+```python
+# List all buckets
+buckets = client.buckets.list()
+
+# Filter by region
+us_buckets = client.buckets.list(region="US")
+emea_buckets = client.buckets.list(region="EMEA")
+
+# Limit results
+buckets = client.buckets.list(limit=10)
+```
+
+### Create Bucket
+
+```python
+bucket = client.buckets.create(
+    key="my-unique-bucket-name",
+    policy="transient",  # "transient", "temporary", or "persistent"
+    region="US"          # "US" or "EMEA"
+)
+print(f"Created: {'{'}bucket.key{'}'}")
+```
+
+### Get Bucket Details
+
+```python
+bucket = client.buckets.get("my-bucket-key")
+print(f"Policy: {'{'}bucket.policy{'}'}")
+print(f"Created: {'{'}bucket.created_date{'}'}")
+```
+
+### Delete Bucket
+
+```python
+client.buckets.delete("my-bucket-key")
+```
+
+## Object Operations
+
+Get an objects manager for a specific bucket:
+
+```python
+objects = client.objects("my-bucket-key")
+```
+
+### List Objects
+
+```python
+# List all objects
+for obj in objects.list():
+    print(f"{'{'}obj.object_key{'}'}: {'{'}obj.size{'}'} bytes")
+
+# Limit results
+objects.list(limit=50)
+```
+
+### Upload File
+
+```python
+# Upload with automatic object key (uses filename)
+obj = objects.upload("/path/to/model.rvt")
+
+# Upload with custom object key
+obj = objects.upload("/path/to/model.rvt", object_key="projects/building-a.rvt")
+
+print(f"Uploaded: {'{'}obj.object_key{'}'}")
+print(f"URN: {'{'}obj.urn{'}'}")  # Base64-encoded URN for translation
+```
+
+### Download File
+
+```python
+path = objects.download("model.rvt", "/local/path/model.rvt")
+print(f"Downloaded to: {'{'}path{'}'}")
+```
+
+### Get Signed URL
+
+```python
+# Get a signed download URL (default: 2 minutes)
+url = objects.signed_url("model.rvt")
+
+# Custom expiration (2-60 minutes)
+url = objects.signed_url("model.rvt", minutes=30)
+```
+
+### Delete Object
+
+```python
+objects.delete("model.rvt")
+```
+
+## Model Translation
+
+### Start Translation
+
+```python
+# Upload a file first
+obj = client.objects("my-bucket").upload("/path/to/model.rvt")
+
+# Start translation to SVF2 (default)
+job = client.translate(obj.urn)
+
+# Or specify format
+job = client.translate(obj.urn, output_format="svf2")
+```
+
+### Check Status
+
+```python
+job = client.get_translation_status(urn)
+print(f"Status: {'{'}job.status{'}'}")
+print(f"Progress: {'{'}job.progress{'}'}")
+```
+
+### Wait for Completion
+
+```python
+# Wait up to 10 minutes (default: 600 seconds)
+job = client.translate(obj.urn)
+completed = job.wait(timeout=600, poll_interval=5)
+
+if completed.status == "success":
+    print("Translation complete!")
+else:
+    print(f"Translation failed: {'{'}completed.status{'}'}")
+```
+
+### Generate URN
+
+```python
+# Manually generate URN from bucket/object keys
+urn = client.get_urn("my-bucket", "model.rvt")
+```
+
+## Data Management (Hubs)
+
+> **Note:** Hub operations require 3-legged authentication. You must first authenticate via the CLI with `raps auth login`.
+
+```python
+# List hubs (requires prior CLI authentication)
+for hub in client.hubs.list():
+    print(f"{'{'}hub.name{'}'} ({'{'}hub.hub_type{'}'})")
+```
+
+## Exception Handling
+
+The library provides specific exception types for different error conditions:
+
+```python
+from raps import (
+    Client,
+    RapsError,
+    AuthenticationError,
+    NotFoundError,
+    RateLimitError,
+    ValidationError
+)
+
+try:
+    client = Client.from_env()
+    bucket = client.buckets.get("nonexistent-bucket")
+except AuthenticationError:
+    print("Invalid credentials")
+except NotFoundError:
+    print("Bucket not found")
+except RateLimitError:
+    print("Rate limit exceeded, retry later")
+except ValidationError as e:
+    print(f"Invalid input: {'{'}e{'}'}")
+except RapsError as e:
+    print(f"RAPS error: {'{'}e{'}'}")
+```
+
+### Exception Hierarchy
+
+```
+RapsError (base)
+├── AuthenticationError  # 401 errors
+├── NotFoundError        # 404 errors
+├── RateLimitError       # 429 errors
+└── ValidationError      # 400 errors, invalid input
+```
+
+## Complete Example
+
+Upload a Revit model, translate it, and get the viewer URN:
+
+```python
+from raps import Client, RapsError
+
+def translate_model(file_path: str, bucket_key: str) -> str:
+    """Upload and translate a model, returning the URN."""
+    client = Client.from_env()
+
+    # Ensure bucket exists
+    try:
+        client.buckets.get(bucket_key)
+    except:
+        client.buckets.create(bucket_key, policy="transient")
+
+    # Upload file
+    print(f"Uploading {'{'}file_path{'}'}...")
+    obj = client.objects(bucket_key).upload(file_path)
+    print(f"Uploaded as {'{'}obj.object_key{'}'}")
+
+    # Start translation
+    print("Starting translation...")
+    job = client.translate(obj.urn, output_format="svf2")
+
+    # Wait for completion
+    print("Waiting for translation...")
+    result = job.wait(timeout=600, poll_interval=10)
+
+    if result.status == "success":
+        print("Translation complete!")
+        return obj.urn
+    else:
+        raise RapsError(f"Translation failed: {'{'}result.status{'}'}")
+
+if __name__ == "__main__":
+    urn = translate_model("building.rvt", "my-translations")
+    print(f"Viewer URN: {'{'}urn{'}'}")
+```
+
+## Context Manager
+
+The client supports Python's context manager protocol:
+
+```python
+from raps import Client
+
+with Client.from_env() as client:
+    buckets = client.buckets.list()
+    # Client is automatically cleaned up
+```
+
+## Type Hints
+
+The library includes type stubs (`.pyi` files) for IDE autocompletion and type checking:
+
+```python
+from raps import Client, Bucket, Object, TranslationJob
+
+def process_bucket(bucket: Bucket) -> None:
+    print(bucket.key)
+
+client: Client = Client.from_env()
+buckets: list[Bucket] = client.buckets.list()
+```
+
+## API Reference
+
+### Client
+
+| Method | Description |
+|--------|-------------|
+| `Client(client_id, client_secret, base_url=None)` | Create client with credentials |
+| `Client.from_env()` | Create client from environment |
+| `test_auth()` | Test authentication, returns bool |
+| `buckets` | Get BucketsManager |
+| `hubs` | Get HubsManager |
+| `objects(bucket_key)` | Get ObjectsManager for bucket |
+| `translate(urn, output_format="svf2", force=False)` | Start translation |
+| `get_translation_status(urn)` | Get translation status |
+| `get_urn(bucket_key, object_key)` | Generate URN |
+
+### BucketsManager
+
+| Method | Description |
+|--------|-------------|
+| `list(region=None, limit=None)` | List buckets |
+| `create(key, policy="transient", region="US")` | Create bucket |
+| `get(key)` | Get bucket details |
+| `delete(key)` | Delete bucket |
+
+### ObjectsManager
+
+| Method | Description |
+|--------|-------------|
+| `list(limit=None)` | List objects |
+| `upload(path, object_key=None)` | Upload file |
+| `download(object_key, path)` | Download file |
+| `delete(object_key)` | Delete object |
+| `signed_url(object_key, minutes=2)` | Get signed URL |
+
+### TranslationJob
+
+| Property | Description |
+|----------|-------------|
+| `urn` | Source URN |
+| `status` | Current status |
+| `progress` | Progress percentage |
+| `wait(timeout=600, poll_interval=5)` | Wait for completion |
+
+### Data Classes
+
+| Class | Properties |
+|-------|------------|
+| `Bucket` | `key`, `owner`, `created_date`, `policy`, `region` |
+| `Object` | `bucket_key`, `object_key`, `object_id`, `size`, `sha1`, `urn` |
+| `Hub` | `id`, `name`, `hub_type`, `region` |
+| `Project` | `id`, `name`, `project_type` |
+
+## Comparison: CLI vs Python Bindings
+
+| Use Case | CLI | Python Bindings |
+|----------|-----|-----------------|
+| Quick operations | `raps bucket list` | More verbose |
+| Scripts/automation | Shell scripts | Native Python |
+| CI/CD pipelines | Either | Either |
+| Integration with Python tools | Subprocess calls | Direct import |
+| Type safety | None | Full type hints |
+| Error handling | Exit codes | Exceptions |
+
+## See Also
+
+- [Installation](/docs/installation) - All installation methods
+- [Authentication](/docs/auth) - Understanding APS authentication
+- [Buckets](/docs/buckets) - Bucket operations (CLI)
+- [Translation](/docs/translation) - Model translation (CLI)

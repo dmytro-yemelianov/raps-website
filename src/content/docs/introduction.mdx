@@ -28,6 +28,7 @@ RAPS offers multiple ways to interact with APS — choose the mode that fits you
 |------|-------------|----------|
 | **[CLI](/docs/usage-modes#cli-mode)** | Standard command-line interface | Scripts, automation, CI/CD |
 | **[Interactive Shell](/docs/usage-modes#interactive-shell)** | REPL with TAB completion | Learning, exploration |
+| **[Python Bindings](/docs/python-bindings)** | Native Python library | Python apps, data pipelines |
 | **[GitHub Actions](/docs/usage-modes#github-actions)** | Pre-built CI/CD action | GitHub workflows |
 | **[Docker](/docs/usage-modes#docker)** | Containerized RAPS | Isolated environments |
 | **[MCP Server](/docs/usage-modes#mcp-server)** | AI assistant integration | Claude, Cursor |
@@ -81,10 +82,14 @@ See the [Architecture Guide](/docs/architecture) for detailed information.
 ## Quick Start
 
 ```bash
-# Install RAPS (choose one)
+# Install RAPS CLI (choose one)
 curl -fsSL https://raw.githubusercontent.com/dmytro-yemelianov/raps/main/install.sh | bash  # Linux/macOS
-pip install raps                    # Python
+pip install raps                          # Python (CLI binary)
+npm install -g @dmytro-yemelianov/raps-cli # Node.js
 brew install dmytro-yemelianov/raps/raps  # Homebrew
+
+# Or install Python bindings for programmatic use
+pip install raps-bindings
 
 # Configure credentials
 export APS_CLIENT_ID="your_client_id"
