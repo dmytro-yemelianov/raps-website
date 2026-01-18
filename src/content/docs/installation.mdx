@@ -75,7 +75,14 @@ If you have Python 3.8+ installed:
 pip install raps
 ```
 
-This installs platform-specific wheels that bundle the RAPS binary. Works on Linux, macOS, and Windows (x64 and arm64).
+This installs platform-specific wheels that bundle the RAPS binary.
+
+**Available wheels:**
+- Linux x64
+- macOS x64 and ARM64 (Apple Silicon)
+- Windows x64
+
+> **Note:** Linux ARM64 users should use the install script or download binaries directly.
 
 ## Package Managers
 
@@ -109,18 +116,17 @@ Download from the [Releases page](https://github.com/dmytro-yemelianov/raps/rele
 
 | Platform | Architecture | File |
 |----------|--------------|------|
-| Windows | x64 | `raps-windows-x64.zip` |
-| Windows | ARM64 | `raps-windows-arm64.zip` |
-| macOS | Intel | `raps-darwin-x64.tar.gz` |
-| macOS | Apple Silicon | `raps-darwin-arm64.tar.gz` |
-| Linux | x64 | `raps-linux-x64.tar.gz` |
-| Linux | ARM64 | `raps-linux-arm64.tar.gz` |
+| Windows | x64 | `raps-cli-x86_64-pc-windows-msvc.zip` |
+| macOS | Intel | `raps-cli-x86_64-apple-darwin.tar.xz` |
+| macOS | Apple Silicon | `raps-cli-aarch64-apple-darwin.tar.xz` |
+| Linux | x64 | `raps-cli-x86_64-unknown-linux-gnu.tar.xz` |
+| Linux | ARM64 | `raps-cli-aarch64-unknown-linux-gnu.tar.xz` |
 
 ### Windows Installation
 
 ```powershell
 # Download and extract
-Expand-Archive raps-windows-x64.zip -DestinationPath "$env:USERPROFILE\bin"
+Expand-Archive raps-cli-x86_64-pc-windows-msvc.zip -DestinationPath "$env:USERPROFILE\bin"
 
 # Add to PATH
 $env:PATH += ";$env:USERPROFILE\bin"
@@ -132,8 +138,8 @@ $env:PATH += ";$env:USERPROFILE\bin"
 ### macOS/Linux Installation
 
 ```bash
-# Extract the archive
-tar -xzf raps-*.tar.gz
+# Extract the archive (.tar.xz format)
+tar -xJf raps-cli-*.tar.xz
 
 # Move to a directory in your PATH
 sudo mv raps /usr/local/bin/
@@ -192,7 +198,7 @@ raps --version
 You should see output like:
 
 ```
-raps 4.1.0
+raps 4.2.3
 ```
 
 ## Troubleshooting
