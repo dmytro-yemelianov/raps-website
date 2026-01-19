@@ -1,0 +1,78 @@
+---
+// Analytics component - swap providers easily
+// Currently configured for: Plausible
+
+interface Props {
+  domain?: string;
+}
+
+const { domain = 'rapscli.xyz' } = Astro.props;
+
+// Set your analytics provider here
+const ANALYTICS_PROVIDER = import.meta.env.ANALYTICS_PROVIDER || 'plausible';
+---
+
+{/* Plausible Analytics - Privacy-focused, GDPR compliant, < 1KB */}
+{ANALYTICS_PROVIDER === 'plausible' && (
+  <script 
+    defer 
+    data-domain={domain}
+    src="https://plausible.io/js/script.js"
+  />
+)}
+
+{/* Google Analytics 4 - Comprehensive but heavier */}
+{ANALYTICS_PROVIDER === 'google' && (
+  <>
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${import.meta.env.GA_MEASUREMENT_ID}`} />
+    <script define:vars={{ gaId: import.meta.env.GA_MEASUREMENT_ID }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', gaId, {
+        anonymize_ip: true,
+        cookie_flags: 'SameSite=None;Secure'
+      });
+    </script>
+  </>
+)}
+
+{/* Cloudflare Web Analytics - Free, privacy-focused */}
+{ANALYTICS_PROVIDER === 'cloudflare' && (
+  <script 
+    defer 
+    src='https://static.cloudflareinsights.com/beacon.min.js' 
+    data-cf-beacon={`{"token": "${import.meta.env.CF_ANALYTICS_TOKEN}"}`}
+  />
+)}
+
+{/* Umami - Self-hosted, open source */}
+{ANALYTICS_PROVIDER === 'umami' && (
+  <script 
+    defer 
+    src={import.meta.env.UMAMI_SCRIPT_URL}
+    data-website-id={import.meta.env.UMAMI_WEBSITE_ID}
+  />
+)}
+
+{/* Simple custom analytics beacon (your existing implementation) */}
+{ANALYTICS_PROVIDER === 'custom' && (
+  <script>
+    // Respect privacy preferences
+    if (navigator.doNotTrack !== '1' && !navigator.globalPrivacyControl) {
+      const data = {
+        page: window.location.pathname,
+        referrer: document.referrer || 'direct',
+        timestamp: Date.now()
+      };
+      
+      // Send to your analytics endpoint
+      fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        keepalive: true
+      }).catch(() => {});
+    }
+  </script>
+)}

@@ -1,0 +1,43 @@
+/* TEAM */
+Developer: Dmytro Yemelianov
+Site: https://rapscli.xyz
+GitHub: https://github.com/dmytro-yemelianov
+LinkedIn: https://www.linkedin.com/in/dmytro-yemelianov/
+Twitter: @dyemelianov
+Location: Netherlands
+
+/* THANKS */
+Rust Community - For the amazing ecosystem
+Autodesk - For the Platform Services APIs
+Open Source Contributors - For making this possible
+
+/* SITE */
+Last update: 2026-01-19
+Language: English
+Standards: HTML5, CSS3, ES6+
+Framework: Astro
+Styling: Tailwind CSS
+Hosting: Vercel
+Repository: https://github.com/dmytro-yemelianov/raps
+
+/* PROJECT */
+Name: RAPS (Rust Autodesk Platform Services CLI)
+Tagline: 🌼 rapeseed — Modern CLI for APS
+License: Apache-2.0
+Written in: Rust
+First Release: 2024
+Current Version: 3.8.0
+
+/* TOOLS */
+Editor: VS Code, Neovim
+Build: Cargo, pnpm
+CI/CD: GitHub Actions
+Analytics: Vercel Analytics
+
+/* EASTER EGG */
+Why "rapeseed"? 🌼
+RAPS sounds like "raps" (to knock/tap) but we chose
+the flower rapeseed (canola) as our mascot because:
+- It's bright yellow like the Autodesk brand
+- It grows fast and is resilient (like Rust!)
+- The seeds produce oil that powers things (like our CLI powers workflows)

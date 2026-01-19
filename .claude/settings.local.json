@@ -33,7 +33,10 @@
       "Bash(pnpm install:*)",
       "Bash(gh run watch:*)",
       "mcp__browsermcp__browser_wait",
-      "mcp__browsermcp__browser_get_console_logs"
+      "mcp__browsermcp__browser_get_console_logs",
+      "Bash(cd:*)",
+      "Bash(pnpm add:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": [],

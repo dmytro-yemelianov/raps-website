@@ -11,6 +11,8 @@ icon: "🤖"
 The `raps serve` command starts a Model Context Protocol (MCP) server, enabling AI assistants to interact with Autodesk Platform Services through natural language.
 
 > **New in v3.0.0** — The MCP server is a major feature addition.
+> **Expanded in v4.1.0** — Now with 37 tools including native auth support, admin bulk operations, issues, RFIs, and ACC extended features.
+> **Improved in v4.1.1** — Server starts without credentials and provides interactive setup guidance.
 
 ## From "Chat with PDF" to "Chat with Tools"
 
@@ -27,11 +29,15 @@ The [Model Context Protocol](https://modelcontextprotocol.io/) is an open standa
 With RAPS MCP server, you can ask your AI assistant to:
 
 - Find specific BIM elements by properties ("all 'Basic Wall' instances over 100m²")
-- Create and manage buckets dynamically  
+- Create and manage buckets dynamically
 - Upload files and start translations
 - Browse BIM 360/ACC projects in real-time
 - Check translation status and retrieve results
 - Query live model metadata without size limits
+- **Bulk manage users** across multiple ACC/BIM 360 projects
+- **Track and manage issues** in construction projects
+- **Query RFIs, assets, submittals, and checklists**
+- **Navigate folders and items** with full permission control
 
 This bridges the gap between the rigid, complex data structures of BIM and the natural language interface of AI.
 
@@ -44,15 +50,34 @@ raps serve
 
 The server runs in stdio mode, listening for MCP requests from AI assistants.
 
+**No credentials required to start.** The server starts even without APS credentials configured. When you ask your AI assistant about authentication status, it will provide step-by-step setup instructions. This means you can add RAPS to your AI assistant first, then get guided through the setup process interactively.
+
 ## Configuration
 
 ### Claude Desktop
 
 Add to your Claude configuration file:
 
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`  
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 **Linux:** `~/.config/claude/claude_desktop_config.json`
+
+**Minimal setup (get guided later):**
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+After adding this, restart Claude and ask "What's my auth status?" — RAPS will guide you through credential setup.
+
+**Full setup (with credentials):**
 
 ```json
 {
@@ -88,14 +113,16 @@ Add to `.cursor/mcp.json` in your project:
 
 ## Available Tools
 
-The RAPS MCP server exposes 14 tools:
+The RAPS MCP server exposes **37 tools** organized by functionality:
 
 ### Authentication
 
 | Tool | Description |
 |------|-------------|
 | `auth_test` | Test 2-legged OAuth credentials |
-| `auth_status` | Check authentication status |
+| `auth_status` | Check auth state with setup guidance and tool availability |
+| `auth_login` | Get instructions for 3-legged OAuth login |
+| `auth_logout` | Clear stored 3-legged tokens |
 
 ### OSS Buckets
 
@@ -128,6 +155,45 @@ The RAPS MCP server exposes 14 tools:
 |------|-------------|
 | `hub_list` | List BIM 360/ACC hubs |
 | `project_list` | List projects in a hub |
+| `folder_list` | List contents of a folder |
+| `folder_create` | Create a new folder |
+| `item_info` | Get item details |
+| `item_versions` | List item versions |
+
+### Admin Bulk Operations
+
+| Tool | Description |
+|------|-------------|
+| `admin_project_list` | List projects in an account with filtering |
+| `admin_user_add` | Bulk add users to multiple projects |
+| `admin_user_remove` | Bulk remove users from projects |
+| `admin_user_update_role` | Bulk update user roles across projects |
+| `admin_operation_list` | List all bulk operations with status |
+| `admin_operation_status` | Get detailed status of a bulk operation |
+
+### Issues
+
+| Tool | Description |
+|------|-------------|
+| `issue_list` | List issues in a project |
+| `issue_get` | Get details of a specific issue |
+| `issue_create` | Create a new issue |
+| `issue_update` | Update an existing issue |
+
+### RFIs
+
+| Tool | Description |
+|------|-------------|
+| `rfi_list` | List RFIs in a project |
+| `rfi_get` | Get details of a specific RFI |
+
+### ACC Extended
+
+| Tool | Description |
+|------|-------------|
+| `acc_assets_list` | List assets in a project |
+| `acc_submittals_list` | List submittals in a project |
+| `acc_checklists_list` | List checklists in a project |
 
 ## How It Works: Live Tool Execution
 
@@ -142,6 +208,54 @@ Instead of dumping data into the context window, the LLM has access to a toolkit
 You don't need to write SQL or complex filter queries. You just ask. The AI translates your natural language into the appropriate RAPS commands.
 
 ## Example Conversations
+
+### First-time setup (no credentials)
+
+> **You:** What's my authentication status?
+
+> **AI:** Let me check your authentication status.
+>
+> **Setup Required**
+>
+> No APS credentials are configured yet. Here's how to get started:
+>
+> 1. Go to https://aps.autodesk.com and create a free account
+> 2. Create a new application to get your Client ID and Secret
+> 3. Add credentials to your MCP configuration:
+>
+> ```json
+> {
+>   "mcpServers": {
+>     "raps": {
+>       "command": "raps",
+>       "args": ["serve"],
+>       "env": {
+>         "APS_CLIENT_ID": "your_client_id",
+>         "APS_CLIENT_SECRET": "your_client_secret"
+>       }
+>     }
+>   }
+> }
+> ```
+>
+> After adding credentials, restart your AI assistant to apply the changes.
+
+### Checking authentication status (with credentials)
+
+> **You:** What's my current authentication status?
+
+> **AI:** Let me check your authentication status.
+>
+> Authentication Status:
+> - 2-legged OAuth: ✓ Valid
+> - 3-legged OAuth: Not logged in
+>
+> Tool Availability:
+> - ✓ OSS (bucket_*, object_*) - available
+> - ✓ Derivative (translate_*) - available
+> - ✗ Data Management (hub_*, project_*) - requires 3-legged auth
+>
+> To access BIM 360/ACC data, you need to log in with your Autodesk account. Run `raps auth login` in your terminal.
 
 ### Creating a bucket
 
@@ -180,9 +294,51 @@ You don't need to write SQL or complex filter queries. You just ask. The AI tran
 > **You:** Start translating the file "building.rvt" in bucket "my-project-files" to SVF2 format
 
 > **AI:** I'll start the translation. First, let me get the URN for that file.
-> 
+>
 > ✓ Translation started. The file is being converted to SVF2 format.
 > You can check the status by asking me about it.
+
+### Bulk user management
+
+> **You:** Add john.smith@company.com to all projects that start with "2026-" as a Project Admin
+
+> **AI:** I'll add that user to the matching projects. Let me first find all projects with the "2026-" prefix.
+>
+> Found 8 projects matching "2026-*":
+> - 2026-Hospital-Phase1
+> - 2026-Hospital-Phase2
+> - 2026-Office-Tower
+> ... and 5 more
+>
+> ✓ Started bulk add operation. User will be added to all 8 projects as Project Admin.
+> Operation ID: op_abc123. You can ask me for status updates.
+
+### Managing issues
+
+> **You:** Create an issue for the Hospital project about the missing fire door schedule
+
+> **AI:** I'll create that issue for you.
+>
+> ✓ Created issue #47: "Missing fire door schedule"
+> - Project: 2026-Hospital-Phase1
+> - Type: Design
+> - Status: Open
+> - Assignee: Unassigned
+>
+> Would you like me to assign it to someone?
+
+### Querying RFIs
+
+> **You:** Show me all open RFIs in the Office Tower project
+
+> **AI:** Let me query the RFIs for that project.
+>
+> Found 3 open RFIs:
+> - RFI-012: "Clarification on structural beam dimensions" (Due: Jan 20)
+> - RFI-015: "MEP coordination at Level 5" (Due: Jan 22)
+> - RFI-018: "Curtain wall detail at entrance" (Due: Jan 25)
+>
+> Would you like details on any of these?
 
 ## Architecture
 
@@ -194,23 +350,26 @@ The MCP server reuses all existing RAPS API clients:
 │  (Claude, etc.) │◀────│   raps serve     │
 └─────────────────┘     └────────┬─────────┘
                                  │
-                    ┌────────────┼────────────┐
-                    │            │            │
-              ┌─────▼─────┐ ┌────▼────┐ ┌─────▼─────┐
-              │ AuthClient│ │OssClient│ │DerivClient│
-              └─────┬─────┘ └────┬────┘ └─────┬─────┘
-                    │            │            │
-                    └────────────┼────────────┘
-                                 │
-                          ┌──────▼──────┐
-                          │   APS APIs  │
-                          └─────────────┘
+     ┌───────────┬───────────┬───┴───┬───────────┬───────────┐
+     │           │           │       │           │           │
+┌────▼────┐ ┌────▼────┐ ┌────▼───┐ ┌─▼──┐ ┌─────▼─────┐ ┌────▼────┐
+│  Auth   │ │   OSS   │ │ Deriv  │ │ DM │ │   Admin   │ │   ACC   │
+│ Client  │ │ Client  │ │ Client │ │    │ │  Clients  │ │ Clients │
+└────┬────┘ └────┬────┘ └────┬───┘ └──┬─┘ └─────┬─────┘ └────┬────┘
+     │           │           │        │         │            │
+     └───────────┴───────────┴────┬───┴─────────┴────────────┘
+                                  │
+                           ┌──────▼──────┐
+                           │   APS APIs  │
+                           └─────────────┘
 ```
+
+The Admin and ACC clients are created on-demand for each request to support bulk operations and project-specific APIs.
 
 ## Limitations
 
 - **No file uploads:** MCP currently doesn't support binary file transfer. Use CLI for uploads.
-- **2-legged auth only:** MCP tools use 2-legged OAuth. For 3-legged operations, use CLI.
+- **3-legged auth requires CLI:** While MCP tools can check auth status and provide guidance, the actual 3-legged login must be done via `raps auth login` in a terminal with browser access.
 - **Stdio transport:** Server must be started by the AI client, not as a daemon.
 
 ## Debugging

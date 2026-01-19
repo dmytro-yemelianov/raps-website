@@ -1,0 +1,17 @@
+# RAPS CLI Security Policy
+# https://rapscli.xyz/.well-known/security.txt
+# Canonical: https://rapscli.xyz/.well-known/security.txt
+
+Contact: https://github.com/dmytro-yemelianov/raps/security/advisories/new
+Contact: mailto:security@rapscli.xyz
+Expires: 2027-01-19T00:00:00.000Z
+Encryption: https://github.com/dmytro-yemelianov.gpg
+Preferred-Languages: en
+Canonical: https://rapscli.xyz/.well-known/security.txt
+Policy: https://github.com/dmytro-yemelianov/raps/blob/main/SECURITY.md
+
+# Acknowledgments
+Acknowledgments: https://rapscli.xyz/security-thanks
+
+# Hiring
+Hiring: https://rapscli.xyz/about

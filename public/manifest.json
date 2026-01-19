@@ -1,0 +1,73 @@
+{
+  "name": "RAPS - Rust Autodesk Platform Services CLI",
+  "short_name": "RAPS CLI",
+  "description": "🌼 RAPS (rapeseed) — A comprehensive command-line interface for Autodesk Platform Services, written in Rust.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["developer", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "RAPS CLI Homepage"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Documentation",
+      "short_name": "Docs",
+      "description": "View RAPS documentation",
+      "url": "/docs/introduction",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Quick Start",
+      "short_name": "Start",
+      "description": "Get started with RAPS",
+      "url": "/quickstart",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Tools",
+      "short_name": "Tools",
+      "description": "Interactive APS tools",
+      "url": "/tools/scope-builder",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://rapscli.xyz"
+    }
+  ],
+  "prefer_related_applications": false
+}

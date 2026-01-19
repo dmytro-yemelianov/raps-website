@@ -1,7 +1,43 @@
-# RAPS Website - rapscli.xyz
+# RAPS CLI - Rust APS (Autodesk Platform Services) CLI
+# https://rapscli.xyz
+# Updated: 2026-01-19
+
+# Allow all crawlers full access
 User-agent: *
 Allow: /
 
-# Sitemap
+# Crawl-delay for polite crawling (seconds between requests)
+Crawl-delay: 1
+
+# Disallow paths that shouldn't be indexed
+Disallow: /api/
+Disallow: /_astro/
+Disallow: /*.json$
+
+# AI Training Crawlers - Allow for visibility
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# Sitemap location
 Sitemap: https://rapscli.xyz/sitemap-index.xml
 
+# LLM context file
+# See: https://rapscli.xyz/llms.txt
