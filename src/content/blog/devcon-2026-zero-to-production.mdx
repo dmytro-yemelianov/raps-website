@@ -1,0 +1,228 @@
+---
+title: "DevCon 2026: Zero to Production CLI Speedrun"
+description: "In 30 minutes, go from zero tooling to a production-ready workflow with authentication, file management, model translation, and AI assistant integration."
+pubDate: 2026-01-20
+author: "Dmytro Yemelianov"
+tags: ["devcon", "cli", "tutorial", "installation", "speedrun"]
+featured: true
+draft: false
+---
+
+> **DevCon 2026 Session 1258** | 30-minute deep dive | Developer Track
+
+![Zero to Production Hero](/blog/devcon/1258-zero-to-production-hero.png)
+
+## The Problem
+
+Every APS project starts the same way. You create an app in the developer portal. You copy the client ID and secret. Then you open your favorite HTTP client and start crafting requests. Base64-encode the credentials. POST to the token endpoint. Copy the access token. Remember to add "Bearer" prefix. Paste it into the next request. Repeat when the token expires in an hour.
+
+It's 2026. We can do better.
+
+This session is a speedrun. In 30 minutes, we'll go from zero tooling to a production-ready workflow that handles authentication, file management, model translation, and—here's the twist—AI assistant integration.
+
+## Part 1: Installation (Choose Your Adventure)
+
+![Multi-Platform Install](/blog/devcon/1258-zero-to-production-installation.png)
+
+Six ways to install—pick the one that doesn't make you twitch.
+
+### Quick Install Scripts (Recommended)
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/dmytro-yemelianov/raps/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/dmytro-yemelianov/raps/main/install.ps1 | iex
+```
+
+### Package Managers
+
+```bash
+# npm
+npm install -g @dmytro-yemelianov/raps-cli
+
+# pip
+pip install raps
+
+# Homebrew (macOS/Linux)
+brew install dmytro-yemelianov/tap/raps
+
+# Scoop (Windows)
+scoop bucket add raps https://github.com/dmytro-yemelianov/scoop-bucket
+scoop install raps
+
+# Cargo (Rust)
+cargo install raps
+```
+
+### Verify Installation
+
+```bash
+raps --version
+# raps 4.3.0
+```
+
+## Configuration: Making It Yours
+
+### Create Your First Profile
+
+```bash
+# Interactive setup
+raps config profile create dev
+
+# Or set values directly
+raps config set client_id "your_client_id"
+raps config set client_secret "your_client_secret"
+```
+
+### Multiple Environments
+
+```bash
+# Create profiles for each environment
+raps config profile create dev
+raps config profile create staging
+raps config profile create production
+
+# Switch between them
+raps config profile use staging
+
+# Check active profile
+raps config profile current
+# → staging
+```
+
+### Test Your Setup
+
+```bash
+raps auth test
+# ✓ Authentication successful
+#   Token expires in: 59 minutes
+#   Scopes: data:read data:write bucket:create ...
+```
+
+## Part 2: Core Operations
+
+![CLI Workflow](/blog/devcon/1258-zero-to-production-workflow.png)
+
+### Buckets: Your Cloud Storage
+
+```bash
+# Create a bucket
+raps bucket create --key hospital-project-2026 --policy persistent --region us
+
+# List your buckets
+raps bucket list
+# ┌─────────────────────────┬────────────┬────────┐
+# │ Bucket Key              │ Policy     │ Region │
+# ├─────────────────────────┼────────────┼────────┤
+# │ hospital-project-2026   │ persistent │ US     │
+# │ temp-uploads            │ transient  │ US     │
+# └─────────────────────────┴────────────┴────────┘
+```
+
+### Uploads: Handling Real Files
+
+```bash
+# Upload a file (auto-chunks large files)
+raps object upload hospital-project-2026 model.rvt
+# [████████████████████████████████] 100% | 245 MB
+# ✓ Upload complete!
+#   URN (for translation): dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6aG9z...
+
+# Batch upload with parallel processing
+raps object upload-batch hospital-project-2026 *.dwg --parallel 4
+```
+
+### Translation: The Moment of Truth
+
+```bash
+# Start a translation
+raps translate start dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6aG9z... --format svf2
+
+# Wait for completion (no manual polling!)
+raps translate status dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6aG9z... --wait
+# Translation progress: 15%... 42%... 78%... 100%
+# ✓ Translation complete!
+```
+
+### Data Management: Navigating ACC/BIM 360
+
+```bash
+# List your hubs (requires 3-legged auth)
+raps auth login  # Opens browser for OAuth flow
+raps hub list
+
+# Navigate the hierarchy
+raps project list b.abc123-hub-id
+raps folder list b.xyz789-project-id urn:folder:root
+raps item versions b.xyz789-project-id urn:item:12345
+```
+
+## Part 3: AI Integration
+
+![Speedrun Timer](/blog/devcon/1258-zero-to-production-speedrun.png)
+
+### Start the MCP Server
+
+```bash
+raps serve
+```
+
+That's it. The CLI is now an MCP server, exposing **35 tools** for AI assistants.
+
+### Connect Claude Desktop
+
+Edit your Claude configuration:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Linux:** `~/.config/claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"],
+      "env": {
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+### What Can You Do With This?
+
+Once connected, natural language becomes API operations:
+
+- "List all my OSS buckets" → AI calls `bucket_list`
+- "Create a bucket named 'new-project' with transient policy" → AI calls `bucket_create`
+- "What's the status of my translation job?" → AI calls `translate_status`
+- "Add user@company.com to all active projects" → AI calls `admin_user_add`
+
+## The Bigger Picture
+
+APS is powerful. The APIs are comprehensive. But there's a gap—a big one—between reading the documentation and actually shipping production code. That gap is filled with friction: OAuth dance, Base64 encoding URNs, polling loops with magic sleep timers.
+
+Good tooling shrinks that gap. It lets you focus on what you're actually building instead of fighting the mechanics.
+
+## Key Takeaways
+
+1. **CLI beats clicking** for anything you do more than twice
+2. **150+ commands** across 15 APIs—probably covers what you need
+3. **Pick your poison for install**: npm, pip, brew, scoop, cargo, or curl-bash
+4. **Profiles save your sanity** when juggling staging vs prod
+5. **MCP is real**—35 tools, works today, not a demo
+6. **Open source** means you can fix bugs without waiting on a vendor ticket
+
+## Resources
+
+- [GitHub Repository](https://github.com/dmytro-yemelianov/raps)
+- [Installation Guide](/docs/installation)
+- [Command Reference](/docs/commands)
+- [MCP Server Guide](/docs/mcp-server)
