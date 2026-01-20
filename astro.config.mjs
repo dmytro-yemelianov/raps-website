@@ -10,9 +10,6 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
-  experimental: {
-    contentLayer: true,
-  },
   integrations: [
     mdx({
       remarkPlugins: [simpleMermaid],

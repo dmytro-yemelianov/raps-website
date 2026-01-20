@@ -22,9 +22,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 // Get all docs
 const allDocs = await getCollection('docs');
 
+// Helper to get slug from doc (Astro 5 uses id, Astro 4 uses slug)
+const getDocSlug = (doc: any) => {
+  const raw = doc.slug || doc.id || '';
+  return raw.replace(/\.mdx?$/, '');
+};
+
 // Helper to check current section
 const getCurrentSection = () => {
-  const doc = allDocs.find(d => d.slug === currentSlug);
+  const doc = allDocs.find(d => getDocSlug(d) === currentSlug);
   if (doc?.data.section === 'cookbook') return 'cookbook';
   if (doc?.data.section) return doc.data.section;
   if (currentSlug.startsWith('cookbook-aec') || currentSlug.startsWith('cookbook-acc') || 
@@ -92,37 +98,54 @@ const navSections = [
         id: 'cookbook-aec',
         title: 'AEC & BIM',
         items: [
-          allDocs.find(d => d.slug === 'cookbook-aec'),
-          ...allDocs.filter(d => d.slug.startsWith('cookbook-aec-')).sort((a, b) => a.data.order - b.data.order)
+          allDocs.find(d => getDocSlug(d) === 'cookbook-aec'),
+          ...allDocs.filter(d => getDocSlug(d).startsWith('cookbook-aec-')).sort((a, b) => a.data.order - b.data.order)
         ].filter(Boolean)
       },
       {
         id: 'cookbook-acc',
         title: 'Construction',
         items: [
-          allDocs.find(d => d.slug === 'cookbook-construction'),
-          ...allDocs.filter(d => d.slug.startsWith('cookbook-acc-')).sort((a, b) => a.data.order - b.data.order)
+          allDocs.find(d => getDocSlug(d) === 'cookbook-construction'),
+          ...allDocs.filter(d => getDocSlug(d).startsWith('cookbook-acc-')).sort((a, b) => a.data.order - b.data.order)
         ].filter(Boolean)
       },
       {
         id: 'cookbook-mfg',
         title: 'Manufacturing',
         items: [
-          allDocs.find(d => d.slug === 'cookbook-manufacturing'),
-          ...allDocs.filter(d => d.slug.startsWith('cookbook-mfg-')).sort((a, b) => a.data.order - b.data.order)
+          allDocs.find(d => getDocSlug(d) === 'cookbook-manufacturing'),
+          ...allDocs.filter(d => getDocSlug(d).startsWith('cookbook-mfg-')).sort((a, b) => a.data.order - b.data.order)
         ].filter(Boolean)
       },
       {
         id: 'cookbook-media',
         title: 'Media & Assets',
         items: [
-          allDocs.find(d => d.slug === 'cookbook-media'),
-          ...allDocs.filter(d => d.slug.startsWith('cookbook-media-')).sort((a, b) => a.data.order - b.data.order)
+          allDocs.find(d => getDocSlug(d) === 'cookbook-media'),
+          ...allDocs.filter(d => getDocSlug(d).startsWith('cookbook-media-')).sort((a, b) => a.data.order - b.data.order)
         ].filter(Boolean)
       }
     ]
   },
 ];
+
+// Add slug property to all docs in navSections for template use
+const addSlugToItems = (items: any[]) => items.map(doc => ({
+  ...doc,
+  slug: getDocSlug(doc)
+}));
+
+navSections.forEach(section => {
+  if (section.items) {
+    section.items = addSlugToItems(section.items);
+  }
+  if (section.subsections) {
+    section.subsections.forEach(subsection => {
+      subsection.items = addSlugToItems(subsection.items);
+    });
+  }
+});
 
 const cleanTitle = (title: string) => {
   return title

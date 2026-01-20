@@ -31,10 +31,10 @@ const sections = {
 // Cookbook groups
 const cookbookDocs = allDocs.filter(d => d.data.section === 'cookbook');
 const cookbookGroups = {
-  'ACC & Construction': cookbookDocs.filter(d => d.slug.includes('acc') || d.slug.includes('construction')),
-  'AEC & BIM': cookbookDocs.filter(d => d.slug.includes('aec')),
-  'Manufacturing': cookbookDocs.filter(d => d.slug.includes('mfg') || d.slug.includes('manufacturing')),
-  'Media & Entertainment': cookbookDocs.filter(d => d.slug.includes('media')),
+  'ACC & Construction': cookbookDocs.filter(d => (d.id || d.slug || '').includes('acc') || (d.id || d.slug || '').includes('construction')),
+  'AEC & BIM': cookbookDocs.filter(d => (d.id || d.slug || '').includes('aec')),
+  'Manufacturing': cookbookDocs.filter(d => (d.id || d.slug || '').includes('mfg') || (d.id || d.slug || '').includes('manufacturing')),
+  'Media & Entertainment': cookbookDocs.filter(d => (d.id || d.slug || '').includes('media')),
 };
 ---
 
@@ -63,7 +63,7 @@ const cookbookGroups = {
                     <span class="w-1.5 h-1.5 rounded-full bg-rapeseed-400 transition-colors"></span>
                   </div>
                   <a 
-                    href={`/docs/${doc.slug}`}
+                    href={`/docs/${(doc.id || doc.slug || '').replace(/\.mdx?$/, '')}`}
                     class="text-slate-300 hover:text-white transition-colors hover:underline underline-offset-2"
                   >
                     {doc.data.title}
@@ -94,7 +94,7 @@ const cookbookGroups = {
                         <span class="w-1.5 h-1.5 rounded-full bg-rapeseed-400/60 transition-colors"></span>
                       </div>
                       <a 
-                        href={`/docs/${doc.slug}`}
+                        href={`/docs/${(doc.id || doc.slug || '').replace(/\.mdx?$/, '')}`}
                         class="text-slate-400 hover:text-white transition-colors hover:underline underline-offset-2"
                       >
                         {doc.data.title}
