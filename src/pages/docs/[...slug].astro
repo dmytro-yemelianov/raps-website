@@ -1,31 +1,41 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import { getCollection, type CollectionEntry } from 'astro:content';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+
+// Helper to get slug from doc (Astro 5 uses id, Astro 4 uses slug)
+const getDocSlug = (doc: any) => {
+  const raw = doc.slug || doc.id || '';
+  return raw.replace(/\.mdx?$/, '');
+};
 
 export async function getStaticPaths() {
   const docs = await getCollection('docs');
-  return docs.map(doc => ({
-    params: { slug: doc.slug },
-    props: { doc },
-  }));
+  return docs.map(doc => {
+    const slug = (doc.slug || doc.id || '').replace(/\.mdx?$/, '');
+    return {
+      params: { slug },
+      props: { doc, slug },
+    };
+  });
 }
 
 interface Props {
   doc: CollectionEntry<'docs'>;
+  slug: string;
 }
 
-const { doc } = Astro.props;
-const { Content } = await doc.render();
+const { doc, slug } = Astro.props;
+const { Content } = await render(doc);
 
 // Get all docs for navigation
 const allDocs = await getCollection('docs');
-const currentIndex = allDocs.findIndex(d => d.slug === doc.slug);
+const currentIndex = allDocs.findIndex(d => getDocSlug(d) === slug);
 
 // Find prev/next in same section
 const sectionDocs = allDocs
   .filter(d => d.data.section === doc.data.section)
   .sort((a, b) => a.data.order - b.data.order);
-const sectionIndex = sectionDocs.findIndex(d => d.slug === doc.slug);
+const sectionIndex = sectionDocs.findIndex(d => getDocSlug(d) === slug);
 const prevDoc = sectionIndex > 0 ? sectionDocs[sectionIndex - 1] : null;
 const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex + 1] : null;
 ---
@@ -33,7 +43,7 @@ const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex
 <DocsLayout 
   title={doc.data.title} 
   description={doc.data.description}
-  currentSlug={doc.slug}
+  currentSlug={slug}
 >
   <article class="docs-content">
     <Content />
@@ -44,7 +54,7 @@ const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex
     <div class="flex justify-between gap-4">
       {prevDoc ? (
         <a 
-          href={`/docs/${prevDoc.slug}`}
+          href={`/docs/${getDocSlug(prevDoc)}`}
           class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
         >
           <div class="text-sm text-slate-500 mb-1">← Previous</div>
@@ -57,7 +67,7 @@ const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex
       
       {nextDoc ? (
         <a 
-          href={`/docs/${nextDoc.slug}`}
+          href={`/docs/${getDocSlug(nextDoc)}`}
           class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
         >
           <div class="text-sm text-slate-500 mb-1">Next →</div>
