@@ -1,0 +1,329 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getLatestRelease } from '../data/releases.js';
+
+const latestRelease = getLatestRelease();
+
+const distributionChannels = [
+  {
+    name: 'Cargo (crates.io)',
+    icon: '🦀',
+    platform: 'Cross-platform',
+    status: 'active',
+    description: 'Official Rust package manager - recommended for Rust developers',
+    installCommand: 'cargo install raps-cli',
+    verifyCommand: 'raps --version',
+    links: [
+      { label: 'crates.io', url: 'https://crates.io/crates/raps-cli' },
+      { label: 'Documentation', url: 'https://docs.rs/raps-cli' },
+    ],
+    gradient: 'from-orange-500/10 via-amber-500/5',
+    border: 'group-hover:border-orange-500/50',
+  },
+  {
+    name: 'Homebrew',
+    icon: '🍺',
+    platform: 'macOS / Linux',
+    status: 'active',
+    description: 'The missing package manager for macOS (and Linux)',
+    installCommand: 'brew install dmytro-yemelianov/tap/raps',
+    verifyCommand: 'raps --version',
+    links: [
+      { label: 'Homebrew Tap', url: 'https://github.com/dmytro-yemelianov/homebrew-tap' },
+      { label: 'Formula', url: 'https://github.com/dmytro-yemelianov/homebrew-tap/blob/main/Formula/raps.rb' },
+    ],
+    gradient: 'from-yellow-500/10 via-amber-500/5',
+    border: 'group-hover:border-yellow-500/50',
+  },
+  {
+    name: 'Scoop',
+    icon: '🪣',
+    platform: 'Windows',
+    status: 'active',
+    description: 'Command-line installer for Windows',
+    installCommand: 'scoop bucket add raps https://github.com/dmytro-yemelianov/scoop-bucket\nscoop install raps',
+    verifyCommand: 'raps --version',
+    links: [
+      { label: 'Scoop Bucket', url: 'https://github.com/dmytro-yemelianov/scoop-bucket' },
+      { label: 'Manifest', url: 'https://github.com/dmytro-yemelianov/scoop-bucket/blob/main/bucket/raps.json' },
+    ],
+    gradient: 'from-blue-500/10 via-cyan-500/5',
+    border: 'group-hover:border-blue-500/50',
+  },
+  {
+    name: 'npm',
+    icon: '📦',
+    platform: 'Cross-platform',
+    status: 'active',
+    description: 'Node.js package manager - for JavaScript/TypeScript projects',
+    installCommand: 'npm install -g @rapscli/raps',
+    verifyCommand: 'raps --version',
+    links: [
+      { label: 'npm Registry', url: 'https://www.npmjs.com/package/@rapscli/raps' },
+      { label: 'Package Info', url: 'https://www.npmjs.com/package/@rapscli/raps?activeTab=readme' },
+    ],
+    gradient: 'from-red-500/10 via-pink-500/5',
+    border: 'group-hover:border-red-500/50',
+  },
+  {
+    name: 'pip (PyPI)',
+    icon: '🐍',
+    platform: 'Cross-platform',
+    status: 'active',
+    description: 'Python package installer - Python bindings for RAPS',
+    installCommand: 'pip install raps-aps',
+    verifyCommand: 'python -c "import raps; print(raps.__version__)"',
+    links: [
+      { label: 'PyPI', url: 'https://pypi.org/project/raps-aps/' },
+      { label: 'Documentation', url: 'https://rapscli.xyz/docs/python-bindings' },
+    ],
+    gradient: 'from-blue-600/10 via-yellow-500/5',
+    border: 'group-hover:border-blue-600/50',
+  },
+  {
+    name: 'Docker Hub',
+    icon: '🐳',
+    platform: 'Containers',
+    status: 'active',
+    description: 'Container images for Docker, Kubernetes, CI/CD pipelines',
+    installCommand: 'docker pull rapscli/raps:latest',
+    verifyCommand: 'docker run --rm rapscli/raps --version',
+    links: [
+      { label: 'Docker Hub', url: 'https://hub.docker.com/r/rapscli/raps' },
+      { label: 'Dockerfile', url: 'https://github.com/dmytro-yemelianov/raps-docker' },
+    ],
+    gradient: 'from-cyan-500/10 via-blue-500/5',
+    border: 'group-hover:border-cyan-500/50',
+  },
+  {
+    name: 'GitHub Releases',
+    icon: '📥',
+    platform: 'All Platforms',
+    status: 'active',
+    description: 'Pre-built binaries for Windows, macOS, and Linux',
+    installCommand: 'Download binary for your platform from releases page',
+    verifyCommand: './raps --version',
+    links: [
+      { label: 'Latest Release', url: `https://github.com/dmytro-yemelianov/raps/releases/tag/v${latestRelease.version}` },
+      { label: 'All Releases', url: 'https://github.com/dmytro-yemelianov/raps/releases' },
+    ],
+    gradient: 'from-purple-500/10 via-indigo-500/5',
+    border: 'group-hover:border-purple-500/50',
+  },
+  {
+    name: 'GitHub Actions',
+    icon: '⚙️',
+    platform: 'CI/CD',
+    status: 'active',
+    description: 'Use RAPS in GitHub Actions workflows',
+    installCommand: '# In your .github/workflows/*.yml\n- uses: dmytro-yemelianov/raps-action@v1',
+    verifyCommand: 'Integrated in workflow',
+    links: [
+      { label: 'Action Repository', url: 'https://github.com/dmytro-yemelianov/raps-action' },
+      { label: 'Marketplace', url: 'https://github.com/marketplace/actions/raps-aps-cli' },
+    ],
+    gradient: 'from-green-500/10 via-emerald-500/5',
+    border: 'group-hover:border-green-500/50',
+  },
+];
+
+const platforms = [
+  {
+    name: 'Windows',
+    icon: '🪟',
+    channels: ['Scoop', 'Cargo', 'npm', 'pip', 'GitHub Releases'],
+  },
+  {
+    name: 'macOS',
+    icon: '🍎',
+    channels: ['Homebrew', 'Cargo', 'npm', 'pip', 'GitHub Releases'],
+  },
+  {
+    name: 'Linux',
+    icon: '🐧',
+    channels: ['Homebrew', 'Cargo', 'npm', 'pip', 'Docker', 'GitHub Releases'],
+  },
+];
+---
+
+<BaseLayout 
+  title="Distributions" 
+  description="Download and install RAPS from your preferred distribution channel. Available via Cargo, Homebrew, Scoop, npm, pip, Docker, and GitHub Releases."
+>
+  <!-- Hero Section -->
+  <section class="relative pt-24 pb-16 sm:pt-32 sm:pb-20 overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary-900/20 via-slate-950 to-slate-950 pointer-events-none"></div>
+    <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent"></div>
+    
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 z-10">
+      <div class="text-center max-w-3xl mx-auto">
+        <h1 class="text-4xl sm:text-6xl font-display font-black text-white mb-6">
+          <span class="text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-200 to-slate-500">
+            Distribution Channels
+          </span>
+        </h1>
+        <p class="text-lg sm:text-xl text-slate-400 mb-8">
+          Install RAPS from your preferred package manager or download pre-built binaries.
+          <br class="hidden sm:block" />
+          All channels receive updates automatically when new versions are released.
+        </p>
+        
+        <!-- Latest Version Badge -->
+        <div class="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-slate-900/80 border border-slate-800 backdrop-blur-md">
+          <span class="text-sm text-slate-400">Latest Version:</span>
+          <span class="text-lg font-bold text-rapeseed-400">v{latestRelease.version}</span>
+          <span class="text-slate-600">|</span>
+          <span class="text-sm text-slate-500">{latestRelease.date}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Platform Guide -->
+  <section class="py-12 bg-slate-900/30 border-y border-slate-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <h2 class="text-2xl font-display font-bold text-white mb-8 text-center">Choose Your Platform</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {platforms.map((platform) => (
+          <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-4xl">{platform.icon}</span>
+              <h3 class="text-xl font-bold text-white">{platform.name}</h3>
+            </div>
+            <div class="space-y-2">
+              {platform.channels.map((channel) => (
+                <div class="text-sm text-slate-400">
+                  <span class="text-rapeseed-400">→</span> {channel}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Distribution Channels -->
+  <section class="py-16 sm:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="mb-12">
+        <h2 class="text-3xl sm:text-4xl font-display font-black text-white mb-4">All Distribution Channels</h2>
+        <p class="text-slate-400 text-lg">Detailed installation instructions for each package manager and platform.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {distributionChannels.map((channel) => (
+          <div class="relative group rounded-2xl p-8 bg-slate-900/50 border border-slate-800/50 overflow-hidden hover:bg-slate-900 transition-all">
+            <div class={`absolute inset-0 bg-gradient-to-br ${channel.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+            <div class={`absolute inset-0 border-2 border-transparent ${channel.border} rounded-2xl transition-colors duration-500 pointer-events-none`}></div>
+            
+            <div class="relative z-10">
+              {/* Header */}
+              <div class="flex items-start justify-between mb-6">
+                <div class="flex items-center gap-4">
+                  <span class="text-5xl">{channel.icon}</span>
+                  <div>
+                    <h3 class="text-2xl font-bold text-white group-hover:text-rapeseed-400 transition-colors">{channel.name}</h3>
+                    <p class="text-sm text-slate-500">{channel.platform}</p>
+                  </div>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/20">
+                  {channel.status}
+                </span>
+              </div>
+
+              {/* Description */}
+              <p class="text-slate-400 mb-6">{channel.description}</p>
+
+              {/* Installation */}
+              <div class="mb-6">
+                <div class="text-sm font-semibold text-slate-300 mb-2">Installation:</div>
+                <div class="relative">
+                  <pre class="p-4 rounded-lg bg-black/50 border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto"><code>{channel.installCommand}</code></pre>
+                  <button 
+                    class="absolute top-2 right-2 p-2 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                    onclick={`navigator.clipboard.writeText(\`${channel.installCommand.replace(/\n/g, '\\n')}\`)`}
+                    title="Copy to clipboard"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Verification */}
+              <div class="mb-6">
+                <div class="text-sm font-semibold text-slate-300 mb-2">Verify:</div>
+                <div class="p-3 rounded-lg bg-black/30 border border-slate-800/50 font-mono text-sm text-green-400">
+                  <span class="text-slate-600">$</span> {channel.verifyCommand}
+                </div>
+              </div>
+
+              {/* Links */}
+              <div class="flex flex-wrap gap-3">
+                {channel.links.map((link) => (
+                  <a 
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700 text-sm text-slate-300 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-colors"
+                  >
+                    {link.label}
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Additional Resources -->
+  <section class="py-16 bg-slate-900/20">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <h2 class="text-3xl font-display font-bold text-white mb-6">Need Help?</h2>
+      <p class="text-slate-400 text-lg mb-8">
+        Check out our installation guide for detailed platform-specific instructions and troubleshooting.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a 
+          href="/docs/installation" 
+          class="px-6 py-3 rounded-lg bg-rapeseed-500 hover:bg-rapeseed-600 text-white font-semibold transition-colors"
+        >
+          Installation Guide
+        </a>
+        <a 
+          href="/docs/troubleshooting" 
+          class="px-6 py-3 rounded-lg border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-semibold transition-colors"
+        >
+          Troubleshooting
+        </a>
+        <a 
+          href="https://github.com/dmytro-yemelianov/raps/issues" 
+          target="_blank"
+          class="px-6 py-3 rounded-lg border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-semibold transition-colors"
+        >
+          Report an Issue
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Add copy functionality to all code blocks
+  document.querySelectorAll('button[onclick*="clipboard"]').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      const code = this.previousElementSibling?.textContent || '';
+      navigator.clipboard.writeText(code).then(() => {
+        const originalHTML = this.innerHTML;
+        this.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+        setTimeout(() => {
+          this.innerHTML = originalHTML;
+        }, 2000);
+      });
+    });
+  });
+</script>

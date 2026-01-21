@@ -4,6 +4,9 @@ import TerminalDemo from '../components/TerminalDemo.astro';
 import DownloadButton from '../components/DownloadButton.astro';
 import GitHubStars from '../components/GitHubStars.astro';
 import UserOnboarding from '../components/UserOnboarding.astro';
+import { getLatestRelease } from '../data/releases.js';
+
+const latestRelease = getLatestRelease();
 
 const docsCards = [
   {
@@ -91,14 +94,14 @@ const quickStart = [
       <div class="flex flex-col items-center text-center">
         
         <!-- Announcement Banner -->
-        <a href="https://github.com/dmytro-yemelianov/raps/releases" target="_blank" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-sm text-slate-300 hover:border-rapeseed-500/30 hover:text-white transition-all mb-10 backdrop-blur-md">
+        <a href={`https://github.com/dmytro-yemelianov/raps/releases/tag/v${latestRelease.version}`} target="_blank" class="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-sm text-slate-300 hover:border-rapeseed-500/30 hover:text-white transition-all mb-10 backdrop-blur-md">
           <span class="flex h-2 w-2 relative">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rapeseed-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2 w-2 bg-rapeseed-500"></span>
           </span>
-          <span class="font-medium">v3.9.0 Released</span>
+          <span class="font-medium">v{latestRelease.version} Released</span>
           <span class="text-slate-600 group-hover:text-slate-400">|</span>
-          <span>MCP Server + ACC Extended</span>
+          <span>{latestRelease.highlights.slice(0, 2).join(' + ')}</span>
           <svg class="w-4 h-4 text-slate-500 group-hover:text-rapeseed-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
         </a>
 
