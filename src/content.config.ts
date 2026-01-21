@@ -28,4 +28,17 @@ const docs = defineCollection({
   }),
 });
 
-export const collections = { blog, docs };
+const products = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/products' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    tagline: z.string().optional(),
+    icon: z.string().optional(),
+    github: z.string().optional(),
+    order: z.number().default(999),
+    version: z.string().optional(),
+  }),
+});
+
+export const collections = { blog, docs, products };
