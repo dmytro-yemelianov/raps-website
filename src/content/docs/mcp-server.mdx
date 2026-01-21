@@ -11,8 +11,9 @@ icon: "🤖"
 The `raps serve` command starts a Model Context Protocol (MCP) server, enabling AI assistants to interact with Autodesk Platform Services through natural language.
 
 > **New in v3.0.0** — The MCP server is a major feature addition.
-> **Expanded in v4.1.0** — Now with 37 tools including native auth support, admin bulk operations, issues, RFIs, and ACC extended features.
+> **Expanded in v4.1.0** — Now with admin bulk operations, issues, RFIs, and ACC extended features.
 > **Improved in v4.1.1** — Server starts without credentials and provides interactive setup guidance.
+> **Enhanced in v4.4.0** — Now with 51 tools including folder permissions, operation lifecycle, and full CRUD for ACC modules.
 
 ## From "Chat with PDF" to "Chat with Tools"
 
@@ -113,7 +114,7 @@ Add to `.cursor/mcp.json` in your project:
 
 ## Available Tools
 
-The RAPS MCP server exposes **37 tools** organized by functionality:
+The RAPS MCP server exposes **51 tools** organized by functionality:
 
 ### Authentication
 
@@ -168,8 +169,11 @@ The RAPS MCP server exposes **37 tools** organized by functionality:
 | `admin_user_add` | Bulk add users to multiple projects |
 | `admin_user_remove` | Bulk remove users from projects |
 | `admin_user_update_role` | Bulk update user roles across projects |
+| `admin_folder_rights` | Bulk update folder permissions across projects |
 | `admin_operation_list` | List all bulk operations with status |
 | `admin_operation_status` | Get detailed status of a bulk operation |
+| `admin_operation_resume` | Resume a paused bulk operation |
+| `admin_operation_cancel` | Cancel a running bulk operation |
 
 ### Issues
 
@@ -186,14 +190,23 @@ The RAPS MCP server exposes **37 tools** organized by functionality:
 |------|-------------|
 | `rfi_list` | List RFIs in a project |
 | `rfi_get` | Get details of a specific RFI |
+| `rfi_create` | Create a new RFI |
+| `rfi_update` | Update an existing RFI |
 
 ### ACC Extended
 
 | Tool | Description |
 |------|-------------|
 | `acc_assets_list` | List assets in a project |
+| `asset_create` | Create a new asset |
+| `asset_update` | Update an existing asset |
+| `asset_delete` | Delete an asset |
 | `acc_submittals_list` | List submittals in a project |
+| `submittal_create` | Create a new submittal |
+| `submittal_update` | Update an existing submittal |
 | `acc_checklists_list` | List checklists in a project |
+| `checklist_create` | Create a new checklist |
+| `checklist_update` | Update an existing checklist |
 
 ## How It Works: Live Tool Execution
 

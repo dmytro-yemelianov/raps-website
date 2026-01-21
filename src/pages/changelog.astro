@@ -4,6 +4,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Changelog data - in production, this could be fetched from GitHub releases API
 const releases = [
   {
+    version: '4.4.0',
+    date: '2026-01-20',
+    highlights: ['51 MCP Tools', 'Folder Permissions', 'Operation Lifecycle', 'Full ACC CRUD'],
+    type: 'minor',
+    changes: {
+      added: [
+        '14 new MCP tools bringing total to 51',
+        'Bulk folder permission management with `admin_folder_rights`',
+        'Operation lifecycle tools: `admin_operation_resume`, `admin_operation_cancel`',
+        'Full RFI CRUD: `rfi_create`, `rfi_update`',
+        'Full Assets CRUD: `asset_create`, `asset_update`, `asset_delete`',
+        'Full Submittals CRUD: `submittal_create`, `submittal_update`',
+        'Full Checklists CRUD: `checklist_create`, `checklist_update`',
+        'Support for all permission levels (ViewOnly, ViewDownload, UploadOnly, ViewDownloadUpload, ViewDownloadUploadEdit, FolderControl)',
+        'Support for folder types (ProjectFiles, Plans, Custom paths)',
+      ],
+      changed: [
+        'Enhanced `admin_project_list` with advanced filter expressions',
+        'Improved auth guidance for new tool categories',
+        'Updated tool availability summary with new tool groups',
+      ],
+    },
+  },
+  {
     version: '3.8.0',
     date: '2026-01-10',
     highlights: ['Interactive Shell', 'Rust 2024 Edition', 'TAB Completion', 'Parameter Hints'],
