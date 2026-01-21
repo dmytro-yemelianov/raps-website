@@ -2,23 +2,22 @@
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import { getCollection, render } from 'astro:content';
 
-// Helper to get slug from entry (Astro 5 uses id, Astro 4 uses slug)
-const getSlug = (entry: any) => {
-  const raw = entry.slug || entry.id || '';
-  return raw.replace(/\.mdx?$/, '');
-};
-
 export async function getStaticPaths() {
   const products = await getCollection('products');
-  return products.map(product => ({
-    params: { slug: getSlug(product) },
-    props: { product },
-  }));
+  return products.map(product => {
+    // Extract slug from id (remove .mdx extension if present)
+    const slug = (product.id || product.slug || '').replace(/\.mdx?$/, '');
+    return {
+      params: { slug },
+      props: { product },
+    };
+  });
 }
 
 const { product } = Astro.props;
 const { Content } = await render(product);
-const slug = getSlug(product);
+// Extract slug from id (remove .mdx extension if present)
+const slug = (product.id || product.slug || '').replace(/\.mdx?$/, '');
 ---
 
 <ProductLayout
