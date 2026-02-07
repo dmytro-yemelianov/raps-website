@@ -130,8 +130,9 @@ const getReadingTime = (content: string) => {
           </div>
         </div>
       ) : (
-        allPosts.map((post, index) => (
-            <article class="group">
+        <div class="flex flex-col gap-4" id="blog-posts-list">
+          {allPosts.map((post, index) => (
+            <article class="group blog-post" data-tags={JSON.stringify(post.data.tags || [])} style="transition: opacity 0.2s ease;">
               <a href={`/blog/${post.id.replace(/\.mdx?$/, '')}`} class="block">
                 <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 transition-all hover:bg-slate-900">
                   <div class="flex flex-wrap items-center gap-3 mb-3">
@@ -151,14 +152,14 @@ const getReadingTime = (content: string) => {
                     {post.data.description}
                   </p>
                   <div class="mt-4 text-sm text-primary-400 group-hover:text-primary-300">
-                    Read article →
+                    Read article &rarr;
                   </div>
                 </div>
               </a>
             </article>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
       
       <!-- Newsletter CTA -->
       <div class="mt-16 bg-gradient-to-r from-rapeseed-500/10 to-amber-500/10 border border-rapeseed-500/20 rounded-2xl p-8">
@@ -170,21 +171,26 @@ const getReadingTime = (content: string) => {
           <p class="text-slate-300 mb-6 max-w-2xl mx-auto">
             Get the latest tutorials, automation guides, and APS development insights delivered weekly. Stay ahead of the curve with expert-level content.
           </p>
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+          <form id="newsletter-form" class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6" novalidate>
             <div class="flex gap-2 w-full max-w-sm">
               <input
+                id="newsletter-email"
                 type="email"
+                name="email"
+                required
                 placeholder="your@email.com"
-                class="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400"
+                class="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 text-base"
+                autocomplete="email"
               />
               <button
-                class="px-6 py-3 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors"
-                onclick="window.analytics?.track('email_signup_attempt', {source: 'blog_footer'})"
+                type="submit"
+                class="px-6 py-3 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors whitespace-nowrap"
               >
                 Subscribe
               </button>
             </div>
-          </div>
+            <p id="newsletter-feedback" class="text-sm hidden w-full text-center"></p>
+          </form>
           <div class="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-slate-500">
             <div class="flex items-center gap-4">
               <a
@@ -217,16 +223,14 @@ const getReadingTime = (content: string) => {
 </BaseLayout>
 
 <script>
-  // Blog category filtering functionality
   document.addEventListener('DOMContentLoaded', function() {
     // Toggle topics section
     const toggleBtn = document.getElementById('toggle-topics');
     const filtersWrapper = document.getElementById('category-filters-wrapper');
     const chevron = document.getElementById('topics-chevron');
-    
+
     toggleBtn?.addEventListener('click', function() {
       const isHidden = filtersWrapper?.classList.contains('hidden');
-      
       if (isHidden) {
         filtersWrapper?.classList.remove('hidden');
         chevron?.classList.add('rotate-180');
@@ -235,73 +239,67 @@ const getReadingTime = (content: string) => {
         chevron?.classList.remove('rotate-180');
       }
     });
-    
+
+    // Blog category filtering
     const filterButtons = document.querySelectorAll('.category-filter');
     const blogPosts = document.querySelectorAll('.blog-post');
-    const featuredPosts = document.querySelectorAll('.featured-post');
-    
+
     filterButtons.forEach(button => {
       button.addEventListener('click', function() {
         const category = this.getAttribute('data-category');
-        
+
         // Update active state
         filterButtons.forEach(btn => {
           btn.classList.remove('active', 'bg-rapeseed-500', 'text-slate-900');
           btn.classList.add('bg-slate-800', 'text-slate-300');
         });
-        
         this.classList.add('active', 'bg-rapeseed-500', 'text-slate-900');
         this.classList.remove('bg-slate-800', 'text-slate-300');
-        
+
         // Filter posts
-        const allPosts = [...blogPosts, ...featuredPosts];
-        
-        allPosts.forEach(post => {
+        blogPosts.forEach(post => {
           const postTags = JSON.parse(post.getAttribute('data-tags') || '[]');
           const shouldShow = category === 'all' || postTags.includes(category);
-          
+
           if (shouldShow) {
             post.style.display = 'block';
-            post.style.opacity = '0';
-            setTimeout(() => {
-              post.style.opacity = '1';
-            }, 50);
+            requestAnimationFrame(() => { post.style.opacity = '1'; });
           } else {
             post.style.opacity = '0';
-            setTimeout(() => {
-              post.style.display = 'none';
-            }, 200);
+            setTimeout(() => { post.style.display = 'none'; }, 200);
           }
         });
-        
-        // Track category filter usage
-        if (window.analytics) {
-          window.analytics.track('blog_category_filter', {
-            category: category,
-            posts_shown: allPosts.filter(post => {
-              const postTags = JSON.parse(post.getAttribute('data-tags') || '[]');
-              return category === 'all' || postTags.includes(category);
-            }).length
-          });
-        }
       });
     });
-    
-    // Track blog engagement
-    const blogLinks = document.querySelectorAll('a[href^="/blog/"]');
-    blogLinks.forEach(link => {
-      link.addEventListener('click', function() {
-        const postTitle = this.querySelector('h3')?.textContent || 'Unknown';
-        const postTags = JSON.parse(this.closest('[data-tags]')?.getAttribute('data-tags') || '[]');
-        
-        if (window.analytics) {
-          window.analytics.track('blog_post_click', {
-            title: postTitle,
-            tags: postTags,
-            featured: this.closest('.featured-post') !== null
-          });
+
+    // Newsletter form handling
+    const form = document.getElementById('newsletter-form');
+    const emailInput = document.getElementById('newsletter-email') as HTMLInputElement;
+    const feedback = document.getElementById('newsletter-feedback');
+
+    form?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = emailInput?.value?.trim();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (feedback) {
+          feedback.textContent = 'Please enter a valid email address.';
+          feedback.className = 'text-sm w-full text-center text-red-400';
         }
-      });
+        return;
+      }
+
+      // Show success state (replace with real endpoint when available)
+      if (feedback) {
+        feedback.textContent = 'Thanks for subscribing! We\'ll be in touch.';
+        feedback.className = 'text-sm w-full text-center text-emerald-400';
+      }
+      if (emailInput) emailInput.value = '';
+
+      // Track signup
+      if ((window as any).analytics) {
+        (window as any).analytics.track('email_signup', { source: 'blog_footer', email });
+      }
     });
   });
 </script>

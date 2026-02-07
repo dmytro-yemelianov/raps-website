@@ -13,21 +13,8 @@
 }
 
 
-/* Ensure interactive elements have minimum size for touch */
-button,
-a,
-input,
-textarea,
-select {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Small buttons/links exception */
-.text-xs,
-.text-sm {
-  min-height: 32px;
-}
+/* Touch target sizing is handled in globals.css with proper
+   mobile-scoped rules and inline link exceptions. */
 
 /* Better form field focus states */
 input:focus,
@@ -39,14 +26,9 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.1);
 }
 
-/* Ensure sufficient color contrast */
-.text-slate-500 {
-  color: #94a3b8; /* Ensure AA compliance */
-}
-
-.text-slate-400 {
-  color: #cbd5e1; /* Better contrast on dark backgrounds */
-}
+/* Color contrast is managed via Tailwind utility classes.
+   Avoid overriding Tailwind classes globally to prevent 
+   design system inconsistencies. */
 
 /* Loading states */
 .loading {
@@ -97,18 +79,7 @@ select:focus {
   margin-top: 0.25rem;
 }
 
-/* Screen reader only text */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
+/* sr-only is provided by Tailwind's built-in utility class */
 
 /* Reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {

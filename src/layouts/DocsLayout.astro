@@ -2,8 +2,11 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import GlossaryText from '../components/GlossaryText.astro';
+import GlobalSearch from '../components/GlobalSearch.astro';
+import Analytics from '@vercel/analytics/astro';
 import { getCollection } from 'astro:content';
 import '../styles/globals.css';
+import '../styles/accessibility.css';
 
 interface Props {
   title: string;
@@ -166,28 +169,31 @@ const sectionContainsCurrent = (sectionId: string) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalURL} />
+    <link rel="manifest" href="/manifest.json" />
     
     <title>{title} | RAPS Docs</title>
     <meta name="title" content={`${title} | RAPS Docs`} />
     <meta name="description" content={description} />
     <meta name="author" content="Dmytro Yemelianov" />
+    <meta name="robots" content="index, follow" />
     
     <meta property="og:type" content="article" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={`${title} | RAPS Docs`} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL('/og-image.png', Astro.site)} />
+    <meta property="og:image" content={new URL('/og-image.svg', Astro.site)} />
     <meta property="og:site_name" content="RAPS CLI" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content={new URL('/og-image.png', Astro.site)} />
+    <meta name="twitter:image" content={new URL('/og-image.svg', Astro.site)} />
     
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="dns-prefetch" href="//github.com" />
+    <link rel="dns-prefetch" href="//api.github.com" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="dark" />
   </head>
   <body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
     <Header />
+    <GlobalSearch />
     
     <div class="flex">
       <!-- Sidebar -->
@@ -504,9 +510,6 @@ const sectionContainsCurrent = (sectionId: string) => {
         </div>
       </main>
     </div>
-    
-    <!-- Mermaid.js (pinned to 10.9.3 for stability) -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
     
     <script define:vars={{ navSections }}>
       // Mobile sidebar
@@ -907,6 +910,12 @@ const sectionContainsCurrent = (sectionId: string) => {
       document.addEventListener('DOMContentLoaded', setupSearch);
       
     </script>
+    
+    <!-- Mermaid.js (pinned to 10.9.3 for stability) -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+    
+    <Footer />
+    <Analytics />
   </body>
 </html>
 

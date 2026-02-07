@@ -27,7 +27,6 @@
     }
   ],
   "redirects": [
-    { "source": "/docs", "destination": "/docs/getting-started", "permanent": false },
     { "source": "/github", "destination": "https://github.com/dmytro-yemelianov/raps", "permanent": false }
   ],
   "trailingSlash": false

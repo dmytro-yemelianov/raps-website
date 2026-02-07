@@ -81,9 +81,6 @@ const isSubmenuActive = (submenu: any[]) => {
                     isSubmenuActive(item.submenu)
                       ? 'bg-slate-800 text-white'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/50',
-                    item.label === 'Products' && !isSubmenuActive(item.submenu) && 'text-purple-400 hover:text-purple-300',
-                    item.label === 'Developer' && !isSubmenuActive(item.submenu) && 'text-emerald-400 hover:text-emerald-300',
-                    item.label === 'Project' && !isSubmenuActive(item.submenu) && 'text-blue-400 hover:text-blue-300',
                   ]}
                 >
                   {item.label}
@@ -153,7 +150,7 @@ const isSubmenuActive = (submenu: any[]) => {
         </a>
         <a
           href="https://github.com/dmytro-yemelianov/raps/releases"
-          class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium rounded-lg transition-colors"
+          class="px-4 py-2 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 text-sm font-semibold rounded-lg transition-colors"
         >
           Download
         </a>
@@ -223,9 +220,6 @@ const isSubmenuActive = (submenu: any[]) => {
                 <summary class:list={[
                   'flex items-center justify-between px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer select-none transition-colors',
                   isSubmenuActive(item.submenu) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800/50',
-                  item.label === 'Products' && !isSubmenuActive(item.submenu) && 'text-purple-400',
-                  item.label === 'Developer' && !isSubmenuActive(item.submenu) && 'text-emerald-400',
-                  item.label === 'Project' && !isSubmenuActive(item.submenu) && 'text-blue-400',
                 ]}>
                   {item.label}
                   <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="currentColor" viewBox="0 0 20 20">
@@ -296,8 +290,36 @@ const isSubmenuActive = (submenu: any[]) => {
       body.classList.toggle('mobile-menu-open');
     };
 
-    mobileMenuButton.addEventListener('click', toggleMenu);
-    mobileMenuCloseButton.addEventListener('click', toggleMenu);
+    mobileMenuButton?.addEventListener('click', toggleMenu);
+    mobileMenuCloseButton?.addEventListener('click', toggleMenu);
+
+    // Touch-accessible desktop dropdown menus
+    // On touch devices, first tap opens the dropdown, second tap follows the link
+    const dropdownToggles = document.querySelectorAll('nav.hidden.md\\:flex .group > button');
+    dropdownToggles.forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        const parent = toggle.closest('.group');
+        const dropdown = parent?.querySelector('[class*="absolute"]');
+        if (!dropdown) return;
+
+        // Close all other dropdowns
+        dropdownToggles.forEach(other => {
+          if (other !== toggle) {
+            const otherDropdown = other.closest('.group')?.querySelector('[class*="absolute"]');
+            otherDropdown?.classList.remove('dropdown-open');
+          }
+        });
+
+        dropdown.classList.toggle('dropdown-open');
+      });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!(e.target as Element).closest('nav.hidden.md\\:flex .group')) {
+        document.querySelectorAll('.dropdown-open').forEach(d => d.classList.remove('dropdown-open'));
+      }
+    });
 
     // Close menu when clicking outside (on backdrop)
     document.getElementById('mobile-menu-backdrop')?.addEventListener('click', toggleMenu);
@@ -354,5 +376,11 @@ const isSubmenuActive = (submenu: any[]) => {
   
   body.mobile-menu-open {
     overflow: hidden;
+  }
+
+  /* Touch-accessible dropdown - visible via click in addition to hover */
+  .dropdown-open {
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 </style>

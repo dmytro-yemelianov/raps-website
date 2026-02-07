@@ -61,3 +61,12 @@
     font-weight: normal;
   }
 }
+
+/* 3D perspective utilities for terminal demo */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.rotate-x-2 {
+  transform: rotateX(2deg);
+}

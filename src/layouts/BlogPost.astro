@@ -285,25 +285,4 @@ const relatedPosts = allPosts
   </article>
 </BaseLayout>
 
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  
-  mermaid.initialize({ 
-    startOnLoad: false,
-    theme: 'dark',
-  });
-
-  const mermaidNodes = document.querySelectorAll('.mermaid');
-  
-  for (const node of mermaidNodes) {
-      const code = node.textContent;
-      
-      try {
-        const { svg } = await mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, code);
-        node.innerHTML = svg;
-      } catch (e) {
-        console.error("Mermaid error:", e);
-        node.innerHTML = `<pre class="text-red-500 p-4 border border-red-500 rounded bg-red-900/20">${e.message}</pre>`;
-      }
-  }
-</script>
+<!-- Mermaid is loaded and initialized by BaseLayout -->
