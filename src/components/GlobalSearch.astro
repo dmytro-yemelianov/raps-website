@@ -186,7 +186,7 @@
     searchResults = searchIndex.filter(item => {
       const inTitle = item.title.toLowerCase().includes(lowerQuery);
       const inContent = item.content.toLowerCase().includes(lowerQuery);
-      const inTags = item.tags.some(tag => tag.includes(lowerQuery));
+      const inTags = item.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
       return inTitle || inContent || inTags;
     });
     
@@ -198,6 +198,11 @@
       const bExact = b.title.toLowerCase() === lowerQuery ? 3 : 0;
       return (bExact + bTitle) - (aExact + aTitle);
     });
+
+    searchResults = searchResults.map((item, index) => ({
+      ...item,
+      resultIndex: index,
+    }));
     
     displayResults(searchResults);
   }
@@ -236,8 +241,8 @@
           <div class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
             ${typeLabels[type] || type}
           </div>
-          ${items.map((item, index) => `
-            <a href="${item.url}" class="search-result block px-4 py-3 hover:bg-slate-800 transition-colors" data-index="${searchResults.indexOf(item)}">
+          ${items.map((item) => `
+            <a href="${item.url}" class="search-result block px-4 py-3 hover:bg-slate-800 transition-colors" data-index="${item.resultIndex}">
               <div class="flex items-center justify-between">
                 <div class="flex-1">
                   <div class="font-medium text-white">${highlightMatch(item.title, input?.value || '')}</div>
@@ -258,9 +263,13 @@
   }
   
   // Highlight matching text
+  function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function highlightMatch(text, query) {
     if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
+    const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
     return text.replace(regex, '<mark class="bg-rapeseed-500/30 text-rapeseed-300">$1</mark>');
   }
   
@@ -312,8 +321,15 @@
   }
   
   // Search input
+  let searchTimeout;
   input?.addEventListener('input', (e) => {
-    performSearch((e.target as HTMLInputElement).value);
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    const query = (e.target as HTMLInputElement).value;
+    searchTimeout = setTimeout(() => {
+      performSearch(query);
+    }, 150);
   });
   
   // Keyboard shortcuts
@@ -345,5 +361,3 @@
     }
   });
 </script>
-
-

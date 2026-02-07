@@ -71,10 +71,10 @@ const distributionChannels = [
     platform: 'Cross-platform',
     status: 'active',
     description: 'Python package installer - Python bindings for RAPS',
-    installCommand: 'pip install raps',
-    verifyCommand: 'python -c "import raps; print(raps.__version__)"',
+    installCommand: 'pip install raps-aps',
+    verifyCommand: 'python -c "import raps_aps; print(raps_aps.__version__)"',
     links: [
-      { label: 'PyPI', url: 'https://pypi.org/project/raps/' },
+      { label: 'PyPI', url: 'https://pypi.org/project/raps-aps/' },
       { label: 'Documentation', url: 'https://rapscli.xyz/docs/python-bindings' },
     ],
     gradient: 'from-blue-600/10 via-yellow-500/5',
@@ -142,7 +142,7 @@ const platforms = [
   {
     name: 'Linux',
     icon: '🐧',
-    channels: ['Homebrew', 'Cargo', 'npm', 'pip', 'Docker', 'GitHub Releases'],
+    channels: ['Homebrew', 'Cargo', 'npm', 'pip', 'Docker Hub', 'GitHub Releases'],
   },
 ];
 ---
