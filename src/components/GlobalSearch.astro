@@ -90,25 +90,48 @@
 <script>
   // Search index - optimized for performance
   const searchIndex = [
-    // Core docs
-    { title: 'Installation', type: 'docs', url: '/docs/installation', content: 'Install RAPS', tags: ['install', 'setup'] },
-    { title: 'Configuration', type: 'docs', url: '/docs/configuration', content: 'Setup credentials', tags: ['config', 'auth'] },
-    { title: 'Authentication', type: 'docs', url: '/docs/auth', content: 'OAuth flows', tags: ['oauth', 'token'] },
-    { title: 'Translation', type: 'docs', url: '/docs/translation', content: 'Convert CAD files', tags: ['convert', 'cad'] },
-    { title: 'GitHub Actions', type: 'docs', url: '/docs/mode-github-actions', content: 'CI/CD integration', tags: ['ci', 'pipeline'] },
+    // Core docs - Getting Started
+    { title: 'Introduction', type: 'docs', url: '/docs/introduction', content: 'Learn what RAPS is and what it can do', tags: ['overview', 'about'] },
+    { title: 'Getting Started', type: 'docs', url: '/docs/getting-started', content: 'Start using RAPS CLI quickly', tags: ['start', 'guide', 'beginner'] },
+    { title: 'Installation', type: 'docs', url: '/docs/installation', content: 'Install RAPS via Cargo, Homebrew, Scoop, or Docker', tags: ['install', 'setup', 'cargo', 'homebrew', 'scoop', 'docker'] },
+    { title: 'Configuration', type: 'docs', url: '/docs/configuration', content: 'Setup APS credentials and config profiles', tags: ['config', 'auth', 'credentials', 'env'] },
+    { title: 'Authentication', type: 'docs', url: '/docs/auth', content: 'OAuth 2.0 flows and token management', tags: ['oauth', 'token', 'login'] },
+    { title: 'Usage Modes', type: 'docs', url: '/docs/usage-modes', content: 'CLI, Shell, Actions, Docker, MCP modes', tags: ['modes', 'shell', 'docker', 'mcp'] },
+    { title: 'Troubleshooting', type: 'docs', url: '/docs/troubleshooting', content: 'Fix common setup and runtime errors', tags: ['errors', 'debug', 'fix'] },
+
+    // Docs - Commands
+    { title: 'Translation', type: 'docs', url: '/docs/translation', content: 'Convert and translate CAD/BIM files via Model Derivative', tags: ['convert', 'cad', 'model derivative', 'translate'] },
+    { title: 'Object Storage (OSS)', type: 'docs', url: '/docs/oss', content: 'Upload, download, and manage files in OSS buckets', tags: ['oss', 'bucket', 'upload', 'download', 'storage'] },
+    { title: 'Data Management', type: 'docs', url: '/docs/data-management', content: 'Manage hubs, projects, folders, and items', tags: ['hubs', 'projects', 'folders', 'bim360', 'acc'] },
+    { title: 'Design Automation', type: 'docs', url: '/docs/design-automation', content: 'Run automated design tasks with Design Automation API', tags: ['automation', 'revit', 'inventor', 'appbundle'] },
+    { title: 'Webhooks', type: 'docs', url: '/docs/webhooks', content: 'Subscribe to APS events and notifications', tags: ['webhooks', 'events', 'subscribe'] },
+
+    // Docs - Modes
+    { title: 'GitHub Actions', type: 'docs', url: '/docs/mode-github-actions', content: 'CI/CD integration with GitHub Actions workflows', tags: ['ci', 'pipeline', 'github', 'actions', 'workflow'] },
+    { title: 'Docker Mode', type: 'docs', url: '/docs/mode-docker', content: 'Run RAPS in Docker containers', tags: ['docker', 'container', 'ci'] },
+    { title: 'Shell Mode', type: 'docs', url: '/docs/mode-shell', content: 'Interactive shell for APS operations', tags: ['shell', 'interactive', 'repl'] },
+    { title: 'MCP Server Mode', type: 'docs', url: '/docs/mode-mcp', content: 'Model Context Protocol server for AI agents', tags: ['mcp', 'ai', 'llm', 'agent'] },
     
     // Tools
-    { title: 'OAuth Scope Builder', type: 'tool', url: '/tools/scope-builder', content: 'Build scopes', tags: ['oauth', 'scope'] },
-    { title: 'Token Decoder', type: 'tool', url: '/tools/token-decoder', content: 'Decode tokens', tags: ['jwt', 'debug'] },
-    { title: 'URN Encoder', type: 'tool', url: '/tools/urn-encoder', content: 'Encode URNs', tags: ['urn', 'encode'] },
+    { title: 'OAuth Scope Builder', type: 'tool', url: '/tools/scope-builder', content: 'Build APS OAuth scopes visually', tags: ['oauth', 'scope', 'permissions'] },
+    { title: 'Token Decoder', type: 'tool', url: '/tools/token-decoder', content: 'Decode and inspect JWT tokens', tags: ['jwt', 'debug', 'token'] },
+    { title: 'URN Encoder', type: 'tool', url: '/tools/urn-encoder', content: 'Encode and decode URNs for Model Derivative', tags: ['urn', 'encode', 'decode', 'base64'] },
+    { title: 'Tax Calculator', type: 'tool', url: '/tools/manual-tax-calculator', content: 'Manual tax rate calculator', tags: ['tax', 'calculator'] },
     
     // Pages
-    { title: 'Quick Start', type: 'page', url: '/quickstart', content: 'Get started', tags: ['start', 'guide'] },
-    { title: 'Roadmap', type: 'page', url: '/roadmap', content: 'Future features', tags: ['roadmap'] },
-    { title: 'APS Hierarchy', type: 'page', url: '/resources/aps-hierarchy', content: 'Visual service map', tags: ['hierarchy', 'visual', 'architecture'] },
+    { title: 'Quick Start', type: 'page', url: '/quickstart', content: 'Get started with RAPS in minutes', tags: ['start', 'guide', 'beginner'] },
+    { title: 'Roadmap', type: 'page', url: '/roadmap', content: 'Upcoming features and development plans', tags: ['roadmap', 'planned', 'future'] },
+    { title: 'Changelog', type: 'page', url: '/changelog', content: 'Release history and version notes', tags: ['releases', 'versions', 'changelog'] },
+    { title: 'API Coverage', type: 'page', url: '/api-coverage', content: 'Supported APS API endpoints', tags: ['api', 'coverage', 'endpoints'] },
+    { title: 'About', type: 'page', url: '/about', content: 'Project background and author', tags: ['about', 'author'] },
+    { title: 'Distributions', type: 'page', url: '/distributions', content: 'Download and install options', tags: ['download', 'install', 'binary'] },
+    { title: 'Glossary', type: 'page', url: '/glossary', content: 'APS, CAD, and DevOps terminology', tags: ['glossary', 'terms', 'definitions'] },
+    { title: 'Blog', type: 'page', url: '/blog', content: 'Articles about CI/CD for APS, tutorials, and guides', tags: ['blog', 'articles', 'tutorials'] },
+    { title: 'APS Hierarchy', type: 'page', url: '/resources/aps-hierarchy', content: 'Visual APS service architecture map', tags: ['hierarchy', 'visual', 'architecture'] },
+    { title: 'Developer Resources', type: 'page', url: '/resources', content: 'Cheat sheets, guides, and examples', tags: ['resources', 'cheatsheet', 'examples'] },
 
     // Products
-    { title: 'raps-mock', type: 'product', url: '/products/raps-mock', content: 'APS API mock server for testing', tags: ['mock', 'server', 'testing', 'ci', 'local'] },
+    { title: 'raps-mock', type: 'product', url: '/products/raps-mock', content: 'APS API mock server for offline testing', tags: ['mock', 'server', 'testing', 'ci', 'local'] },
     { title: 'raps-twin', type: 'product', url: '/products/raps-twin', content: 'Engineering Department Digital Twin simulation', tags: ['simulation', 'digital twin', 'mesa', 'simpy', 'eddt'] },
   ];
   
@@ -323,12 +346,4 @@
   });
 </script>
 
-<style>
-  .perspective-1000 {
-    perspective: 1000px;
-  }
-  
-  .rotate-x-2 {
-    transform: rotateX(2deg);
-  }
-</style>
+
