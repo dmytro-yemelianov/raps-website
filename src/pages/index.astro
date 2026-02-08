@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TerminalDemo from '../components/TerminalDemo.astro';
+import TerminalGif from '../components/TerminalGif.astro';
 import DownloadButton from '../components/DownloadButton.astro';
 import GitHubStars from '../components/GitHubStars.astro';
 import UserOnboarding from '../components/UserOnboarding.astro';
@@ -143,7 +143,11 @@ const quickStart = [
         <div class="mt-20 w-full max-w-4xl perspective-1000">
           <div class="relative transform rotate-x-2 group">
             <div class="absolute -inset-1 bg-gradient-to-r from-rapeseed-500 to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-            <TerminalDemo />
+            <TerminalGif
+              src="/terminal/raps-hero.gif"
+              title="Terminal — raps"
+              alt="RAPS CLI demo showing authentication, bucket listing, and model translation"
+            />
           </div>
         </div>
 

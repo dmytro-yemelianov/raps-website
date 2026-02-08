@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import TerminalGif from '../components/TerminalGif.astro';
 
 const steps = [
   {
@@ -344,6 +345,26 @@ const nextSteps = [
                         <div class="text-slate-400 mt-1 whitespace-pre-wrap">{line.output}</div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Terminal GIF recordings */}
+                {step.number === '03' && (
+                  <div class="mt-6">
+                    <TerminalGif
+                      src="/terminal/raps-auth.gif"
+                      title="Terminal — raps auth"
+                      alt="RAPS authentication test and whoami commands"
+                    />
+                  </div>
+                )}
+                {step.number === '04' && (
+                  <div class="mt-6">
+                    <TerminalGif
+                      src="/terminal/raps-buckets.gif"
+                      title="Terminal — raps bucket"
+                      alt="RAPS bucket list and create operations"
+                    />
                   </div>
                 )}
               </div>
