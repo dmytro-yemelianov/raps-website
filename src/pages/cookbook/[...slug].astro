@@ -43,38 +43,40 @@ const nextDoc = sectionIndex < categoryDocs.length - 1 ? categoryDocs[sectionInd
   description={doc.data.description}
   currentSlug={slug}
 >
-  <article class="docs-content">
-    <Content />
-  </article>
+  <div class="max-w-4xl mx-auto px-6 py-12">
+    <article class="docs-content">
+      <Content />
+    </article>
 
-  <!-- Navigation -->
-  <nav class="mt-16 pt-8 border-t border-slate-800">
-    <div class="flex justify-between gap-4">
-      {prevDoc ? (
-        <a
-          href={`/cookbook/${getDocSlug(prevDoc)}`}
-          class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
-        >
-          <div class="text-sm text-slate-500 mb-1">&larr; Previous</div>
-          <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
-            {prevDoc.data.icon && <span class="mr-2">{prevDoc.data.icon}</span>}
-            {prevDoc.data.title}
-          </div>
-        </a>
-      ) : <div class="flex-1"></div>}
+    <!-- Navigation -->
+    <nav class="mt-16 pt-8 border-t border-slate-800">
+      <div class="flex justify-between gap-4">
+        {prevDoc ? (
+          <a
+            href={`/cookbook/${getDocSlug(prevDoc)}`}
+            class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
+          >
+            <div class="text-sm text-slate-500 mb-1">&larr; Previous</div>
+            <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
+              {prevDoc.data.icon && <span class="mr-2">{prevDoc.data.icon}</span>}
+              {prevDoc.data.title}
+            </div>
+          </a>
+        ) : <div class="flex-1"></div>}
 
-      {nextDoc ? (
-        <a
-          href={`/cookbook/${getDocSlug(nextDoc)}`}
-          class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
-        >
-          <div class="text-sm text-slate-500 mb-1">Next &rarr;</div>
-          <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
-            {nextDoc.data.title}
-            {nextDoc.data.icon && <span class="ml-2">{nextDoc.data.icon}</span>}
-          </div>
-        </a>
-      ) : <div class="flex-1"></div>}
-    </div>
-  </nav>
+        {nextDoc ? (
+          <a
+            href={`/cookbook/${getDocSlug(nextDoc)}`}
+            class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
+          >
+            <div class="text-sm text-slate-500 mb-1">Next &rarr;</div>
+            <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
+              {nextDoc.data.title}
+              {nextDoc.data.icon && <span class="ml-2">{nextDoc.data.icon}</span>}
+            </div>
+          </a>
+        ) : <div class="flex-1"></div>}
+      </div>
+    </nav>
+  </div>
 </CookbookLayout>

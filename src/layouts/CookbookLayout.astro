@@ -303,17 +303,8 @@ const cleanTitle = (title: string) => {
       </div>
 
       <!-- Main content -->
-      <main class="flex-1 lg:ml-64 min-h-screen">
-        <div class="max-w-4xl mx-auto px-6 py-12">
-
-          <div class="docs-content">
-            <GlossaryText>
-              <slot />
-            </GlossaryText>
-          </div>
-
-          </div>
-        </div>
+      <main class="flex-1 lg:ml-64 min-h-screen pt-16">
+        <slot />
       </main>
     </div>
 
