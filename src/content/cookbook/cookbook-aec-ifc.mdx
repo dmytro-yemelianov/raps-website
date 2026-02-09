@@ -1,0 +1,389 @@
+---
+title: "IFC Open BIM Workflow"
+description: "Process IFC files for open BIM collaboration"
+category: "aec"
+order: 15
+icon: "🔗"
+---
+
+# IFC Open BIM Workflow
+
+Process IFC files for open BIM collaboration with external partners.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">External Partners</div>
+      <div class="space-y-2">
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">ArchiCAD</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Tekla</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Bentley</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Other BIM</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">IFC Exchange</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">IFC Files</div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">RAPS Processing</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Upload</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate SVF2</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">APS Cloud</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">OSS Bucket</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Viewables</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Metadata</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Coordination</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Forge Viewer</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Reports</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Partners</span>
+      <span>&#8594;</span>
+      <span>IFC</span>
+      <span>&#8594;</span>
+      <span>Process</span>
+      <span>&#8594;</span>
+      <span>Cloud</span>
+      <span>&#8594;</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Step 1: Upload IFC File
+
+```bash
+raps object upload my-bucket model.ifc
+```
+
+### Step 2: Translate to SVF2
+
+```bash
+URN=$(raps object urn my-bucket model.ifc --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Step 3: Verify Translation
+
+```bash
+raps translate manifest "$URN"
+```
+
+### Step 4: Extract IFC Data
+
+```bash
+# Get metadata
+raps derivative metadata "$URN" --output json > ifc-metadata.json
+
+# Get IFC property sets
+raps derivative properties "$URN" --output json > ifc-properties.json
+
+# Get model hierarchy
+raps derivative tree "$URN" --output json > ifc-tree.json
+```
+
+### Step 5: Analyze IFC Content
+
+```bash
+# Count elements by IFC type
+cat ifc-properties.json | jq '
+  group_by(.properties.IfcType) |
+  map({type: .[0].properties.IfcType, count: length}) |
+  sort_by(-.count)'
+
+# List all property sets
+cat ifc-properties.json | jq '[.[].properties | keys] | flatten | unique'
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/ifc-processing.yml
+name: IFC Processing Pipeline
+
+on:
+  push:
+    paths:
+      - 'ifc/**/*.ifc'
+
+env:
+  BUCKET: ifc-exchange-${{ github.repository_id }}
+
+jobs:
+  process-ifc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Process IFC files
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./ifc-reports
+
+          for ifc in ifc/**/*.ifc; do
+            [ -f "$ifc" ] || continue
+
+            filename=$(basename "$ifc")
+            name="${filename%.ifc}"
+
+            echo "Processing: $ifc"
+
+            # Upload
+            raps object upload "$BUCKET" "$ifc"
+
+            # Translate
+            URN=$(raps object urn "$BUCKET" "$filename" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+
+            # Extract metadata
+            raps derivative metadata "$URN" --output json > "./ifc-reports/${name}-metadata.json"
+            raps derivative properties "$URN" --output json > "./ifc-reports/${name}-properties.json"
+
+            # Generate report
+            echo "# IFC Report: $filename" > "./ifc-reports/${name}-report.md"
+            echo "Processed: $(date)" >> "./ifc-reports/${name}-report.md"
+            echo "" >> "./ifc-reports/${name}-report.md"
+            echo "## Element Count by Type" >> "./ifc-reports/${name}-report.md"
+            cat "./ifc-reports/${name}-properties.json" | jq -r '
+              group_by(.properties.IfcType) |
+              map({type: .[0].properties.IfcType, count: length}) |
+              sort_by(-.count) |
+              .[] | "- \(.type): \(.count)"
+            ' >> "./ifc-reports/${name}-report.md"
+          done
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifc-reports
+          path: ./ifc-reports/
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Git Push</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm font-mono text-blue-300">ifc/**/*.ifc changed</div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">For Each IFC</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Upload to OSS</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Translate SVF2</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Extract Metadata</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Generate Report</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Artifacts</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">metadata.json</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">properties.json</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">report.md</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Process IFC from Partner
+
+```
+User: "We received IFC files from the structural engineer. Upload them and check if they translated correctly."
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Process partner IFC files</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_upload()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Upload IFC</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_translate_start()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="border-l-2 border-purple-500/30 ml-4 pl-4 py-2 my-2">
+        <div class="text-xs text-purple-400 mb-2">Wait for completion:</div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1 text-right text-purple-400">aps_translate_manifest()</div>
+          <div class="text-slate-500">&#8594;</div>
+          <div class="flex-1 text-amber-400">Check status</div>
+          <div class="text-slate-500">&#8594;</div>
+          <div class="flex-1 text-emerald-400"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Get properties</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400">IFC data</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Translation complete + summary</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> The structural IFC file has been uploaded and translated successfully.
+>
+> **Model Summary:**
+> - File: structural-model.ifc
+> - Status: Complete
+> - Elements: 2,847 total
+>
+> **By IFC Type:**
+> - IfcColumn: 156
+> - IfcBeam: 89
+> - IfcSlab: 12
+> - IfcFooting: 24
+> - IfcWall: 45
+> - IfcConnection: 2,521
+
+### Compare IFC Versions
+
+```
+User: "Compare the structural IFC we received today with last week's version"
+```
+
+**AI Response:**
+> IFC Version Comparison:
+>
+> | Element Type | Last Week | Today | Change |
+> |--------------|-----------|-------|--------|
+> | IfcColumn | 148 | 156 | +8 |
+> | IfcBeam | 85 | 89 | +4 |
+> | IfcSlab | 12 | 12 | 0 |
+> | IfcFooting | 24 | 24 | 0 |
+> | **Total** | **2,789** | **2,847** | **+58** |
+>
+> New elements appear to be in Grid Lines E-F, Levels 3-4.
+
+---
+
+## IFC Validation
+
+### Check Required Properties
+
+```bash
+# Verify all elements have required properties
+cat ifc-properties.json | jq '
+  [.[] | select(
+    .properties.GlobalId == null or
+    .properties.Name == null
+  )] | length'
+```
+
+### Export Property Set Summary
+
+```bash
+# List all Pset definitions
+cat ifc-properties.json | jq '
+  [.[].properties | to_entries | .[] | select(.key | startswith("Pset_"))] |
+  group_by(.key) |
+  map({pset: .[0].key, count: length})'
+```
+
+### Validate IFC Schema
+
+```bash
+# Check IFC types distribution
+cat ifc-properties.json | jq '
+  group_by(.properties.IfcType) |
+  map({
+    type: .[0].properties.IfcType,
+    count: length,
+    hasGlobalId: ([.[] | select(.properties.GlobalId != null)] | length),
+    hasName: ([.[] | select(.properties.Name != null)] | length)
+  }) |
+  sort_by(-.count)'
+```
+
+---
+
+## Related
+
+- [Model Coordination Pipeline](/cookbook/cookbook-aec-coordination)
+- [Metadata Extraction](/cookbook/cookbook-aec-metadata)
+- [Cookbook: AEC & BIM](/cookbook/cookbook-aec)

@@ -1,0 +1,138 @@
+---
+import CookbookLayout from '../../layouts/CookbookLayout.astro';
+import { getCollection } from 'astro:content';
+
+const allCookbook = await getCollection('cookbook');
+
+const getDocSlug = (doc: any) => {
+  const raw = doc.slug || doc.id || '';
+  return raw.replace(/\.mdx?$/, '');
+};
+
+const categories = [
+  {
+    id: 'aec',
+    title: 'AEC & BIM',
+    icon: '🏗️',
+    description: 'Architecture, Engineering & Construction workflows with Revit, IFC, and BIM formats',
+    color: 'blue',
+    landing: 'cookbook-aec',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-aec'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-aec-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+  {
+    id: 'construction',
+    title: 'Construction',
+    icon: '🚧',
+    description: 'Autodesk Construction Cloud, BIM 360, and construction management workflows',
+    color: 'orange',
+    landing: 'cookbook-construction',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-construction'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-acc-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+  {
+    id: 'manufacturing',
+    title: 'Manufacturing',
+    icon: '⚙️',
+    description: 'Manufacturing workflows with Inventor, Fusion, STEP, IGES, and CAD formats',
+    color: 'purple',
+    landing: 'cookbook-manufacturing',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-manufacturing'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-mfg-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+  {
+    id: 'media',
+    title: 'Media & Assets',
+    icon: '🎬',
+    description: '3D content creation, animation, visualization, and Reality Capture workflows',
+    color: 'emerald',
+    landing: 'cookbook-media',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-media'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-media-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
+  },
+];
+---
+
+<CookbookLayout title="Cookbook" currentSlug="">
+  <div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="mb-12 border-b border-slate-800 pb-8">
+      <h1 class="text-4xl font-display font-bold text-white mb-4">Cookbook</h1>
+      <p class="text-lg text-slate-400 max-w-2xl">
+        Real-world recipes and industry workflows for the RAPS CLI. Choose your industry vertical to get started.
+      </p>
+    </div>
+
+    <!-- Category Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+      {categories.map(cat => (
+        <a
+          href={`/cookbook/${cat.landing}`}
+          class="group block p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-slate-700 hover:bg-slate-900/80 transition-all"
+        >
+          <div class="flex items-start gap-4">
+            <span class="text-3xl">{cat.icon}</span>
+            <div class="flex-1">
+              <h2 class="text-xl font-bold text-white group-hover:text-rapeseed-400 transition-colors mb-2">
+                {cat.title}
+              </h2>
+              <p class="text-sm text-slate-400 mb-4">{cat.description}</p>
+              <div class="text-xs text-slate-500">
+                {cat.items.length} {cat.items.length === 1 ? 'recipe' : 'recipes'}
+              </div>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <!-- All Recipes by Category -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-12">
+      {categories.map(cat => (
+        cat.items.length > 0 && (
+          <div>
+            <h3 class="text-sm font-semibold text-rapeseed-400 uppercase tracking-wider mb-4">{cat.title}</h3>
+            <ul class="space-y-2">
+              {cat.items.map(doc => (
+                <li class="flex items-start">
+                  <div class="flex-shrink-0 w-4 h-4 flex items-center justify-center mt-0.5 mr-3">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rapeseed-400/60 transition-colors"></span>
+                  </div>
+                  <a
+                    href={`/cookbook/${getDocSlug(doc)}`}
+                    class="text-slate-400 hover:text-white transition-colors hover:underline underline-offset-2"
+                  >
+                    {doc.data.title.replace(/^Cookbook:\s*/i, '').replace(/^Recipe:\s*/i, '')}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      ))}
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-20 pt-10 border-t border-slate-800 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
+      <div>
+        <h3 class="text-white font-semibold mb-1">Need help?</h3>
+        <p class="text-slate-400 text-sm">Check the documentation or join our community.</p>
+      </div>
+      <div class="flex gap-4">
+        <a href="/docs" class="text-sm font-medium text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+          Documentation &rarr;
+        </a>
+        <a href="https://github.com/dmytro-yemelianov/raps/issues" target="_blank" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">
+          GitHub Issues &nearr;
+        </a>
+      </div>
+    </div>
+  </div>
+</CookbookLayout>

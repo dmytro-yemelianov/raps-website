@@ -28,6 +28,17 @@ const docs = defineCollection({
   }),
 });
 
+const cookbook = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/cookbook' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    order: z.number().default(999),
+    icon: z.string().optional(),
+  }),
+});
+
 const products = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/products' }),
   schema: z.object({
@@ -41,4 +52,4 @@ const products = defineCollection({
   }),
 });
 
-export const collections = { blog, docs, products };
+export const collections = { blog, cookbook, docs, products };

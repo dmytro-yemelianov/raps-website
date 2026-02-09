@@ -14,92 +14,86 @@ interface Props {
   currentSlug?: string;
 }
 
-const { 
-  title, 
-  description = 'RAPS CLI Documentation',
+const {
+  title,
+  description = 'RAPS Cookbook — Industry Recipes',
   currentSlug = '',
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-// Get all docs
-const allDocs = await getCollection('docs');
+// Get all cookbook entries
+const allCookbook = await getCollection('cookbook');
 
-// Helper to get slug from doc (Astro 5 uses id, Astro 4 uses slug)
+// Helper to get slug from doc
 const getDocSlug = (doc: any) => {
   const raw = doc.slug || doc.id || '';
   return raw.replace(/\.mdx?$/, '');
 };
 
-// Helper to check current section
-const getCurrentSection = () => {
-  const doc = allDocs.find(d => getDocSlug(d) === currentSlug);
-  if (doc?.data.section) return doc.data.section;
+// Determine which subsection the current page belongs to
+const getCurrentSubsection = () => {
+  if (currentSlug.startsWith('cookbook-aec')) return 'aec';
+  if (currentSlug.startsWith('cookbook-acc') || currentSlug === 'cookbook-construction') return 'construction';
+  if (currentSlug.startsWith('cookbook-mfg') || currentSlug === 'cookbook-manufacturing') return 'manufacturing';
+  if (currentSlug.startsWith('cookbook-media')) return 'media';
   return null;
 };
 
-const currentSection = getCurrentSection();
+const currentSubsection = getCurrentSubsection();
 
-// Navigation structure
-const navSections = [
+// Navigation structure — 4 industry subsections
+const navSubsections = [
   {
-    id: 'getting-started',
-    title: 'Getting Started',
-    items: allDocs
-      .filter(doc => doc.data.section === 'getting-started')
-      .sort((a, b) => a.data.order - b.data.order)
+    id: 'aec',
+    title: 'AEC & BIM',
+    icon: '🏗️',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-aec'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-aec-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
   },
   {
-    id: 'modes',
-    title: 'Usage Modes',
-    items: allDocs
-      .filter(doc => doc.data.section === 'modes')
-      .sort((a, b) => a.data.order - b.data.order)
+    id: 'construction',
+    title: 'Construction',
+    icon: '🚧',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-construction'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-acc-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
   },
   {
-    id: 'commands',
-    title: 'Commands',
-    items: allDocs
-      .filter(doc => doc.data.section === 'commands')
-      .sort((a, b) => a.data.order - b.data.order)
+    id: 'manufacturing',
+    title: 'Manufacturing',
+    icon: '⚙️',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-manufacturing'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-mfg-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
   },
   {
-    id: 'guides',
-    title: 'Guides',
-    items: allDocs
-      .filter(doc => doc.data.section === 'guides')
-      .sort((a, b) => a.data.order - b.data.order)
-  },
-  {
-    id: 'reference',
-    title: 'Reference',
-    items: allDocs
-      .filter(doc => doc.data.section === 'reference')
-      .sort((a, b) => a.data.order - b.data.order)
+    id: 'media',
+    title: 'Media & Assets',
+    icon: '🎬',
+    items: [
+      allCookbook.find(d => getDocSlug(d) === 'cookbook-media'),
+      ...allCookbook.filter(d => getDocSlug(d).startsWith('cookbook-media-')).sort((a, b) => a.data.order - b.data.order)
+    ].filter(Boolean)
   },
 ];
 
-// Add slug property to all docs in navSections for template use
-const addSlugToItems = (items: any[]) => items.map(doc => ({
-  ...doc,
-  slug: getDocSlug(doc)
-}));
-
-navSections.forEach(section => {
-  if (section.items) {
-    section.items = addSlugToItems(section.items);
-  }
+// Add slug property for template use
+navSubsections.forEach(sub => {
+  sub.items = sub.items.map(doc => ({
+    ...doc,
+    slug: getDocSlug(doc)
+  }));
 });
 
 const cleanTitle = (title: string) => {
   return title
     .replace(/^Cookbook:\s*/i, '')
     .replace(/^Recipe:\s*/i, '');
-};
-
-// Check if section contains current page
-const sectionContainsCurrent = (sectionId: string) => {
-  return currentSection === sectionId;
 };
 ---
 
@@ -111,22 +105,22 @@ const sectionContainsCurrent = (sectionId: string) => {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalURL} />
     <link rel="manifest" href="/manifest.json" />
-    
-    <title>{title} | RAPS Docs</title>
-    <meta name="title" content={`${title} | RAPS Docs`} />
+
+    <title>{title} | RAPS Cookbook</title>
+    <meta name="title" content={`${title} | RAPS Cookbook`} />
     <meta name="description" content={description} />
     <meta name="author" content="Dmytro Yemelianov" />
     <meta name="robots" content="index, follow" />
-    
+
     <meta property="og:type" content="article" />
     <meta property="og:url" content={canonicalURL} />
-    <meta property="og:title" content={`${title} | RAPS Docs`} />
+    <meta property="og:title" content={`${title} | RAPS Cookbook`} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL('/og-image.svg', Astro.site)} />
     <meta property="og:site_name" content="RAPS CLI" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={new URL('/og-image.svg', Astro.site)} />
-    
+
     <link rel="dns-prefetch" href="//github.com" />
     <link rel="dns-prefetch" href="//api.github.com" />
     <meta name="theme-color" content="#0f172a" />
@@ -135,46 +129,45 @@ const sectionContainsCurrent = (sectionId: string) => {
   <body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
     <Header />
     <GlobalSearch />
-    
+
     <div class="flex">
       <!-- Sidebar -->
       <aside class="hidden lg:block w-64 fixed left-0 top-16 bottom-0 overflow-y-auto border-r border-slate-800/50 bg-slate-950">
-        <!-- Documentation Search -->
+        <!-- Cookbook Search -->
         <div class="p-4 border-b border-slate-800/50">
           <div class="relative">
             <input
               type="text"
-              placeholder="Search docs..."
-              id="docs-search"
+              placeholder="Search recipes..."
+              id="cookbook-search"
               class="w-full px-3 py-2 pl-10 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 focus:bg-slate-800"
             />
             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <!-- Search Results -->
           <div id="search-results" class="hidden mt-3 bg-slate-800 border border-slate-700 rounded-lg max-h-64 overflow-y-auto">
             <div class="p-3 text-sm text-slate-400">Start typing to search...</div>
           </div>
         </div>
-        <nav class="py-6 px-4" id="docs-nav">
-          {navSections.map(section => (
-            section.items?.length > 0 && (
-              <div class="nav-section mb-1" data-section={section.id}>
+        <nav class="py-6 px-4" id="cookbook-nav">
+          {navSubsections.map(sub => (
+            sub.items.length > 0 && (
+              <div class="nav-section mb-1" data-section={sub.id}>
                 <button
                   class:list={[
                     "nav-toggle w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    sectionContainsCurrent(section.id)
+                    currentSubsection === sub.id
                       ? "text-white"
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
                   ]}
-                  data-expanded={sectionContainsCurrent(section.id) ? "true" : "false"}
+                  data-expanded={currentSubsection === sub.id ? "true" : "false"}
                 >
-                  <span>{section.title}</span>
+                  <span>{sub.title}</span>
                   <svg
                     class:list={[
                       "nav-chevron w-4 h-4 transition-transform duration-200",
-                      sectionContainsCurrent(section.id) ? "rotate-180" : ""
+                      currentSubsection === sub.id ? "rotate-180" : ""
                     ]}
                     fill="none"
                     stroke="currentColor"
@@ -183,42 +176,39 @@ const sectionContainsCurrent = (sectionId: string) => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                
-                {section.items && (
-                  <ul
-                    class:list={[
-                      "nav-items mt-1 ml-3 border-l border-slate-800 transition-all duration-200",
-                      sectionContainsCurrent(section.id) ? "" : "hidden"
-                    ]}
-                  >
-                    {section.items.map(doc => (
-                      <li>
-                        <a
-                          href={`/docs/${doc.slug}`}
-                          class:list={[
-                            "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
-                            currentSlug === doc.slug
-                              ? "text-rapeseed-400 border-rapeseed-400 font-medium"
-                              : "text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600"
-                          ]}
-                          data-current={currentSlug === doc.slug ? "true" : undefined}
-                        >
-                          {cleanTitle(doc.data.title)}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                
+
+                <ul
+                  class:list={[
+                    "nav-items mt-1 ml-3 border-l border-slate-800 transition-all duration-200",
+                    currentSubsection === sub.id ? "" : "hidden"
+                  ]}
+                >
+                  {sub.items.map(doc => (
+                    <li>
+                      <a
+                        href={`/cookbook/${doc.slug}`}
+                        class:list={[
+                          "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
+                          currentSlug === doc.slug
+                            ? "text-rapeseed-400 border-rapeseed-400 font-medium"
+                            : "text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600"
+                        ]}
+                        data-current={currentSlug === doc.slug ? "true" : undefined}
+                      >
+                        {cleanTitle(doc.data.title)}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )
           ))}
         </nav>
       </aside>
-      
+
       <!-- Mobile menu button -->
-      <button 
-        id="docs-menu-toggle"
+      <button
+        id="cookbook-menu-toggle"
         class="lg:hidden fixed bottom-6 left-6 z-50 p-3 bg-rapeseed-500 text-slate-900 rounded-full shadow-lg hover:bg-rapeseed-400 transition-colors"
         aria-label="Toggle navigation"
       >
@@ -226,55 +216,54 @@ const sectionContainsCurrent = (sectionId: string) => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
-      
+
       <!-- Mobile sidebar -->
-      <div id="docs-mobile-sidebar" class="lg:hidden fixed inset-0 z-40 hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="docs-sidebar-backdrop"></div>
+      <div id="cookbook-mobile-sidebar" class="lg:hidden fixed inset-0 z-40 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="cookbook-sidebar-backdrop"></div>
         <aside class="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 border-r border-slate-800 overflow-y-auto">
           <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-            <span class="font-semibold text-white">Documentation</span>
-            <button id="docs-menu-close" class="p-2 text-slate-400 hover:text-white">
+            <span class="font-semibold text-white">Cookbook</span>
+            <button id="cookbook-menu-close" class="p-2 text-slate-400 hover:text-white">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <!-- Mobile Documentation Search -->
+          <!-- Mobile Search -->
           <div class="p-4 border-b border-slate-800">
             <div class="relative">
               <input
                 type="text"
-                placeholder="Search docs..."
-                id="docs-search-mobile"
+                placeholder="Search recipes..."
+                id="cookbook-search-mobile"
                 class="w-full px-3 py-2 pl-10 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 focus:bg-slate-700"
               />
               <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <!-- Mobile Search Results -->
             <div id="search-results-mobile" class="hidden mt-3 bg-slate-700 border border-slate-600 rounded-lg max-h-64 overflow-y-auto">
               <div class="p-3 text-sm text-slate-400">Start typing to search...</div>
             </div>
           </div>
           <nav class="py-4 px-3">
-            {navSections.map(section => (
-              section.items?.length > 0 && (
-                <div class="nav-section mb-1" data-section={section.id}>
+            {navSubsections.map(sub => (
+              sub.items.length > 0 && (
+                <div class="nav-section mb-1" data-section={sub.id}>
                   <button
                     class:list={[
                       "nav-toggle w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                      sectionContainsCurrent(section.id)
+                      currentSubsection === sub.id
                         ? "text-white"
                         : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
                     ]}
-                    data-expanded={sectionContainsCurrent(section.id) ? "true" : "false"}
+                    data-expanded={currentSubsection === sub.id ? "true" : "false"}
                   >
-                    <span>{section.title}</span>
+                    <span>{sub.title}</span>
                     <svg
                       class:list={[
                         "nav-chevron w-4 h-4 transition-transform duration-200",
-                        sectionContainsCurrent(section.id) ? "rotate-180" : ""
+                        currentSubsection === sub.id ? "rotate-180" : ""
                       ]}
                       fill="none"
                       stroke="currentColor"
@@ -283,73 +272,70 @@ const sectionContainsCurrent = (sectionId: string) => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  
-                  {section.items && (
-                    <ul
-                      class:list={[
-                        "nav-items mt-1 ml-3 border-l border-slate-700 transition-all duration-200",
-                        sectionContainsCurrent(section.id) ? "" : "hidden"
-                      ]}
-                    >
-                      {section.items.map(doc => (
-                        <li>
-                          <a
-                            href={`/docs/${doc.slug}`}
-                            class:list={[
-                              "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
-                              currentSlug === doc.slug
-                                ? "text-rapeseed-400 border-rapeseed-400 font-medium"
-                                : "text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600"
-                            ]}
-                          >
-                            {cleanTitle(doc.data.title)}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  
+
+                  <ul
+                    class:list={[
+                      "nav-items mt-1 ml-3 border-l border-slate-700 transition-all duration-200",
+                      currentSubsection === sub.id ? "" : "hidden"
+                    ]}
+                  >
+                    {sub.items.map(doc => (
+                      <li>
+                        <a
+                          href={`/cookbook/${doc.slug}`}
+                          class:list={[
+                            "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
+                            currentSlug === doc.slug
+                              ? "text-rapeseed-400 border-rapeseed-400 font-medium"
+                              : "text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600"
+                          ]}
+                        >
+                          {cleanTitle(doc.data.title)}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )
             ))}
           </nav>
         </aside>
       </div>
-      
+
       <!-- Main content -->
       <main class="flex-1 lg:ml-64 min-h-screen">
         <div class="max-w-4xl mx-auto px-6 py-12">
-          
+
           <div class="docs-content">
             <GlossaryText>
               <slot />
             </GlossaryText>
           </div>
-          
+
           </div>
         </div>
       </main>
     </div>
-    
-    <script define:vars={{ navSections }}>
+
+    <script define:vars={{ navSubsections }}>
       // Mobile sidebar
-      const toggle = document.getElementById('docs-menu-toggle');
-      const sidebar = document.getElementById('docs-mobile-sidebar');
-      const close = document.getElementById('docs-menu-close');
-      const backdrop = document.getElementById('docs-sidebar-backdrop');
-      
+      const toggle = document.getElementById('cookbook-menu-toggle');
+      const sidebar = document.getElementById('cookbook-mobile-sidebar');
+      const close = document.getElementById('cookbook-menu-close');
+      const backdrop = document.getElementById('cookbook-sidebar-backdrop');
+
       toggle?.addEventListener('click', () => {
         sidebar?.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
       });
-      
+
       [close, backdrop].forEach(el => {
         el?.addEventListener('click', () => {
           sidebar?.classList.add('hidden');
           document.body.style.overflow = '';
         });
       });
-      
+
       // Collapsible navigation
       document.querySelectorAll('.nav-toggle').forEach(button => {
         button.addEventListener('click', () => {
@@ -357,7 +343,7 @@ const sectionContainsCurrent = (sectionId: string) => {
           const items = section?.querySelector('.nav-items');
           const chevron = button.querySelector('.nav-chevron');
           const isExpanded = button.getAttribute('data-expanded') === 'true';
-          
+
           if (items) {
             items.classList.toggle('hidden', isExpanded);
             button.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
@@ -365,51 +351,30 @@ const sectionContainsCurrent = (sectionId: string) => {
           }
         });
       });
-      
-      // Collapsible navigation subsections
-      document.querySelectorAll('.nav-subsection-toggle').forEach(button => {
-        button.addEventListener('click', () => {
-          const subsection = button.closest('.nav-subsection');
-          const items = subsection?.querySelector('.nav-items');
-          const chevron = button.querySelector('.nav-chevron');
-          const isExpanded = button.getAttribute('data-expanded') === 'true';
-          
-          if (items) {
-            items.classList.toggle('hidden', isExpanded);
-            button.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
-            chevron?.classList.toggle('rotate-180', !isExpanded);
-          }
-        });
-      });
-      
+
       // Scroll current nav item into view
       document.addEventListener('DOMContentLoaded', () => {
-        const currentLink = document.querySelector('#docs-nav a[data-current="true"]');
+        const currentLink = document.querySelector('#cookbook-nav a[data-current="true"]');
         if (currentLink) {
           currentLink.scrollIntoView({ block: 'center', behavior: 'instant' });
         }
       });
-      
+
       // Add copy buttons to code blocks
       document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.docs-content pre').forEach(pre => {
-          // Skip mermaid blocks
           if (pre.getAttribute('data-language') === 'mermaid') return;
-          
-          // Create wrapper
+
           const wrapper = document.createElement('div');
           wrapper.className = 'code-block-wrapper';
           pre.parentNode.insertBefore(wrapper, pre);
           wrapper.appendChild(pre);
-          
-          // Get language
+
           const lang = pre.getAttribute('data-language') || '';
-          
-          // Create header
+
           const header = document.createElement('div');
           header.className = 'code-block-header';
-          
-          // Language label
+
           if (lang) {
             const langLabel = document.createElement('span');
             langLabel.className = 'code-lang';
@@ -418,77 +383,16 @@ const sectionContainsCurrent = (sectionId: string) => {
           } else {
             header.appendChild(document.createElement('span'));
           }
-          
-          // Copy button
+
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copy-btn';
           copyBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>`;
           copyBtn.title = 'Copy code';
-          
+
           copyBtn.addEventListener('click', async () => {
-            let code = pre.querySelector('code')?.textContent || pre.textContent || '';
-            
-            // Strip prompt characters and filter output for shell/bash/powershell/cmd code blocks
-            const shellLanguages = ['bash', 'sh', 'shell', 'zsh', 'fish', 'powershell', 'ps1', 'ps', 'cmd', 'bat', 'terminal', 'console'];
-            if (shellLanguages.includes(lang.toLowerCase())) {
-              code = code.split('\n')
-                .map(line => {
-                  // Remove common prompt patterns:
-                  // $ , # , > , PS> , PS C:\> , C:\> , >>> , ...
-                  return line
-                    .replace(/^\s*\$+\s+/, '')           // $ or $$
-                    .replace(/^\s*#+\s+/, '')            // # (root prompt) - but keep comments
-                    .replace(/^\s*>\s+/, '')             // > (continuation)
-                    .replace(/^\s*PS\s*>\s*/, '')        // PS>
-                    .replace(/^\s*PS\s+[A-Z]:\\.*?>\s*/, '') // PS C:\...>
-                    .replace(/^\s*[A-Z]:\\.*?>\s*/, '')  // C:\...>
-                    .replace(/^\s*>>>\s+/, '')           // Python >>>
-                    .replace(/^\s*\.\.\.\s+/, '')        // ... continuation
-                    .replace(/^\s*\+\s+/, '');           // + continuation
-                })
-                .filter(line => {
-                  const trimmed = line.trim();
-                  // Skip empty lines within output blocks
-                  if (!trimmed) return true; // Keep empty lines for formatting
-                  
-                  // Skip lines that look like output (common patterns)
-                  // JSON output
-                  if (/^\s*[\{\}\[\]]/.test(trimmed) && !trimmed.includes('=')) return false;
-                  if (/^\s*"[^"]+"\s*:/.test(trimmed)) return false; // JSON key-value
-                  
-                  // Table-like output (lines starting with │ ├ └ ┌ ┐ ─ etc)
-                  if (/^[│├└┌┐┘┬┴┼─|+\-]/.test(trimmed)) return false;
-                  
-                  // Output lines starting with common prefixes
-                  if (/^(OK|ERROR|WARN|INFO|DEBUG|SUCCESS|FAILED|✓|✗|→|⟹|==>|-->)[\s:]/i.test(trimmed)) return false;
-                  
-                  // Lines that are clearly output (all caps status, timestamps, etc)
-                  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return false; // Timestamps
-                  if (/^\s*\d+\s+(bytes|files|items|objects|buckets)/i.test(trimmed)) return false; // Counts
-                  
-                  // Skip lines that look like command output (indented non-command text)
-                  // But keep comments (lines starting with #)
-                  if (line.startsWith('  ') && !trimmed.startsWith('#') && !trimmed.startsWith('raps ') && 
-                      !trimmed.startsWith('cargo ') && !trimmed.startsWith('brew ') && 
-                      !trimmed.startsWith('scoop ') && !trimmed.startsWith('docker ') &&
-                      !trimmed.startsWith('npm ') && !trimmed.startsWith('curl ') &&
-                      !trimmed.startsWith('wget ') && !trimmed.startsWith('git ') &&
-                      !trimmed.startsWith('cd ') && !trimmed.startsWith('mkdir ') &&
-                      !trimmed.startsWith('export ') && !trimmed.startsWith('set ') &&
-                      !trimmed.startsWith('$env:') && !trimmed.startsWith('echo ') &&
-                      !/^[a-z_][a-z0-9_]*=/i.test(trimmed)) {
-                    return false;
-                  }
-                  
-                  return true;
-                })
-                .join('\n')
-                .replace(/\n{3,}/g, '\n\n') // Collapse multiple empty lines
-                .trim();
-            }
-            
+            const code = pre.querySelector('code')?.textContent || pre.textContent || '';
             await navigator.clipboard.writeText(code);
             copyBtn.innerHTML = `<svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -499,12 +403,12 @@ const sectionContainsCurrent = (sectionId: string) => {
               </svg>`;
             }, 2000);
           });
-          
+
           header.appendChild(copyBtn);
           wrapper.insertBefore(header, pre);
         });
       });
-      
+
       // Mermaid diagrams
       document.addEventListener('DOMContentLoaded', async () => {
         if (typeof mermaid !== 'undefined') {
@@ -526,27 +430,21 @@ const sectionContainsCurrent = (sectionId: string) => {
               clusterBkg: '#0f172a',
               clusterBorder: '#334155',
               nodeTextColor: '#f1f5f9',
-              actorBorder: '#f5c542',
-              actorBkg: '#1e293b',
-              actorTextColor: '#f1f5f9',
-              signalColor: '#64748b',
-              noteBorderColor: '#f5c542',
-              noteBkgColor: '#1e293b',
             },
             flowchart: { curve: 'basis', padding: 20 },
             sequence: { actorMargin: 50, useMaxWidth: true },
           });
-          
+
           const mermaidBlocks = document.querySelectorAll('pre[data-language="mermaid"]');
-          
+
           for (let i = 0; i < mermaidBlocks.length; i++) {
             const preEl = mermaidBlocks[i];
             const codeEl = preEl.querySelector('code');
             const diagramCode = codeEl ? codeEl.textContent : preEl.textContent || '';
-            
+
             const container = document.createElement('div');
             container.className = 'mermaid-diagram';
-            
+
             try {
               const { svg } = await mermaid.render(`mermaid-${i}`, diagramCode);
               container.innerHTML = svg;
@@ -559,277 +457,221 @@ const sectionContainsCurrent = (sectionId: string) => {
           }
         }
       });
-      
-      // Documentation Search Implementation
-      let docsIndex = [];
-      
-      // Build search index from navigation
+
+      // Cookbook Search
+      let cookbookIndex = [];
+
       function buildSearchIndex() {
-        navSections.forEach(section => {
-          if (section.items) {
-            section.items.forEach(item => {
-              docsIndex.push({
-                title: item.data.title,
-                slug: item.slug,
-                description: item.data.description || '',
-                section: section.title,
-                url: `/docs/${item.slug}`
-              });
+        navSubsections.forEach(sub => {
+          sub.items.forEach(item => {
+            cookbookIndex.push({
+              title: item.data.title,
+              slug: item.slug,
+              description: item.data.description || '',
+              section: sub.title,
+              url: `/cookbook/${item.slug}`
             });
-          }
-          
+          });
         });
       }
-      
-      // Search function
-      function searchDocs(query) {
+
+      function searchCookbook(query) {
         if (!query || query.length < 2) return [];
-        
-        const results = docsIndex.filter(item => {
+        return cookbookIndex.filter(item => {
           const searchText = `${item.title} ${item.description} ${item.section}`.toLowerCase();
-          const queryLower = query.toLowerCase();
-          return searchText.includes(queryLower);
-        }).slice(0, 8); // Limit to 8 results
-        
-        return results;
+          return searchText.includes(query.toLowerCase());
+        }).slice(0, 8);
       }
-      
-      // Render search results
+
       function renderSearchResults(results, containerId) {
         const container = document.getElementById(containerId);
-        
         if (results.length === 0) {
           container.innerHTML = '<div class="p-3 text-sm text-slate-400">No results found</div>';
           return;
         }
-        
-        const html = results.map(result => `
+        const inputId = containerId.includes('mobile') ? 'cookbook-search-mobile' : 'cookbook-search';
+        const query = document.getElementById(inputId).value;
+        container.innerHTML = results.map(result => `
           <a href="${result.url}" class="block p-3 hover:bg-slate-700 transition-colors border-b border-slate-600 last:border-b-0">
-            <div class="font-medium text-white text-sm">${highlightMatch(result.title, document.getElementById(containerId.includes('mobile') ? 'docs-search-mobile' : 'docs-search').value)}</div>
+            <div class="font-medium text-white text-sm">${highlightMatch(result.title, query)}</div>
             <div class="text-xs text-slate-400 mt-1">${result.section}</div>
-            ${result.description ? `<div class="text-xs text-slate-500 mt-1 line-clamp-2">${highlightMatch(result.description, document.getElementById(containerId.includes('mobile') ? 'docs-search-mobile' : 'docs-search').value)}</div>` : ''}
+            ${result.description ? `<div class="text-xs text-slate-500 mt-1 line-clamp-2">${highlightMatch(result.description, query)}</div>` : ''}
           </a>
         `).join('');
-        
-        container.innerHTML = html;
       }
-      
-      // Highlight search matches
+
       function highlightMatch(text, query) {
         if (!query) return text;
         const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')})`, 'gi');
         return text.replace(regex, '<mark class="bg-rapeseed-400/30 text-rapeseed-300">$1</mark>');
       }
-      
-      // Setup search functionality
+
       function setupSearch() {
         buildSearchIndex();
-        
-        const searchInputs = ['docs-search', 'docs-search-mobile'];
+        const searchInputs = ['cookbook-search', 'cookbook-search-mobile'];
         const resultContainers = ['search-results', 'search-results-mobile'];
-        
+
         searchInputs.forEach((inputId, index) => {
           const input = document.getElementById(inputId);
           const resultsContainer = document.getElementById(resultContainers[index]);
-          
           if (!input || !resultsContainer) return;
-          
+
           let searchTimeout;
-          
           input.addEventListener('input', function() {
             clearTimeout(searchTimeout);
             const query = this.value.trim();
-            
-            if (query.length === 0) {
-              resultsContainer.classList.add('hidden');
-              return;
-            }
-            
+            if (query.length === 0) { resultsContainer.classList.add('hidden'); return; }
             if (query.length < 2) {
               resultsContainer.classList.remove('hidden');
               resultsContainer.innerHTML = '<div class="p-3 text-sm text-slate-400">Type at least 2 characters...</div>';
               return;
             }
-            
             searchTimeout = setTimeout(() => {
-              const results = searchDocs(query);
+              const results = searchCookbook(query);
               renderSearchResults(results, resultContainers[index]);
               resultsContainer.classList.remove('hidden');
-              
-              // Track search usage
-              if (window.analytics) {
-                window.analytics.track('docs_search', {
-                  query: query,
-                  results_count: results.length,
-                  is_mobile: inputId.includes('mobile')
-                });
-              }
             }, 200);
           });
-          
+
           input.addEventListener('focus', function() {
-            if (this.value.trim().length >= 2) {
-              resultsContainer.classList.remove('hidden');
-            }
+            if (this.value.trim().length >= 2) resultsContainer.classList.remove('hidden');
           });
-          
-          // Hide results when clicking outside
+
           document.addEventListener('click', function(e) {
             if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
               resultsContainer.classList.add('hidden');
             }
           });
-          
-          // Keyboard navigation
+
           input.addEventListener('keydown', function(e) {
             const links = resultsContainer.querySelectorAll('a');
             if (links.length === 0) return;
-            
             let activeIndex = -1;
-            links.forEach((link, index) => {
-              if (link.classList.contains('bg-slate-600')) {
-                activeIndex = index;
-                link.classList.remove('bg-slate-600');
-              }
+            links.forEach((link, i) => {
+              if (link.classList.contains('bg-slate-600')) { activeIndex = i; link.classList.remove('bg-slate-600'); }
             });
-            
-            if (e.key === 'ArrowDown') {
-              e.preventDefault();
-              activeIndex = Math.min(activeIndex + 1, links.length - 1);
-            } else if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              activeIndex = Math.max(activeIndex - 1, 0);
-            } else if (e.key === 'Enter') {
-              e.preventDefault();
-              if (activeIndex >= 0) {
-                links[activeIndex].click();
-              }
-            }
-            
-            if (activeIndex >= 0) {
-              links[activeIndex].classList.add('bg-slate-600');
-            }
+            if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, links.length - 1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (activeIndex >= 0) links[activeIndex].click(); }
+            if (activeIndex >= 0) links[activeIndex].classList.add('bg-slate-600');
           });
         });
       }
-      
-      // Initialize search when page loads
+
       document.addEventListener('DOMContentLoaded', setupSearch);
-      
     </script>
-    
+
     <!-- Mermaid.js (pinned to 10.9.3 for stability) -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
-    
+
     <Footer />
     <Analytics />
   </body>
 </html>
 
 <style is:global>
-  /* Docs prose styling */
+  /* Docs prose styling — shared with DocsLayout */
   .docs-content {
     @apply text-slate-300 leading-relaxed;
   }
-  
+
   .docs-content h1 {
     @apply text-3xl sm:text-4xl font-display font-bold text-white mb-6;
   }
-  
+
   .docs-content h2 {
     @apply text-2xl font-display font-bold text-white mt-12 mb-4 pb-2 border-b border-slate-800;
   }
-  
+
   .docs-content h3 {
     @apply text-xl font-semibold text-white mt-8 mb-3;
   }
-  
+
   .docs-content h4 {
     @apply text-lg font-semibold text-slate-200 mt-6 mb-2;
   }
-  
+
   .docs-content p {
     @apply mb-4;
   }
-  
+
   .docs-content a {
     @apply text-rapeseed-400 hover:text-rapeseed-300 underline underline-offset-2;
   }
-  
+
   .docs-content ul {
     @apply list-disc list-inside mb-4 space-y-1;
   }
-  
+
   .docs-content ol {
     @apply list-decimal list-inside mb-4 space-y-1;
   }
-  
+
   .docs-content li {
     @apply text-slate-300;
   }
-  
+
   .docs-content code:not(pre code) {
     @apply bg-slate-800 text-rapeseed-400 px-1.5 py-0.5 rounded text-sm font-mono;
   }
-  
-  /* Code blocks with header */
+
   .docs-content .code-block-wrapper {
     @apply mb-4 rounded-lg overflow-hidden border border-slate-800;
   }
-  
+
   .docs-content .code-block-header {
     @apply flex items-center justify-between px-4 py-2 bg-slate-800/80 border-b border-slate-700/50;
   }
-  
+
   .docs-content .code-lang {
     @apply text-xs font-medium text-slate-400 uppercase tracking-wider;
   }
-  
+
   .docs-content .copy-btn {
     @apply p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-colors;
   }
-  
+
   .docs-content .code-block-wrapper pre {
     @apply mb-0 border-0 rounded-none;
   }
-  
+
   .docs-content pre {
     @apply bg-slate-900 border border-slate-800 rounded-lg p-4 overflow-x-auto mb-4;
   }
-  
+
   .docs-content pre code {
     @apply text-sm font-mono;
   }
-  
+
   .docs-content blockquote {
     @apply border-l-4 border-rapeseed-500 pl-4 italic text-slate-400 my-4;
   }
-  
+
   .docs-content table {
     @apply w-full border-collapse mb-4;
   }
-  
+
   .docs-content th {
     @apply bg-slate-800 text-left px-4 py-2 font-semibold text-white border border-slate-700;
   }
-  
+
   .docs-content td {
     @apply px-4 py-2 border border-slate-700;
   }
-  
+
   .docs-content tr:nth-child(even) {
     @apply bg-slate-900/50;
   }
-  
+
   .docs-content hr {
     @apply border-slate-800 my-8;
   }
-  
+
   .docs-content strong {
     @apply font-semibold text-white;
   }
 
-  /* Terminal GIF recordings in docs — matches TerminalGif.astro component */
+  /* Terminal GIF recordings */
   .docs-content p:has(> img[src$=".gif"]) {
     @apply my-6 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-2xl;
     display: flex;
@@ -863,7 +705,7 @@ const sectionContainsCurrent = (sectionId: string) => {
   .mermaid-diagram {
     @apply bg-slate-900/50 border border-slate-700/50 rounded-xl p-6 my-6 overflow-x-auto flex justify-center;
   }
-  
+
   .mermaid-diagram svg {
     max-width: 100%;
     height: auto;

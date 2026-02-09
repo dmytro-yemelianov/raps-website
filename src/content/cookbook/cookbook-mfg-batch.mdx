@@ -1,0 +1,459 @@
+---
+title: "Multi-Format Batch Processing"
+description: "Batch process directories of CAD files"
+category: "manufacturing"
+order: 23
+icon: "📦"
+---
+
+# Multi-Format Batch Processing
+
+Process multiple CAD formats in bulk with parallel translation.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">CAD Directory</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">\*.iam</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.ipt</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.stp</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.igs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.sldprt</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">File Discovery</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Scan Directory</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Filter Supported</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Parallel Upload</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker 1</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker 2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker N</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Parallel Translation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job 1</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job 2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job N</div>
+      </div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Status Tracking</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Monitor Progress</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Collect Results</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Output</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Status Report</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Error Log</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>Discovery</span>
+      <span class="text-slate-600">→</span>
+      <span>Upload</span>
+      <span class="text-slate-600">→</span>
+      <span>Translate</span>
+      <span class="text-slate-600">→</span>
+      <span>Monitor</span>
+      <span class="text-slate-600">→</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Step 1: Discover and Upload Files
+
+```bash
+# Upload all supported CAD files
+for ext in iam ipt stp step igs iges sldprt sldasm; do
+  for file in ./cad-files/*.$ext; do
+    [ -f "$file" ] && raps object upload cad-library "$file"
+  done
+done
+```
+
+### Step 2: Parallel Translation
+
+```bash
+# Start all translations in parallel
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  echo "Starting: $key"
+  raps translate start "$URN" --format svf2 &
+done
+
+# Wait for all background jobs
+wait
+echo "All translations started"
+```
+
+### Step 3: Monitor Status
+
+```bash
+# Check status of all translations
+echo "Translation Status:"
+echo "==================="
+
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+  PROGRESS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.progress // "0"')
+
+  case $STATUS in
+    success)  echo "✓ $key" ;;
+    failed)   echo "✗ $key (FAILED)" ;;
+    *)        echo "⋯ $key ($STATUS $PROGRESS%)" ;;
+  esac
+done
+```
+
+### Step 4: Generate Report
+
+```bash
+# Create batch processing report
+echo "# Batch Translation Report" > batch-report.md
+echo "Date: $(date)" >> batch-report.md
+echo "" >> batch-report.md
+
+SUCCESS=0
+FAILED=0
+PENDING=0
+
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+  echo "| $key | $STATUS |" >> batch-report.md
+done
+
+echo "" >> batch-report.md
+echo "Summary: $SUCCESS success, $FAILED failed, $PENDING pending" >> batch-report.md
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/batch-processing.yml
+name: Batch CAD Processing
+
+on:
+  push:
+    paths:
+      - 'cad-files/**'
+  workflow_dispatch:
+
+env:
+  BUCKET: batch-cad-${{ github.run_id }}
+
+jobs:
+  process-batch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Create bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy transient --region US
+
+      - name: Upload all CAD files
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          find cad-files -type f \( -name "*.iam" -o -name "*.ipt" -o -name "*.stp" -o -name "*.igs" \) | while read file; do
+            echo "Uploading: $file"
+            raps object upload "$BUCKET" "$file" --parallel
+          done
+
+      - name: Start all translations
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            raps translate start "$URN" --format svf2 &
+          done
+          wait
+
+      - name: Wait for translations
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          MAX_WAIT=1800  # 30 minutes
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            PENDING=$(raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+              URN=$(raps object urn "$BUCKET" "$key" --output plain)
+              STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+              [ "$STATUS" != "success" ] && [ "$STATUS" != "failed" ] && echo "pending"
+            done | wc -l)
+
+            [ "$PENDING" -eq 0 ] && break
+
+            echo "Waiting... $PENDING translations in progress"
+            sleep 30
+            ELAPSED=$((ELAPSED + 30))
+          done
+
+      - name: Generate report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# Batch Processing Report" > report.md
+          echo "" >> report.md
+          echo "| File | Status |" >> report.md
+          echo "|------|--------|" >> report.md
+
+          SUCCESS=0
+          FAILED=0
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "unknown"')
+            echo "| $key | $STATUS |" >> report.md
+          done
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-report
+          path: report.md
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Trigger</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Push to cad-files/</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Setup</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Create temp bucket</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Parallel Upload</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Find CAD files</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload all files</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Parallel Translation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Start all jobs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Wait for completion</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Report</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Generate status report</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload artifact</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Batch Process Directory
+
+```
+User: "Process all CAD files in the supplier-parts folder"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Process supplier-parts folder</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Scan directory for CAD files</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: For each file</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Upload</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Uploaded 15 files</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Start translations</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Start job</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">All translations started</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Monitor</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_manifest(urn)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Final status report</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> Processing supplier-parts folder...
+>
+> **Upload Phase:**
+> Uploaded 15 files (total 245 MB)
+>
+> **Translation Phase:**
+> | File | Status | Time |
+> |------|--------|------|
+> | bracket-a.stp | Complete | 45s |
+> | bracket-b.stp | Complete | 42s |
+> | housing.iam | Complete | 2m 15s |
+> | shaft.ipt | Complete | 28s |
+> | ... | ... | ... |
+>
+> **Summary:** 15/15 successful, 0 failed
+
+### Check Batch Status
+
+```
+User: "How many files are still processing in the batch?"
+```
+
+**AI Response:**
+> Batch Status:
+> - **Complete:** 12 files
+> - **In Progress:** 3 files (housing.iam at 75%, gearbox.iam at 45%, frame.sldasm at 30%)
+> - **Failed:** 0 files
+>
+> Estimated time remaining: ~3 minutes
+
+---
+
+## Optimization Tips
+
+### Parallel Upload with Concurrency Limit
+
+```bash
+# Control concurrency to avoid rate limits
+MAX_CONCURRENT=5
+
+find ./cad-files -type f \( -name "*.stp" -o -name "*.iam" \) | \
+  xargs -P $MAX_CONCURRENT -I {} sh -c '
+    raps object upload cad-library "{}"
+    echo "Uploaded: {}"
+  '
+```
+
+### Prioritize by File Size
+
+```bash
+# Process smaller files first for quick wins
+find ./cad-files -type f -name "*.stp" -printf "%s %p\n" | \
+  sort -n | cut -d' ' -f2 | while read file; do
+    raps object upload cad-library "$file"
+  done
+```
+
+### Skip Already Translated
+
+```bash
+# Check if already translated before starting
+for key in $(raps object list cad-library --output json | jq -r '.[].key'); do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // ""')
+
+  if [ "$STATUS" != "success" ]; then
+    echo "Translating: $key"
+    raps translate start "$URN" --format svf2
+  else
+    echo "Skipping (already done): $key"
+  fi
+done
+```
+
+---
+
+## Related
+
+- [CAD Translation Pipeline](/cookbook/cookbook-mfg-translation)
+- [Thumbnail Catalog Generation](/cookbook/cookbook-mfg-catalog)
+- [Cookbook: Manufacturing](/cookbook/cookbook-manufacturing)

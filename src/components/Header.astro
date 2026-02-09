@@ -8,6 +8,7 @@ const navItems = [
     color: 'rapeseed'
   },
   { href: '/blog', label: 'Blog' },
+  { href: '/cookbook', label: 'Cookbook', color: 'emerald' },
   {
     label: 'Products',
     submenu: [
@@ -43,6 +44,7 @@ const currentPath = Astro.url.pathname;
 // Helper to check if current path matches nav item
 const isActive = (href: string) => {
   if (href === '/') return currentPath === '/';
+  if (href === '/cookbook') return currentPath.startsWith('/cookbook');
   if (href === '/docs') return currentPath.startsWith('/docs');
   if (href === '/tools') return currentPath.startsWith('/tools');
   if (href === '/resources') return currentPath.startsWith('/resources');

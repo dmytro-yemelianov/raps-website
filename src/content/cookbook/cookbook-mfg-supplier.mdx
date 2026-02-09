@@ -1,0 +1,428 @@
+---
+title: "Supplier Package Creation"
+description: "Create shareable packages for suppliers"
+category: "manufacturing"
+order: 26
+icon: "📤"
+---
+
+# Supplier Package Creation
+
+Create shareable CAD packages with temporary download links for suppliers.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">File Selection</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">CAD Models</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Drawings</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Specifications</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Organization</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create Folder Structure</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Apply Naming Convention</div>
+      </div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Upload to OSS</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Files</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Organize by Supplier/PO</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Generate Links</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create Signed URLs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Set Expiration</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Delivery</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Email Package</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Download Page</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Select</span>
+      <span class="text-slate-600">→</span>
+      <span>Organize</span>
+      <span class="text-slate-600">→</span>
+      <span>Upload</span>
+      <span class="text-slate-600">→</span>
+      <span>Share</span>
+      <span class="text-slate-600">→</span>
+      <span>Deliver</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Step 1: Organize Files by Supplier
+
+```bash
+SUPPLIER="acme-corp"
+ORDER="PO-2024-001"
+
+# Upload CAD files
+raps object upload supplier-packages part.stp --key "suppliers/${SUPPLIER}/${ORDER}/part.stp"
+raps object upload supplier-packages drawing.pdf --key "suppliers/${SUPPLIER}/${ORDER}/drawing.pdf"
+raps object upload supplier-packages spec.pdf --key "suppliers/${SUPPLIER}/${ORDER}/specification.pdf"
+```
+
+### Step 2: Generate Signed Download URLs
+
+```bash
+# Generate temporary download links (valid for 24 hours)
+echo "Download Package for ${SUPPLIER} - ${ORDER}"
+echo "============================================"
+echo "Links valid for 24 hours"
+echo ""
+
+for file in part.stp drawing.pdf specification.pdf; do
+  URL=$(raps object signed-url supplier-packages "suppliers/${SUPPLIER}/${ORDER}/${file}" --minutes 1440)
+  echo "${file}:"
+  echo "  ${URL}"
+  echo ""
+done
+```
+
+### Step 3: Create Package Manifest
+
+```bash
+# Generate package manifest
+echo "# Supplier Package Manifest" > package-manifest.md
+echo "" >> package-manifest.md
+echo "**Supplier:** ${SUPPLIER}" >> package-manifest.md
+echo "**PO Number:** ${ORDER}" >> package-manifest.md
+echo "**Generated:** $(date)" >> package-manifest.md
+echo "**Expires:** $(date -d '+24 hours')" >> package-manifest.md
+echo "" >> package-manifest.md
+echo "## Files" >> package-manifest.md
+echo "" >> package-manifest.md
+
+raps object list supplier-packages --prefix "suppliers/${SUPPLIER}/${ORDER}/" --output json | \
+  jq -r '.[] | "- \(.key | split("/") | .[-1]) (\(.size) bytes)"' >> package-manifest.md
+```
+
+### Step 4: Batch Package Creation
+
+```bash
+#!/bin/bash
+# create-supplier-package.sh
+
+SUPPLIER=$1
+ORDER=$2
+FILES_DIR=$3
+
+BUCKET="supplier-packages"
+PREFIX="suppliers/${SUPPLIER}/${ORDER}"
+
+# Upload all files
+for file in "${FILES_DIR}"/*; do
+  [ -f "$file" ] || continue
+  filename=$(basename "$file")
+  raps object upload "$BUCKET" "$file" --key "${PREFIX}/${filename}"
+done
+
+# Generate links
+echo "Package ready for ${SUPPLIER}"
+echo "============================="
+
+raps object list "$BUCKET" --prefix "$PREFIX/" --output json | \
+  jq -r '.[].key' | while read key; do
+    filename=$(basename "$key")
+    url=$(raps object signed-url "$BUCKET" "$key" --minutes 1440)
+    echo "${filename}: ${url}"
+  done
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/supplier-package.yml
+name: Supplier Package Creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      supplier:
+        description: 'Supplier name'
+        required: true
+      po_number:
+        description: 'PO number'
+        required: true
+      files_path:
+        description: 'Path to files (glob pattern)'
+        required: true
+      expiry_hours:
+        description: 'Link expiry in hours'
+        default: '24'
+
+jobs:
+  create-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Upload package files
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="supplier-packages"
+          PREFIX="suppliers/${{ inputs.supplier }}/${{ inputs.po_number }}"
+
+          for file in ${{ inputs.files_path }}; do
+            [ -f "$file" ] || continue
+            filename=$(basename "$file")
+            raps object upload "$BUCKET" "$file" --key "${PREFIX}/${filename}"
+            echo "Uploaded: ${filename}"
+          done
+
+      - name: Generate download links
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="supplier-packages"
+          PREFIX="suppliers/${{ inputs.supplier }}/${{ inputs.po_number }}"
+          EXPIRY_MINS=$(( ${{ inputs.expiry_hours }} * 60 ))
+
+          echo "# Supplier Package" > package.md
+          echo "" >> package.md
+          echo "**Supplier:** ${{ inputs.supplier }}" >> package.md
+          echo "**PO:** ${{ inputs.po_number }}" >> package.md
+          echo "**Created:** $(date)" >> package.md
+          echo "**Expires:** $(date -d '+${{ inputs.expiry_hours }} hours')" >> package.md
+          echo "" >> package.md
+          echo "## Download Links" >> package.md
+          echo "" >> package.md
+
+          raps object list "$BUCKET" --prefix "$PREFIX/" --output json | \
+            jq -r '.[].key' | while read key; do
+              filename=$(basename "$key")
+              url=$(raps object signed-url "$BUCKET" "$key" --minutes $EXPIRY_MINS)
+              echo "- [${filename}](${url})" >> package.md
+            done
+
+      - name: Upload package manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-package-${{ inputs.supplier }}-${{ inputs.po_number }}
+          path: package.md
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Manual Trigger</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">supplier + PO + files</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-amber-500/50 rounded-lg p-3 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-xs mb-2">Upload</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload files to OSS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Organize by supplier/PO</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Generate Links</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Create signed URLs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Set expiration</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Package</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">package.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Create Package
+
+```
+User: "Create a supplier package for Acme Corp with the bracket files for PO-2024-100"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Create package for Acme Corp</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Identify files for package</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Upload files</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file, key)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Upload</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Generate links</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_signed_url(key, minutes=1440)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Signed URL</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Package ready with download links</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> Created supplier package for Acme Corp - PO-2024-100:
+>
+> **Files uploaded:** 4
+> **Link expiry:** 24 hours (Feb 16, 2024 at 3:00 PM)
+>
+> **Download Links:**
+> - [bracket-assembly.stp](https://signed-url...)
+> - [bracket-drawing.pdf](https://signed-url...)
+> - [specification.pdf](https://signed-url...)
+> - [quality-requirements.pdf](https://signed-url...)
+>
+> You can share these links directly with the supplier.
+
+### Check Package Status
+
+```
+User: "List all active supplier packages"
+```
+
+**AI Response:**
+> Active Supplier Packages:
+>
+> | Supplier | PO | Files | Created | Expires |
+> |----------|-----|-------|---------|---------|
+> | Acme Corp | PO-2024-100 | 4 | Feb 15 | Feb 16 |
+> | Beta Mfg | PO-2024-098 | 3 | Feb 14 | Feb 15 |
+> | Gamma Inc | PO-2024-095 | 6 | Feb 12 | **Expired** |
+
+---
+
+## Advanced Features
+
+### Email Integration
+
+```bash
+#!/bin/bash
+# send-package-email.sh
+
+SUPPLIER=$1
+EMAIL=$2
+ORDER=$3
+
+# Generate package links
+LINKS=$(raps object list supplier-packages --prefix "suppliers/${SUPPLIER}/${ORDER}/" --output json | \
+  jq -r '.[].key' | while read key; do
+    filename=$(basename "$key")
+    url=$(raps object signed-url supplier-packages "$key" --minutes 1440)
+    echo "- ${filename}: ${url}"
+  done)
+
+# Send email (using mailx or similar)
+cat <<EOF | mail -s "Download Package for ${ORDER}" "$EMAIL"
+Dear Supplier,
+
+Your requested files for ${ORDER} are ready for download.
+
+Files:
+${LINKS}
+
+These links will expire in 24 hours.
+
+Best regards,
+Manufacturing Team
+EOF
+```
+
+### Package Tracking
+
+```bash
+# Log package creation
+echo "$(date),${SUPPLIER},${ORDER},created" >> package-log.csv
+
+# Track downloads (requires webhook setup)
+raps webhook create \
+  --event "download.complete" \
+  --callback "https://myapp.com/track-download" \
+  --scope "data:read"
+```
+
+### Cleanup Expired Packages
+
+```bash
+# Delete packages older than 7 days
+CUTOFF=$(date -d '-7 days' +%Y%m%d)
+
+raps object list supplier-packages --prefix "suppliers/" --output json | \
+  jq -r '.[] | select(.lastModified < "'"$CUTOFF"'") | .key' | \
+  while read key; do
+    echo "Deleting expired: $key"
+    raps object delete supplier-packages "$key"
+  done
+```
+
+---
+
+## Related
+
+- [Design Iteration Tracking](/cookbook/cookbook-mfg-iterations)
+- [CAD Translation Pipeline](/cookbook/cookbook-mfg-translation)
+- [Cookbook: Manufacturing](/cookbook/cookbook-manufacturing)

@@ -1,0 +1,468 @@
+---
+title: "Account Admin Bulk Management"
+description: "Bulk user management operations across ACC/BIM 360 projects"
+category: "construction"
+order: 40
+icon: "👥"
+---
+
+# Account Admin Bulk Management
+
+Manage users across multiple ACC/BIM 360 projects with bulk operations, resumable state, and progress tracking.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">User Operations</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Add Users</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Remove Users</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Update Roles</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Folder Rights</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Project Files</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Plans</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Custom Folders</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Bulk Features</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">50 Parallel Requests</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Auto-Retry (429)</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Progress Tracking</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">State Management</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Resumable Ops</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Dry-Run Mode</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Operation History</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Select Projects → Configure Operation → Execute → Track Progress</div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Add User to Multiple Projects
+
+```bash
+ACCOUNT_ID="your-account-id"
+EMAIL="newuser@company.com"
+
+# Add user to all projects
+raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin
+
+# Add user to specific projects (regex filter)
+raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin \
+  --filter "^Downtown|^Hospital"
+
+# Preview changes with dry-run
+raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin --dry-run
+```
+
+### Remove User from Projects
+
+```bash
+# Remove user from all projects
+raps admin user remove "$ACCOUNT_ID" "departed@company.com"
+
+# Remove from specific projects
+raps admin user remove "$ACCOUNT_ID" "departed@company.com" \
+  --filter "^2024-.*"
+
+# Dry-run to preview
+raps admin user remove "$ACCOUNT_ID" "departed@company.com" --dry-run
+```
+
+### Update User Roles
+
+```bash
+# Promote user across all projects
+raps admin user update-role "$ACCOUNT_ID" "user@company.com" --role project_admin
+
+# Update role in filtered projects
+raps admin user update-role "$ACCOUNT_ID" "user@company.com" \
+  --role viewer --filter "^Archive-"
+```
+
+### Manage Folder Permissions
+
+```bash
+# Grant access to Project Files folder
+raps admin folder rights "$ACCOUNT_ID" "contractor@partner.com" \
+  --permission edit --folder project_files
+
+# Grant access to Plans folder
+raps admin folder rights "$ACCOUNT_ID" "reviewer@client.com" \
+  --permission view --folder plans
+
+# Custom folder by ID
+raps admin folder rights "$ACCOUNT_ID" "user@company.com" \
+  --permission control --folder "urn:adsk.wipprod:fs.folder:abc123"
+```
+
+### List and Filter Projects
+
+```bash
+# List all projects
+raps admin project list "$ACCOUNT_ID"
+
+# Filter by name pattern
+raps admin project list "$ACCOUNT_ID" --filter "Downtown"
+
+# Filter by status and platform
+raps admin project list "$ACCOUNT_ID" --status active --platform acc
+
+# Limit results
+raps admin project list "$ACCOUNT_ID" --limit 10 --output json
+```
+
+---
+
+## Operation Management
+
+### Track Operation Progress
+
+```bash
+# View current operation status
+raps admin operation status
+
+# View specific operation
+raps admin operation status --id "550e8400-e29b-41d4-a716-446655440000"
+
+# List all operations
+raps admin operation list
+
+# Filter by status
+raps admin operation list --status in_progress
+```
+
+### Resume Interrupted Operations
+
+```bash
+# Resume most recent in-progress operation
+raps admin operation resume
+
+# Resume specific operation
+raps admin operation resume --id "550e8400-e29b-41d4-a716-446655440000"
+```
+
+### Cancel Operations
+
+```bash
+# Cancel current operation
+raps admin operation cancel
+
+# Cancel specific operation
+raps admin operation cancel --id "550e8400-e29b-41d4-a716-446655440000"
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/user-onboarding.yml
+name: User Onboarding
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'User email to onboard'
+        required: true
+      role:
+        description: 'Role to assign'
+        required: true
+        default: 'project_admin'
+        type: choice
+        options:
+          - project_admin
+          - project_manager
+          - viewer
+      filter:
+        description: 'Project filter regex (optional)'
+        required: false
+
+env:
+  ACCOUNT_ID: ${{ secrets.ACC_ACCOUNT_ID }}
+
+jobs:
+  onboard-user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Add user to projects
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          FILTER_ARG=""
+          if [ -n "${{ github.event.inputs.filter }}" ]; then
+            FILTER_ARG="--filter ${{ github.event.inputs.filter }}"
+          fi
+
+          raps admin user add "$ACCOUNT_ID" "${{ github.event.inputs.email }}" \
+            --role ${{ github.event.inputs.role }} \
+            $FILTER_ARG \
+            --output json > result.json
+
+      - name: Generate report
+        run: |
+          echo "# User Onboarding Report" > report.md
+          echo "**User:** ${{ github.event.inputs.email }}" >> report.md
+          echo "**Role:** ${{ github.event.inputs.role }}" >> report.md
+          echo "**Date:** $(date)" >> report.md
+          echo "" >> report.md
+
+          TOTAL=$(jq '.total' result.json)
+          SUCCESS=$(jq '.succeeded' result.json)
+          SKIPPED=$(jq '.skipped' result.json)
+          FAILED=$(jq '.failed' result.json)
+
+          echo "## Results" >> report.md
+          echo "- Total projects: $TOTAL" >> report.md
+          echo "- Succeeded: $SUCCESS" >> report.md
+          echo "- Skipped: $SKIPPED" >> report.md
+          echo "- Failed: $FAILED" >> report.md
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-report
+          path: |
+            report.md
+            result.json
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Trigger</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Manual Dispatch</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Auth</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Refresh Token</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">3-Leg OAuth</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Bulk Operation</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Filter Projects</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Add User (50 parallel)</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Report</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">result.json</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Offboarding Script
+
+```bash
+#!/bin/bash
+# offboard-user.sh - Complete user removal
+
+set -e
+
+ACCOUNT_ID="$1"
+EMAIL="$2"
+
+if [ -z "$ACCOUNT_ID" ] || [ -z "$EMAIL" ]; then
+  echo "Usage: offboard-user.sh <account_id> <email>"
+  exit 1
+fi
+
+echo "Offboarding user: $EMAIL"
+echo "================================"
+
+# Step 1: Preview changes
+echo "Step 1: Preview removal..."
+raps admin user remove "$ACCOUNT_ID" "$EMAIL" --dry-run
+
+read -p "Proceed with removal? (y/N) " confirm
+if [ "$confirm" != "y" ]; then
+  echo "Cancelled."
+  exit 0
+fi
+
+# Step 2: Remove user from all projects
+echo "Step 2: Removing user from projects..."
+raps admin user remove "$ACCOUNT_ID" "$EMAIL" --output json > removal-result.json
+
+# Step 3: Generate report
+echo "Step 3: Generating report..."
+TOTAL=$(jq '.total' removal-result.json)
+REMOVED=$(jq '.succeeded' removal-result.json)
+SKIPPED=$(jq '.skipped' removal-result.json)
+
+echo ""
+echo "Offboarding Complete"
+echo "===================="
+echo "User: $EMAIL"
+echo "Projects processed: $TOTAL"
+echo "Successfully removed: $REMOVED"
+echo "Skipped (not in project): $SKIPPED"
+echo ""
+echo "Full results saved to: removal-result.json"
+```
+
+---
+
+## Batch User Management
+
+### Onboard Multiple Users
+
+```bash
+#!/bin/bash
+# batch-onboard.sh
+
+ACCOUNT_ID="your-account-id"
+ROLE="project_admin"
+
+# Users to onboard (one per line)
+USERS=(
+  "user1@company.com"
+  "user2@company.com"
+  "user3@company.com"
+)
+
+for email in "${USERS[@]}"; do
+  echo "Onboarding: $email"
+  raps admin user add "$ACCOUNT_ID" "$email" --role "$ROLE" \
+    --output json >> onboarding-results.jsonl
+  echo "---"
+done
+
+echo "Batch onboarding complete. Results in onboarding-results.jsonl"
+```
+
+### Role Migration
+
+```bash
+#!/bin/bash
+# migrate-roles.sh - Migrate users from one role to another
+
+ACCOUNT_ID="your-account-id"
+OLD_ROLE="viewer"
+NEW_ROLE="project_admin"
+PROJECT_FILTER="^2024-Active"
+
+# Get users with old role
+raps admin project list "$ACCOUNT_ID" --filter "$PROJECT_FILTER" --output json |
+  jq -r '.[].id' | while read project_id; do
+    raps acc project-user list "$project_id" --output json |
+      jq -r --arg role "$OLD_ROLE" '.[] | select(.role == $role) | .email'
+  done | sort -u > users-to-migrate.txt
+
+echo "Found $(wc -l < users-to-migrate.txt) users to migrate"
+
+# Migrate each user
+while read email; do
+  echo "Migrating: $email"
+  raps admin user update-role "$ACCOUNT_ID" "$email" \
+    --role "$NEW_ROLE" --filter "$PROJECT_FILTER"
+done < users-to-migrate.txt
+```
+
+---
+
+## Permission Levels
+
+| Level | Actions | Use Case |
+|-------|---------|----------|
+| `view` | View files | Read-only access |
+| `view_download` | View + download | Reviewers, clients |
+| `upload` | View + download + upload | Contributors |
+| `edit` | Full edit access | Team members |
+| `control` | Full control + permissions | Administrators |
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All operations succeeded |
+| `1` | Partial success (some failed) |
+| `2` | Operation failed to start |
+| `3` | User cancelled |
+
+---
+
+## Troubleshooting
+
+### Rate Limiting
+
+The bulk operations automatically handle rate limits with exponential backoff:
+
+```
+[2/100] Rate limited, waiting 2s before retry...
+[2/100] Retry 1/3 for project-123
+[2/100] Success after retry
+```
+
+### User Not Found
+
+If a user doesn't exist in the account:
+
+```bash
+# The operation will skip projects where user isn't found
+raps admin user remove "$ACCOUNT_ID" "unknown@company.com"
+# Output: Skipped 50 projects (user not in project)
+```
+
+### Resuming Failed Operations
+
+```bash
+# Check operation history
+raps admin operation list --status failed
+
+# Resume with specific ID
+raps admin operation resume --id "operation-uuid"
+```
+
+---
+
+## Related
+
+- [Data Management](/docs/data-management)
+- [Issues & RFI Management](/cookbook/cookbook-acc-issues)
+- [Cookbook: Construction](/cookbook/cookbook-construction)

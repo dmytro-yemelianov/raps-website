@@ -1,0 +1,413 @@
+---
+title: "Model Version Tracking"
+description: "Track and compare model versions over time"
+category: "aec"
+order: 13
+icon: "📅"
+---
+
+# Model Version Tracking
+
+Track model versions with organized storage and comparison.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Version History</div>
+      <div class="space-y-2">
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">v-20240101</span><br/>building.rvt
+        </div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">v-20240115</span><br/>building.rvt
+        </div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">v-20240201</span><br/>building.rvt
+        </div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">latest</span><br/>building.rvt
+        </div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">OSS Bucket Structure</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/v-20240101/</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/v-20240115/</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/v-20240201/</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/latest/</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">SVF2 Viewables</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-v1</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-v2</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-v3</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-latest</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Version Comparison</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-3 text-sm text-slate-300 text-center">
+        <div class="font-semibold mb-2">Diff Report</div>
+        <div class="flex justify-center gap-3 text-xs">
+          <span class="text-green-400">+45</span>
+          <span class="text-red-400">-12</span>
+          <span class="text-yellow-400">~78</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Versions</span>
+      <span>&#8594;</span>
+      <span>Storage</span>
+      <span>&#8594;</span>
+      <span>Translate</span>
+      <span>&#8594;</span>
+      <span>Compare</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Step 1: Upload Versioned Model
+
+```bash
+# Create versioned object key with timestamp
+VERSION=$(date +%Y%m%d-%H%M%S)
+raps object upload my-bucket building.rvt --key "building/v-${VERSION}/building.rvt"
+
+# Also upload to "latest" for easy access
+raps object upload my-bucket building.rvt --key "building/latest/building.rvt"
+```
+
+### Step 2: List All Versions
+
+```bash
+raps object list my-bucket --prefix "building/v-" --output json | \
+  jq -r '.[] | .key' | sort -r
+```
+
+**Output:**
+```
+building/v-20240201-110530/building.rvt
+building/v-20240115-143022/building.rvt
+building/v-20240101-090000/building.rvt
+```
+
+### Step 3: Compare Versions
+
+```bash
+# Get URNs for both versions
+OLD_URN=$(raps object urn my-bucket "building/v-20240101-090000/building.rvt" --output plain)
+NEW_URN=$(raps object urn my-bucket "building/v-20240115-143022/building.rvt" --output plain)
+
+# Extract element counts
+OLD_COUNT=$(raps derivative properties "$OLD_URN" --output json | jq 'length')
+NEW_COUNT=$(raps derivative properties "$NEW_URN" --output json | jq 'length')
+
+echo "Version comparison:"
+echo "  Old version: $OLD_COUNT elements"
+echo "  New version: $NEW_COUNT elements"
+echo "  Difference: $((NEW_COUNT - OLD_COUNT)) elements"
+```
+
+### Step 4: Detailed Comparison by Category
+
+```bash
+# Compare categories between versions
+echo "Category Comparison:"
+echo "===================="
+
+for category in "Walls" "Doors" "Windows" "Rooms"; do
+  OLD=$(raps derivative properties "$OLD_URN" --output json | jq "[.[] | select(.category == \"$category\")] | length")
+  NEW=$(raps derivative properties "$NEW_URN" --output json | jq "[.[] | select(.category == \"$category\")] | length")
+  DIFF=$((NEW - OLD))
+
+  if [ $DIFF -gt 0 ]; then
+    echo "$category: $OLD -> $NEW (+$DIFF)"
+  elif [ $DIFF -lt 0 ]; then
+    echo "$category: $OLD -> $NEW ($DIFF)"
+  else
+    echo "$category: $OLD (no change)"
+  fi
+done
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/version-tracking.yml
+name: Model Version Tracking
+
+on:
+  push:
+    paths:
+      - 'models/**/*.rvt'
+
+jobs:
+  version-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Version and upload models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          VERSION=$(date +%Y%m%d-%H%M%S)
+          BUCKET="versioned-models"
+
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'models/**/*.rvt'); do
+            [ -f "$file" ] || continue
+
+            basename=$(basename "$file" .rvt)
+
+            # Upload versioned copy
+            raps object upload "$BUCKET" "$file" --key "${basename}/v-${VERSION}/${basename}.rvt"
+
+            # Upload as latest
+            raps object upload "$BUCKET" "$file" --key "${basename}/latest/${basename}.rvt"
+
+            # Translate latest
+            URN=$(raps object urn "$BUCKET" "${basename}/latest/${basename}.rvt" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+
+            echo "Uploaded ${basename} as version ${VERSION}"
+          done
+
+      - name: Generate version comparison
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Get last two versions and compare
+          echo "# Version Comparison Report" > comparison.md
+          echo "Generated: $(date)" >> comparison.md
+          # Add comparison logic here
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-log
+          path: comparison.md
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Git Push</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm font-mono text-blue-300">models/*.rvt changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Versioning</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Generate timestamp</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Upload v-YYYYMMDD</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Upload to latest</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Processing</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Translate latest</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Compare with previous</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Report</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">comparison.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Upload New Version
+
+```
+User: "Upload the new version of the building model and compare it with last week's version"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Upload and compare versions</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_upload()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Upload new version</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_translate_start()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Translate new version</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">List versions</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-emerald-400">Version list</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties(old)</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties(new)</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-center text-purple-400 italic">Calculate differences</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Version comparison report</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> New version uploaded and translated. Comparison with v-20240208:
+> - **Added:** 23 new walls, 8 doors, 12 windows
+> - **Removed:** 5 walls, 2 doors
+> - **Modified:** 45 elements with property changes
+> - **Total elements:** 1,892 (up from 1,854)
+
+### List Version History
+
+```
+User: "Show me all versions of the office building model"
+```
+
+**AI Response:**
+> Version history for office-building.rvt:
+>
+> | Version | Date | Elements | Size |
+> |---------|------|----------|------|
+> | v-20240215 | Feb 15, 2024 | 1,892 | 156 MB |
+> | v-20240208 | Feb 8, 2024 | 1,854 | 152 MB |
+> | v-20240201 | Feb 1, 2024 | 1,823 | 148 MB |
+> | v-20240125 | Jan 25, 2024 | 1,756 | 142 MB |
+
+---
+
+## Best Practices
+
+### Naming Convention
+
+```
+bucket/
+└── {model-name}/
+    ├── v-YYYYMMDD-HHMMSS/
+    │   └── {model-name}.rvt
+    ├── v-YYYYMMDD-HHMMSS/
+    │   └── {model-name}.rvt
+    └── latest/
+        └── {model-name}.rvt
+```
+
+### Retention Policy
+
+```bash
+# Keep only last 10 versions
+VERSIONS=$(raps object list my-bucket --prefix "building/v-" --output json | jq -r '.[].key' | sort -r)
+COUNT=0
+
+echo "$VERSIONS" | while read key; do
+  COUNT=$((COUNT + 1))
+  if [ $COUNT -gt 10 ]; then
+    echo "Deleting old version: $key"
+    raps object delete my-bucket "$key"
+  fi
+done
+```
+
+---
+
+## Related
+
+- [Model Coordination Pipeline](/cookbook/cookbook-aec-coordination)
+- [BIM 360/ACC Sync](/cookbook/cookbook-aec-acc-sync)
+- [Cookbook: AEC & BIM](/cookbook/cookbook-aec)

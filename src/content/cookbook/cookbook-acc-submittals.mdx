@@ -1,0 +1,382 @@
+---
+title: "Submittal Tracking"
+description: "Track and export submittal status"
+category: "construction"
+order: 35
+icon: "📨"
+---
+
+# Submittal Tracking
+
+Track submittals, manage approvals, and generate status reports.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Submittal Lifecycle</div>
+      <div class="flex flex-wrap gap-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Created</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Submitted</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Under Review</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-emerald-800/50 rounded text-sm text-emerald-300">Approved/Rejected</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Closed</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Tracking</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">List Submittals</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Filter by Status</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Track Due Dates</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Reporting</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Submittal Log</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Status Summary</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Overdue Report</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### List All Submittals
+
+```bash
+PROJECT_ID="b.project-id"
+
+# List all submittals
+raps acc submittal list "$PROJECT_ID"
+
+# Export to JSON
+raps acc submittal list "$PROJECT_ID" --output json > submittals.json
+```
+
+### Filter by Status
+
+```bash
+# Get open submittals
+cat submittals.json | jq '[.[] | select(.status == "open")]' > open-submittals.json
+
+# Get pending review
+cat submittals.json | jq '[.[] | select(.status == "under_review")]' > pending-review.json
+
+# Get approved
+cat submittals.json | jq '[.[] | select(.status == "approved")]' > approved.json
+```
+
+### Export Submittal Log
+
+```bash
+cat submittals.json | jq -r '
+  ["Number", "Title", "Spec Section", "Status", "Submitted", "Required", "Approved"],
+  (.[] | [
+    .number,
+    .title,
+    .specSection,
+    .status,
+    .submittedDate,
+    .requiredDate,
+    .approvedDate // ""
+  ]) | @csv
+' > submittal-log.csv
+```
+
+### Find Late Submittals
+
+```bash
+TODAY=$(date +%Y-%m-%d)
+
+cat submittals.json | jq --arg today "$TODAY" '
+  [.[] | select(.status != "approved" and .requiredDate != null and .requiredDate < $today)]
+' > late-submittals.json
+
+echo "Late submittals: $(jq 'length' late-submittals.json)"
+
+# Detail report
+jq -r '.[] | "- \(.number): \(.title) (Due: \(.requiredDate))"' late-submittals.json
+```
+
+### Status Summary
+
+```bash
+cat submittals.json | jq '
+  group_by(.status) |
+  map({status: .[0].status, count: length}) |
+  sort_by(-.count)'
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/submittal-tracking.yml
+name: Submittal Tracking Report
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'  # Weekdays at 7 AM
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.ACC_PROJECT_ID }}
+
+jobs:
+  submittal-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Export submittals
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps acc submittal list "$PROJECT_ID" --output json > submittals.json
+
+      - name: Generate report
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+
+          echo "# Submittal Status Report" > report.md
+          echo "Generated: $(date)" >> report.md
+          echo "" >> report.md
+
+          # Summary
+          TOTAL=$(jq 'length' submittals.json)
+          OPEN=$(jq '[.[] | select(.status == "open")] | length' submittals.json)
+          REVIEW=$(jq '[.[] | select(.status == "under_review")] | length' submittals.json)
+          APPROVED=$(jq '[.[] | select(.status == "approved")] | length' submittals.json)
+          LATE=$(jq --arg today "$TODAY" '[.[] | select(.status != "approved" and .requiredDate < $today)] | length' submittals.json)
+
+          echo "## Summary" >> report.md
+          echo "| Status | Count |" >> report.md
+          echo "|--------|-------|" >> report.md
+          echo "| Total | $TOTAL |" >> report.md
+          echo "| Open | $OPEN |" >> report.md
+          echo "| Under Review | $REVIEW |" >> report.md
+          echo "| Approved | $APPROVED |" >> report.md
+          echo "| **Late** | **$LATE** |" >> report.md
+          echo "" >> report.md
+
+          # Late submittals
+          if [ "$LATE" -gt 0 ]; then
+            echo "## Late Submittals" >> report.md
+            echo "| Number | Title | Required | Days Late |" >> report.md
+            echo "|--------|-------|----------|-----------|" >> report.md
+
+            jq --arg today "$TODAY" -r '
+              .[] |
+              select(.status != "approved" and .requiredDate != null and .requiredDate < $today) |
+              "| \(.number) | \(.title) | \(.requiredDate) | - |"
+            ' submittals.json >> report.md
+          fi
+
+      - name: Export CSV
+        run: |
+          jq -r '
+            ["Number","Title","Spec","Status","Required","Submitted"],
+            (.[] | [.number, .title, .specSection, .status, .requiredDate, .submittedDate])
+            | @csv
+          ' submittals.json > submittal-log.csv
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: submittal-reports
+          path: |
+            report.md
+            submittal-log.csv
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Daily Report</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">7 AM Weekdays</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Export</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Get Submittals</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Calculate Metrics</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Reports</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">submittal-log.csv</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Get Submittal Status
+
+```
+User: "What's the status of our submittals?"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">User</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI Assistant</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">User</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Submittal status</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_submittal_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Get submittals</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Submittal list</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Group by status + Find late items</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Status summary</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">User</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> **Submittal Status Summary:**
+>
+> | Status | Count | % |
+> |--------|-------|---|
+> | Approved | 45 | 60% |
+> | Under Review | 12 | 16% |
+> | Open | 15 | 20% |
+> | Rejected | 3 | 4% |
+>
+> **Attention Required:**
+> - 4 submittals are past due
+> - 3 rejected submittals need resubmission
+>
+> **Upcoming (Next 7 Days):**
+> - SUB-089: Structural Steel Shop Drawings (Due: Feb 18)
+> - SUB-092: HVAC Equipment (Due: Feb 20)
+
+### Find Late Submittals
+
+```
+User: "Show me all late submittals"
+```
+
+**AI Response:**
+> **Late Submittals (4):**
+>
+> | Number | Title | Spec | Required | Days Late |
+> |--------|-------|------|----------|-----------|
+> | SUB-045 | Door Hardware | 08 71 00 | Feb 10 | 5 |
+> | SUB-052 | Roofing Materials | 07 50 00 | Feb 12 | 3 |
+> | SUB-061 | Light Fixtures | 26 51 00 | Feb 13 | 2 |
+> | SUB-063 | Plumbing Fixtures | 22 40 00 | Feb 14 | 1 |
+>
+> Would you like me to send reminders to the responsible parties?
+
+---
+
+## Advanced Reports
+
+### By Spec Section
+
+```bash
+cat submittals.json | jq '
+  group_by(.specSection) |
+  map({
+    section: .[0].specSection,
+    total: length,
+    approved: [.[] | select(.status == "approved")] | length,
+    pending: [.[] | select(.status != "approved")] | length
+  }) |
+  sort_by(.section)'
+```
+
+### Lead Time Analysis
+
+```bash
+cat submittals.json | jq '
+  [.[] | select(.submittedDate != null and .approvedDate != null) |
+   {
+     number: .number,
+     submitted: .submittedDate,
+     approved: .approvedDate
+   }]'
+# Note: Calculate days between dates with additional processing
+```
+
+### Approval Rate by Month
+
+```bash
+cat submittals.json | jq '
+  [.[] | select(.approvedDate != null)] |
+  group_by(.approvedDate[:7]) |
+  map({month: .[0].approvedDate[:7], approved: length})'
+```
+
+---
+
+## Related
+
+- [Issues & RFI Management](/cookbook/cookbook-acc-issues)
+- [Checklist Export](/cookbook/cookbook-acc-checklists)
+- [Cookbook: Construction](/cookbook/cookbook-construction)

@@ -1,0 +1,422 @@
+---
+title: "OBJ with Materials"
+description: "Handle textured OBJ models correctly"
+category: "media"
+order: 44
+icon: "🎨"
+---
+
+# OBJ with Materials
+
+Process OBJ files with MTL materials and texture files correctly.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">OBJ Package</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">model.obj</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">model.mtl</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">textures/</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Packaging</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create ZIP</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload Package</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Translation</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Specify Root File</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Resolve References</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Process Textures</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Output</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 with Textures</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Option 1: ZIP Package
+
+The most reliable method for OBJ with external files.
+
+```bash
+# Package OBJ with materials and textures
+cd ./model-folder
+zip -r model-package.zip model.obj model.mtl textures/
+
+# Upload package
+raps object upload media-assets model-package.zip
+
+# Translate with root file specification
+URN=$(raps object urn media-assets model-package.zip --output plain)
+raps translate start "$URN" --format svf2 --root "model.obj" --wait
+```
+
+### Option 2: Upload Files Individually
+
+For simpler setups without subdirectories.
+
+```bash
+# Upload OBJ file
+raps object upload media-assets model.obj
+
+# Upload MTL file (same folder reference)
+raps object upload media-assets model.mtl
+
+# Upload textures
+for tex in ./textures/*.{jpg,png}; do
+  raps object upload media-assets "$tex"
+done
+
+# Translate OBJ
+URN=$(raps object urn media-assets model.obj --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Verify Texture Loading
+
+```bash
+# Check manifest for texture resources
+raps translate manifest "$URN" --output json | jq '.derivatives[].children[] | select(.type == "resource")'
+
+# Get thumbnail to verify materials
+raps derivative thumbnail "$URN" --output ./preview-with-materials.png
+```
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/obj-materials.yml
+name: OBJ with Materials Processing
+
+on:
+  push:
+    paths:
+      - 'models/**/*.obj'
+      - 'models/**/*.mtl'
+
+env:
+  BUCKET: textured-models
+
+jobs:
+  process-obj:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Package and upload OBJ models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Find directories containing OBJ files
+          find models -name "*.obj" | while read obj; do
+            DIR=$(dirname "$obj")
+            NAME=$(basename "$obj" .obj)
+
+            echo "Processing: $NAME"
+
+            # Create package with all related files
+            cd "$DIR"
+            zip -r "${NAME}-package.zip" "${NAME}.obj" "${NAME}.mtl" textures/ 2>/dev/null || \
+            zip -r "${NAME}-package.zip" "${NAME}.obj" "${NAME}.mtl" 2>/dev/null || \
+            zip -r "${NAME}-package.zip" "${NAME}.obj"
+            cd -
+
+            # Upload
+            raps object upload "$BUCKET" "${DIR}/${NAME}-package.zip"
+
+            # Translate
+            URN=$(raps object urn "$BUCKET" "${NAME}-package.zip" --output plain)
+            raps translate start "$URN" --format svf2 --root "${NAME}.obj" --wait
+
+            echo "Completed: $NAME"
+          done
+
+      - name: Verify translations
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./thumbnails
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+            if [ "$STATUS" = "success" ]; then
+              NAME=$(echo "$key" | sed 's/-package.zip//')
+              raps derivative thumbnail "$URN" --output "./thumbnails/${NAME}.png" 2>/dev/null || true
+            fi
+          done
+
+      - name: Upload thumbnails
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-thumbnails
+          path: ./thumbnails/
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OBJ/MTL changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Package</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Find OBJ files</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Create ZIP with MTL + textures</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Upload & Translate</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload package</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate with root</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Verify</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Check textures loaded</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate thumbnails</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Process Textured Model
+
+```
+User: "Upload the character model with all its textures"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Upload character with textures</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Find OBJ, MTL, and texture files</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Create ZIP package</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, package.zip)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Upload package</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Complete</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn, root="character.obj")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Translate with root</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_thumbnail(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Thumbnail with textures</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Model ready with textures</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> Uploaded character model with textures:
+>
+> **Package Contents:**
+> - character.obj (2.4 MB)
+> - character.mtl (1.2 KB)
+> - textures/
+>   - diffuse.jpg (4.1 MB)
+>   - normal.png (2.8 MB)
+>   - roughness.jpg (1.5 MB)
+>
+> **Translation:** Complete
+> **Textures loaded:** 3/3
+>
+> Preview saved to `thumbnail.png` — download locally to confirm materials and textures applied correctly.
+
+### Troubleshoot Missing Textures
+
+```
+User: "The model textures aren't showing up"
+```
+
+**AI Response:**
+> Checking texture loading for character.obj...
+>
+> **Issue Found:** Texture paths in MTL don't match uploaded files
+>
+> **MTL References:**
+> - map_Kd textures/Diffuse.jpg ❌ (case mismatch)
+> - map_Bump normal.png ❌ (wrong path)
+>
+> **Uploaded Files:**
+> - textures/diffuse.jpg
+> - textures/normal.png
+>
+> **Fix:** Update MTL file to match actual paths:
+> ```
+> map_Kd textures/diffuse.jpg
+> map_Bump textures/normal.png
+> ```
+>
+> Would you like me to create a corrected package?
+
+---
+
+## Common Issues
+
+### Path Case Sensitivity
+
+```bash
+# Linux/macOS are case-sensitive
+# MTL says: textures/Diffuse.jpg
+# Actual:   textures/diffuse.jpg
+
+# Fix: Rename files or update MTL
+sed -i 's/Diffuse\.jpg/diffuse.jpg/g' model.mtl
+```
+
+### Relative Path Issues
+
+```bash
+# MTL with absolute paths won't work
+# map_Kd C:/Users/me/project/textures/diffuse.jpg
+
+# Fix: Convert to relative paths
+sed -i 's|C:/Users/me/project/||g' model.mtl
+```
+
+### Missing Textures
+
+```bash
+# Check what textures MTL references
+grep -E "^map_" model.mtl
+
+# Verify files exist
+for tex in $(grep -oE "map_\w+\s+\S+" model.mtl | awk '{print $2}'); do
+  [ -f "$tex" ] && echo "✓ $tex" || echo "✗ $tex MISSING"
+done
+```
+
+### Folder Structure
+
+```
+Correct structure:
+model-package.zip
+├── model.obj
+├── model.mtl
+└── textures/
+    ├── diffuse.jpg
+    ├── normal.png
+    └── specular.jpg
+
+MTL content:
+newmtl material_0
+map_Kd textures/diffuse.jpg
+map_Bump textures/normal.png
+map_Ks textures/specular.jpg
+```
+
+---
+
+## Related
+
+- [3D Asset Translation](/cookbook/cookbook-media-translation)
+- [Asset Catalog Generation](/cookbook/cookbook-media-catalog)
+- [Cookbook: Media & Entertainment](/cookbook/cookbook-media)

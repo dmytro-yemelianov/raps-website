@@ -1,0 +1,395 @@
+---
+title: "3D Asset Translation"
+description: "Process FBX, OBJ, glTF for web viewing"
+category: "media"
+order: 41
+icon: "🎮"
+---
+
+# 3D Asset Translation
+
+Process common 3D formats (FBX, OBJ, glTF) for web-based viewing.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">3D Formats</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">FBX</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OBJ + MTL</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">glTF/GLB</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3DS</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">DAE</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">RAPS Upload</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">raps object upload</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-amber-500/30 p-4">
+      <div class="text-amber-400 text-xs font-semibold uppercase tracking-wider mb-3">APS Storage</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OSS Bucket</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Model Derivative</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 Translation</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Outputs</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Web Viewable</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Thumbnails</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Metadata</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Step 1: Create Assets Bucket
+
+```bash
+raps bucket create --key media-assets --policy persistent --region US
+```
+
+### Step 2: Upload 3D Files
+
+```bash
+# FBX file
+raps object upload media-assets character.fbx
+
+# OBJ file
+raps object upload media-assets environment.obj
+
+# glTF file
+raps object upload media-assets props.gltf
+
+# GLB (binary glTF)
+raps object upload media-assets vehicle.glb
+```
+
+### Step 3: Translate to SVF2
+
+```bash
+# Get URN and translate
+URN=$(raps object urn media-assets character.fbx --output plain)
+raps translate start "$URN" --format svf2 --wait
+
+# Check translation result
+raps translate manifest "$URN"
+```
+
+### Step 4: Verify Output
+
+```bash
+# Get available views
+raps derivative views "$URN" --output json
+
+# Get thumbnail
+raps derivative thumbnail "$URN" --output ./preview.png
+
+# Get metadata
+raps derivative metadata "$URN" --output json
+```
+
+### Supported Formats
+
+| Format | Extension | Notes |
+|--------|-----------|-------|
+| FBX | .fbx | Autodesk format, animations |
+| OBJ | .obj | With .mtl materials |
+| glTF | .gltf | JSON + separate assets |
+| GLB | .glb | Binary glTF |
+| 3DS | .3ds | Legacy 3D Studio |
+| DAE | .dae | Collada format |
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/asset-translation.yml
+name: 3D Asset Translation
+
+on:
+  push:
+    paths:
+      - 'assets/**/*.fbx'
+      - 'assets/**/*.obj'
+      - 'assets/**/*.gltf'
+      - 'assets/**/*.glb'
+
+env:
+  BUCKET: media-assets-${{ github.repository_id }}
+
+jobs:
+  translate-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Upload and translate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'assets/**'); do
+            [ -f "$file" ] || continue
+
+            ext="${file##*.}"
+            case "$ext" in
+              fbx|obj|gltf|glb|3ds|dae)
+                echo "Processing: $file"
+                raps object upload "$BUCKET" "$file"
+
+                key=$(basename "$file")
+                URN=$(raps object urn "$BUCKET" "$key" --output plain)
+                raps translate start "$URN" --format svf2 --wait
+
+                echo "Translated: $key"
+                ;;
+            esac
+          done
+
+      - name: Generate thumbnails
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./thumbnails
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+            if [ "$STATUS" = "success" ]; then
+              name=$(echo "$key" | sed 's/\.[^.]*$//')
+              raps derivative thumbnail "$URN" --output "./thumbnails/${name}.png" 2>/dev/null || true
+            fi
+          done
+
+      - name: Upload thumbnails
+        uses: actions/upload-artifact@v4
+        with:
+          name: asset-thumbnails
+          path: ./thumbnails/
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">3D files changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Processing</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Upload assets</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Translate to SVF2</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Generate thumbnails</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Artifacts</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">thumbnails/</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Translate Single Asset
+
+```
+User: "Upload and translate the new character model for web viewing"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Translate character.fbx</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, file)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Upload FBX</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Complete</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_urn(bucket, key)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">URN</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn, format="svf2")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Start translation</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_thumbnail(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Thumbnail</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">User</span>
+        <span class="text-slate-400 ml-2">Asset ready with preview</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> character.fbx has been uploaded and translated:
+>
+> **Asset Details:**
+> - File size: 12.4 MB
+> - Polygons: 45,000
+> - Materials: 8
+> - Bones: 65
+> - Animation clips: 3
+>
+> **Translation:** Complete (45 seconds)
+>
+> [View in Browser](https://viewer.autodesk.com/...)
+>
+> Preview saved to `preview.png` — open it locally or push to object storage for a quick visual check.
+
+### Batch Translate
+
+```
+User: "Process all the props in the environment folder"
+```
+
+**AI Response:**
+> Processing 12 files from environment folder:
+>
+> | File | Format | Status | Polygons |
+> |------|--------|--------|----------|
+> | tree_01.fbx | FBX | Complete | 8,200 |
+> | rock_large.obj | OBJ | Complete | 2,100 |
+> | fence.gltf | glTF | Complete | 1,450 |
+> | lamp_post.fbx | FBX | Processing | - |
+> | ... | ... | ... | ... |
+>
+> **Progress:** 9/12 complete
+
+---
+
+## Format-Specific Tips
+
+### FBX with Animations
+
+```bash
+# FBX animations are preserved
+URN=$(raps object urn media-assets animated-character.fbx --output plain)
+raps translate start "$URN" --format svf2 --wait
+
+# Check animation data in metadata
+raps derivative metadata "$URN" --output json | jq '.animations'
+```
+
+### OBJ with External Materials
+
+```bash
+# Package OBJ with MTL and textures
+zip -r model-package.zip model.obj model.mtl textures/
+
+raps object upload media-assets model-package.zip
+
+# Specify root file
+URN=$(raps object urn media-assets model-package.zip --output plain)
+raps translate start "$URN" --format svf2 --root "model.obj" --wait
+```
+
+### glTF Variants
+
+```bash
+# glTF (JSON + binary + textures)
+# Upload all files together or as a zip
+
+# GLB is self-contained
+raps object upload media-assets model.glb
+URN=$(raps object urn media-assets model.glb --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+---
+
+## Related
+
+- [OBJ with Materials](/cookbook/cookbook-media-materials)
+- [Animation Workflows](/cookbook/cookbook-media-animation)
+- [Cookbook: Media & Entertainment](/cookbook/cookbook-media)

@@ -28,14 +28,6 @@ const sections = {
   },
 };
 
-// Cookbook groups
-const cookbookDocs = allDocs.filter(d => d.data.section === 'cookbook');
-const cookbookGroups = {
-  'ACC & Construction': cookbookDocs.filter(d => (d.id || d.slug || '').includes('acc') || (d.id || d.slug || '').includes('construction')),
-  'AEC & BIM': cookbookDocs.filter(d => (d.id || d.slug || '').includes('aec')),
-  'Manufacturing': cookbookDocs.filter(d => (d.id || d.slug || '').includes('mfg') || (d.id || d.slug || '').includes('manufacturing')),
-  'Media & Entertainment': cookbookDocs.filter(d => (d.id || d.slug || '').includes('media')),
-};
 ---
 
 <DocsLayout title="Documentation" currentSlug="">
@@ -75,36 +67,16 @@ const cookbookGroups = {
         )
       ))}
 
-      {/* Cookbook Section with Groups */}
+      {/* Cookbook link */}
       <div class="md:col-span-2 lg:col-span-3 mt-8 pt-8 border-t border-slate-800">
-        <div class="mb-8">
-          <h2 class="text-xl font-bold text-white mb-1">Cookbook</h2>
-          <p class="text-sm text-slate-500">Real-world recipes and industry workflows</p>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-12">
-          {Object.entries(cookbookGroups).map(([groupTitle, docs]) => (
-            docs.length > 0 && (
-              <div>
-                <h3 class="text-sm font-semibold text-rapeseed-400 uppercase tracking-wider mb-4">{groupTitle}</h3>
-                <ul class="space-y-2">
-                  {docs.map(doc => (
-                    <li class="flex items-start">
-                      <div class="flex-shrink-0 w-4 h-4 flex items-center justify-center mt-0.5 mr-3">
-                        <span class="w-1.5 h-1.5 rounded-full bg-rapeseed-400/60 transition-colors"></span>
-                      </div>
-                      <a 
-                        href={`/docs/${(doc.id || doc.slug || '').replace(/\.mdx?$/, '')}`}
-                        class="text-slate-400 hover:text-white transition-colors hover:underline underline-offset-2"
-                      >
-                        {doc.data.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          ))}
+        <div class="flex items-center gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-white mb-1">Cookbook</h2>
+            <p class="text-sm text-slate-500">Real-world recipes and industry workflows</p>
+          </div>
+          <a href="/cookbook" class="text-sm font-medium text-rapeseed-400 hover:text-rapeseed-300 transition-colors whitespace-nowrap">
+            Browse Cookbook &rarr;
+          </a>
         </div>
       </div>
     </div>

@@ -1,0 +1,372 @@
+---
+title: "CAD Translation Pipeline"
+description: "Process various CAD formats for web viewing"
+category: "manufacturing"
+order: 21
+icon: "🔧"
+---
+
+# CAD Translation Pipeline
+
+Process various CAD formats (Inventor, Fusion, STEP, IGES) for web viewing.
+
+## Workflow Overview
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">CAD Sources</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Inventor IAM/IPT</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Fusion 360</div>
+        <div class="bg-slate-800 rounded px-2 py-1">STEP/STP</div>
+        <div class="bg-slate-800 rounded px-2 py-1">IGES/IGS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">SolidWorks</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">RAPS Upload</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1 font-mono">raps object upload</div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">APS Storage</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">OSS Bucket</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Model Derivative</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Translation Engine</div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Outputs</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">SVF2 Viewable</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Thumbnails</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Metadata</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Input</span>
+      <span class="text-slate-600">→</span>
+      <span>Upload</span>
+      <span class="text-slate-600">→</span>
+      <span>Storage</span>
+      <span class="text-slate-600">→</span>
+      <span>Translate</span>
+      <span class="text-slate-600">→</span>
+      <span>Output</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## CLI Approach
+
+### Step 1: Create CAD Bucket
+
+```bash
+raps bucket create --key cad-library --policy persistent --region US
+```
+
+### Step 2: Upload CAD Files
+
+```bash
+# Inventor assembly
+raps object upload cad-library assembly.iam
+
+# Inventor part
+raps object upload cad-library part.ipt
+
+# STEP file
+raps object upload cad-library model.stp
+
+# IGES file
+raps object upload cad-library legacy.igs
+```
+
+### Step 3: Translate to SVF2
+
+```bash
+# Get URN and translate
+URN=$(raps object urn cad-library assembly.iam --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Step 4: Verify Translation
+
+```bash
+# Check manifest
+raps translate manifest "$URN"
+
+# Get available views
+raps derivative views "$URN" --output json
+```
+
+### Supported Formats
+
+| Format | Extension | Notes |
+|--------|-----------|-------|
+| Inventor Assembly | .iam | Full assembly hierarchy |
+| Inventor Part | .ipt | Single part files |
+| STEP | .stp, .step | AP203/AP214 |
+| IGES | .igs, .iges | Legacy format |
+| SolidWorks | .sldprt, .sldasm | Parts and assemblies |
+| Fusion 360 | .f3d | Direct from Fusion |
+
+---
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/cad-translation.yml
+name: CAD Translation Pipeline
+
+on:
+  push:
+    paths:
+      - 'cad/**/*.iam'
+      - 'cad/**/*.ipt'
+      - 'cad/**/*.stp'
+      - 'cad/**/*.igs'
+
+env:
+  BUCKET: cad-library-${{ github.repository_id }}
+
+jobs:
+  translate-cad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Upload and translate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'cad/**'); do
+            [ -f "$file" ] || continue
+
+            echo "Processing: $file"
+            raps object upload "$BUCKET" "$file"
+
+            key=$(basename "$file")
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+
+            echo "Translated: $key"
+          done
+
+      - name: Generate translation report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# CAD Translation Report" > report.md
+          echo "Date: $(date)" >> report.md
+          echo "" >> report.md
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+            echo "- $key: $STATUS" >> report.md
+          done
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-report
+          path: report.md
+```
+
+### Pipeline Flow
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Git Push</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">CAD files changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Processing</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload to OSS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Start Translation</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Wait for Complete</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Output</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">translation-report.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## MCP Integration
+
+### Translate Single File
+
+```
+User: "Upload and translate the new assembly.iam file for web viewing"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">User</div>
+      <div class="text-purple-400">AI Assistant</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">User</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Translate assembly.iam</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Upload file</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Upload complete</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_urn(bucket, key)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">URN</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(urn, format="svf2")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Start translation</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">loop: Wait for completion</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_manifest(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Check status</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Translation complete</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> assembly.iam has been uploaded and translated successfully.
+> - **File size:** 45 MB
+> - **Components:** 234 parts
+> - **Translation time:** 2m 34s
+> - **Viewer URL:** https://viewer.autodesk.com/...
+
+### Translate Multiple Formats
+
+```
+User: "I have STEP and IGES files from a supplier. Translate them all for review."
+```
+
+**AI Response:**
+> Translating 5 files from supplier folder:
+>
+> | File | Format | Status | Time |
+> |------|--------|--------|------|
+> | bracket.stp | STEP | Complete | 45s |
+> | housing.stp | STEP | Complete | 1m 12s |
+> | shaft.igs | IGES | Complete | 32s |
+> | gear.igs | IGES | Complete | 28s |
+> | mount.stp | STEP | Complete | 55s |
+>
+> All files ready for viewing.
+
+---
+
+## Format-Specific Options
+
+### STEP Translation
+
+```bash
+# Standard STEP translation
+raps translate start "$URN" --format svf2 --wait
+
+# With specific output views
+raps translate start "$URN" --format svf2 --views "3d"
+```
+
+### Inventor Assembly with References
+
+```bash
+# Upload assembly with all referenced parts
+raps object upload cad-library assembly.iam
+raps object upload cad-library part1.ipt
+raps object upload cad-library part2.ipt
+
+# Translate assembly (references resolved automatically)
+URN=$(raps object urn cad-library assembly.iam --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### ZIP Package with Root File
+
+```bash
+# Create zip with assembly and parts
+zip -r model-package.zip assembly.iam *.ipt
+
+# Upload package
+raps object upload cad-library model-package.zip
+
+# Translate with root file specified
+URN=$(raps object urn cad-library model-package.zip --output plain)
+raps translate start "$URN" --format svf2 --root "assembly.iam" --wait
+```
+
+---
+
+## Related
+
+- [Multi-Format Batch Processing](/cookbook/cookbook-mfg-batch)
+- [Bill of Materials Extraction](/cookbook/cookbook-mfg-bom)
+- [Cookbook: Manufacturing](/cookbook/cookbook-manufacturing)

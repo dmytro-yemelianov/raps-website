@@ -1,0 +1,80 @@
+---
+import CookbookLayout from '../../layouts/CookbookLayout.astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+
+const getDocSlug = (doc: any) => {
+  const raw = doc.slug || doc.id || '';
+  return raw.replace(/\.mdx?$/, '');
+};
+
+export async function getStaticPaths() {
+  const cookbook = await getCollection('cookbook');
+  return cookbook.map(doc => {
+    const slug = (doc.slug || doc.id || '').replace(/\.mdx?$/, '');
+    return {
+      params: { slug },
+      props: { doc, slug },
+    };
+  });
+}
+
+interface Props {
+  doc: CollectionEntry<'cookbook'>;
+  slug: string;
+}
+
+const { doc, slug } = Astro.props;
+const { Content } = await render(doc);
+
+// Get all cookbook for prev/next navigation
+const allCookbook = await getCollection('cookbook');
+
+// Find prev/next in same category
+const categoryDocs = allCookbook
+  .filter(d => d.data.category === doc.data.category)
+  .sort((a, b) => a.data.order - b.data.order);
+const sectionIndex = categoryDocs.findIndex(d => getDocSlug(d) === slug);
+const prevDoc = sectionIndex > 0 ? categoryDocs[sectionIndex - 1] : null;
+const nextDoc = sectionIndex < categoryDocs.length - 1 ? categoryDocs[sectionIndex + 1] : null;
+---
+
+<CookbookLayout
+  title={doc.data.title}
+  description={doc.data.description}
+  currentSlug={slug}
+>
+  <article class="docs-content">
+    <Content />
+  </article>
+
+  <!-- Navigation -->
+  <nav class="mt-16 pt-8 border-t border-slate-800">
+    <div class="flex justify-between gap-4">
+      {prevDoc ? (
+        <a
+          href={`/cookbook/${getDocSlug(prevDoc)}`}
+          class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
+        >
+          <div class="text-sm text-slate-500 mb-1">&larr; Previous</div>
+          <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
+            {prevDoc.data.icon && <span class="mr-2">{prevDoc.data.icon}</span>}
+            {prevDoc.data.title}
+          </div>
+        </a>
+      ) : <div class="flex-1"></div>}
+
+      {nextDoc ? (
+        <a
+          href={`/cookbook/${getDocSlug(nextDoc)}`}
+          class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
+        >
+          <div class="text-sm text-slate-500 mb-1">Next &rarr;</div>
+          <div class="font-medium text-white group-hover:text-rapeseed-400 transition-colors">
+            {nextDoc.data.title}
+            {nextDoc.data.icon && <span class="ml-2">{nextDoc.data.icon}</span>}
+          </div>
+        </a>
+      ) : <div class="flex-1"></div>}
+    </div>
+  </nav>
+</CookbookLayout>
