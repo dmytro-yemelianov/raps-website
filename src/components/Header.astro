@@ -13,6 +13,7 @@ const navItems = [
     submenu: [
       { href: '/products/raps-mock', label: 'raps-mock', icon: '🧪', description: 'APS API mock server for testing' },
       { href: '/products/raps-twin', label: 'raps-twin', icon: '🏭', description: 'Engineering Department Digital Twin' },
+      { href: '/products/yr', label: 'yr', icon: '🎬', description: 'Terminal recording toolkit for Windows' },
     ]
   },
   {
@@ -90,7 +91,8 @@ const isSubmenuActive = (submenu: any[]) => {
                 </button>
 
                 <!-- Dropdown Menu -->
-                <div class="absolute top-full left-0 mt-2 w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div class="absolute top-full left-0 pt-2 w-80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div class="bg-slate-900 border border-slate-700 rounded-xl shadow-xl">
                   <div class="p-2">
                     {item.submenu.map((subitem) => (
                       <a
@@ -108,6 +110,7 @@ const isSubmenuActive = (submenu: any[]) => {
                       </a>
                     ))}
                   </div>
+                </div>
                 </div>
               </div>
             );
