@@ -1,0 +1,160 @@
+---
+title: "Коди завершення"
+description: "Коди завершення для автоматизації та CI/CD"
+section: "reference"
+order: 1
+icon: "🔢"
+---
+
+# Коди завершення
+
+RAPS використовує стандартизовані коди завершення для інтеграції з CI/CD та автоматизації скриптів.
+
+## Довідник кодів завершення
+
+| Код | Назва | Опис |
+|-----|-------|------|
+| 0 | Success | Команда виконана успішно |
+| 1 | General Error | Невизначена помилка |
+| 2 | Configuration Error | Відсутня або некоректна конфігурація |
+| 3 | Authentication Error | Помилка автентифікації |
+| 4 | Not Found | Ресурс не знайдено |
+| 5 | Conflict | Конфлікт ресурсу (напр., бакет вже існує) |
+| 6 | Permission Denied | Недостатньо прав доступу |
+| 7 | Validation Error | Некоректні вхідні дані або параметри |
+| 8 | Network Error | Помилка мережі або з'єднання |
+| 9 | Timeout | Перевищено час очікування операції |
+| 10 | Rate Limited | Перевищено ліміт запитів API |
+| 11 | Server Error | Помилка сервера APS API |
+| 12 | Translation Failed | Помилка трансляції моделі |
+
+## Використання кодів завершення у скриптах
+
+### Bash
+
+```bash
+#!/bin/bash
+set -e  # Вихід при помилці
+
+raps auth test
+if [ $? -eq 0 ]; then
+  echo "Authentication successful"
+else
+  echo "Authentication failed"
+  exit 1
+fi
+
+# Або використовуйте && для ланцюжка команд
+raps bucket create --key my-bucket && \
+raps object upload my-bucket model.rvt && \
+raps translate start $URN --format svf2 --wait
+```
+
+### PowerShell
+
+```powershell
+$result = raps auth test
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Authentication successful"
+} elseif ($LASTEXITCODE -eq 3) {
+    Write-Host "Authentication failed - check credentials"
+    exit 1
+} else {
+    Write-Host "Unexpected error: $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+```
+
+### Конвеєри CI/CD
+
+```yaml
+# GitHub Actions
+- name: Test Authentication
+  run: raps auth test
+  continue-on-error: false
+
+- name: Upload Model
+  run: |
+    raps object upload my-bucket model.rvt
+    if [ $? -eq 5 ]; then
+      echo "::warning::File already exists, skipping"
+    fi
+```
+
+## Обробка конкретних помилок
+
+### Помилки автентифікації (код завершення 3)
+
+```bash
+raps auth test
+if [ $? -eq 3 ]; then
+  echo "Check APS_CLIENT_ID and APS_CLIENT_SECRET"
+  echo "Ensure credentials are valid in APS Developer Portal"
+  exit 1
+fi
+```
+
+### Помилки "не знайдено" (код завершення 4)
+
+```bash
+raps bucket details my-bucket
+if [ $? -eq 4 ]; then
+  echo "Bucket doesn't exist, creating..."
+  raps bucket create --key my-bucket --policy persistent --region US
+fi
+```
+
+### Обмеження частоти запитів (код завершення 10)
+
+```bash
+raps bucket list
+if [ $? -eq 10 ]; then
+  echo "Rate limited, waiting 60 seconds..."
+  sleep 60
+  raps bucket list  # Повторна спроба
+fi
+```
+
+### Помилки трансляції (код завершення 12)
+
+```bash
+raps translate start $URN --format svf2 --wait
+if [ $? -eq 12 ]; then
+  echo "Translation failed, checking manifest..."
+  raps translate manifest $URN --output json | jq '.messages'
+fi
+```
+
+## Виведення JSON для автоматизації
+
+Поєднуйте коди завершення з виведенням у JSON для детальної обробки помилок:
+
+```bash
+output=$(raps translate status $URN --output json 2>&1)
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+  status=$(echo "$output" | jq -r '.status')
+  if [ "$status" == "success" ]; then
+    echo "Translation complete"
+  else
+    echo "Translation in progress: $status"
+  fi
+else
+  error=$(echo "$output" | jq -r '.error // "Unknown error"')
+  echo "Error: $error (exit code: $exit_code)"
+fi
+```
+
+## Найкращі практики
+
+1. **Завжди перевіряйте коди завершення** у скриптах автоматизації
+2. **Використовуйте `--output json`** для машинночитаного виведення
+3. **Реалізуйте логіку повторних спроб** для помилок мережі (код 8) та обмеження частоти запитів (код 10)
+4. **Журналюйте детальні помилки** використовуючи виведення у JSON
+5. **Встановлюйте відповідні тайм-аути** за допомогою прапорця `--timeout`
+
+## Наступні кроки
+
+- [Приклади](/docs/examples) — Приклади робочих процесів CI/CD
+- [Конвеєри](/docs/pipelines) — Декларативна автоматизація

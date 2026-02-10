@@ -1,0 +1,428 @@
+---
+title: "Створення пакетів для постачальників"
+description: "Створення пакетів для передачі постачальникам"
+category: "manufacturing"
+order: 26
+icon: "📤"
+---
+
+# Створення пакетів для постачальників
+
+Створення пакетів CAD-файлів з тимчасовими посиланнями для завантаження постачальниками.
+
+## Огляд процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Вибір файлів</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">CAD-моделі</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Креслення</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Специфікації</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Організація</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Створення структури тек</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Застосування конвенції іменування</div>
+      </div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Завантаження в OSS</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження файлів</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Організація за постачальником/PO</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Генерація посилань</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Створення підписаних URL</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Встановлення терміну дії</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Доставка</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Email-пакет</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Сторінка завантаження</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Вибір</span>
+      <span class="text-slate-600">→</span>
+      <span>Організація</span>
+      <span class="text-slate-600">→</span>
+      <span>Завантаження</span>
+      <span class="text-slate-600">→</span>
+      <span>Поширення</span>
+      <span class="text-slate-600">→</span>
+      <span>Доставка</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Організація файлів за постачальником
+
+```bash
+SUPPLIER="acme-corp"
+ORDER="PO-2024-001"
+
+# Upload CAD files
+raps object upload supplier-packages part.stp --key "suppliers/${SUPPLIER}/${ORDER}/part.stp"
+raps object upload supplier-packages drawing.pdf --key "suppliers/${SUPPLIER}/${ORDER}/drawing.pdf"
+raps object upload supplier-packages spec.pdf --key "suppliers/${SUPPLIER}/${ORDER}/specification.pdf"
+```
+
+### Крок 2: Генерація підписаних URL для завантаження
+
+```bash
+# Generate temporary download links (valid for 24 hours)
+echo "Download Package for ${SUPPLIER} - ${ORDER}"
+echo "============================================"
+echo "Links valid for 24 hours"
+echo ""
+
+for file in part.stp drawing.pdf specification.pdf; do
+  URL=$(raps object signed-url supplier-packages "suppliers/${SUPPLIER}/${ORDER}/${file}" --minutes 1440)
+  echo "${file}:"
+  echo "  ${URL}"
+  echo ""
+done
+```
+
+### Крок 3: Створення маніфесту пакета
+
+```bash
+# Generate package manifest
+echo "# Supplier Package Manifest" > package-manifest.md
+echo "" >> package-manifest.md
+echo "**Supplier:** ${SUPPLIER}" >> package-manifest.md
+echo "**PO Number:** ${ORDER}" >> package-manifest.md
+echo "**Generated:** $(date)" >> package-manifest.md
+echo "**Expires:** $(date -d '+24 hours')" >> package-manifest.md
+echo "" >> package-manifest.md
+echo "## Files" >> package-manifest.md
+echo "" >> package-manifest.md
+
+raps object list supplier-packages --prefix "suppliers/${SUPPLIER}/${ORDER}/" --output json | \
+  jq -r '.[] | "- \(.key | split("/") | .[-1]) (\(.size) bytes)"' >> package-manifest.md
+```
+
+### Крок 4: Пакетне створення пакетів
+
+```bash
+#!/bin/bash
+# create-supplier-package.sh
+
+SUPPLIER=$1
+ORDER=$2
+FILES_DIR=$3
+
+BUCKET="supplier-packages"
+PREFIX="suppliers/${SUPPLIER}/${ORDER}"
+
+# Upload all files
+for file in "${FILES_DIR}"/*; do
+  [ -f "$file" ] || continue
+  filename=$(basename "$file")
+  raps object upload "$BUCKET" "$file" --key "${PREFIX}/${filename}"
+done
+
+# Generate links
+echo "Package ready for ${SUPPLIER}"
+echo "============================="
+
+raps object list "$BUCKET" --prefix "$PREFIX/" --output json | \
+  jq -r '.[].key' | while read key; do
+    filename=$(basename "$key")
+    url=$(raps object signed-url "$BUCKET" "$key" --minutes 1440)
+    echo "${filename}: ${url}"
+  done
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/supplier-package.yml
+name: Supplier Package Creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      supplier:
+        description: 'Supplier name'
+        required: true
+      po_number:
+        description: 'PO number'
+        required: true
+      files_path:
+        description: 'Path to files (glob pattern)'
+        required: true
+      expiry_hours:
+        description: 'Link expiry in hours'
+        default: '24'
+
+jobs:
+  create-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Upload package files
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="supplier-packages"
+          PREFIX="suppliers/${{ inputs.supplier }}/${{ inputs.po_number }}"
+
+          for file in ${{ inputs.files_path }}; do
+            [ -f "$file" ] || continue
+            filename=$(basename "$file")
+            raps object upload "$BUCKET" "$file" --key "${PREFIX}/${filename}"
+            echo "Uploaded: ${filename}"
+          done
+
+      - name: Generate download links
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="supplier-packages"
+          PREFIX="suppliers/${{ inputs.supplier }}/${{ inputs.po_number }}"
+          EXPIRY_MINS=$(( ${{ inputs.expiry_hours }} * 60 ))
+
+          echo "# Supplier Package" > package.md
+          echo "" >> package.md
+          echo "**Supplier:** ${{ inputs.supplier }}" >> package.md
+          echo "**PO:** ${{ inputs.po_number }}" >> package.md
+          echo "**Created:** $(date)" >> package.md
+          echo "**Expires:** $(date -d '+${{ inputs.expiry_hours }} hours')" >> package.md
+          echo "" >> package.md
+          echo "## Download Links" >> package.md
+          echo "" >> package.md
+
+          raps object list "$BUCKET" --prefix "$PREFIX/" --output json | \
+            jq -r '.[].key' | while read key; do
+              filename=$(basename "$key")
+              url=$(raps object signed-url "$BUCKET" "$key" --minutes $EXPIRY_MINS)
+              echo "- [${filename}](${url})" >> package.md
+            done
+
+      - name: Upload package manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-package-${{ inputs.supplier }}-${{ inputs.po_number }}
+          path: package.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Ручний запуск</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">постачальник + PO + файли</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-amber-500/50 rounded-lg p-3 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-xs mb-2">Завантаження</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження файлів в OSS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Організація за постачальником/PO</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Генерація посилань</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Створення підписаних URL</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Встановлення терміну дії</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Пакет</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">package.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Створення пакета
+
+```
+User: "Create a supplier package for Acme Corp with the bracket files for PO-2024-100"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">Користувач</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Створити пакет для Acme Corp</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Визначення файлів для пакета</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Завантаження файлів</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file, key)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Завантаження</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Генерація посилань</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_signed_url(key, minutes=1440)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Підписаний URL</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Пакет готовий з посиланнями для завантаження</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Створено пакет для постачальника Acme Corp - PO-2024-100:
+>
+> **Завантажено файлів:** 4
+> **Термін дії посилань:** 24 години (16 лют. 2024, 15:00)
+>
+> **Посилання для завантаження:**
+> - [bracket-assembly.stp](https://signed-url...)
+> - [bracket-drawing.pdf](https://signed-url...)
+> - [specification.pdf](https://signed-url...)
+> - [quality-requirements.pdf](https://signed-url...)
+>
+> Ви можете поділитися цими посиланнями безпосередньо з постачальником.
+
+### Перевірка статусу пакетів
+
+```
+User: "List all active supplier packages"
+```
+
+**Відповідь AI:**
+> Активні пакети для постачальників:
+>
+> | Постачальник | PO | Файли | Створено | Термін дії |
+> |-------------|-----|-------|----------|------------|
+> | Acme Corp | PO-2024-100 | 4 | 15 лют. | 16 лют. |
+> | Beta Mfg | PO-2024-098 | 3 | 14 лют. | 15 лют. |
+> | Gamma Inc | PO-2024-095 | 6 | 12 лют. | **Прострочено** |
+
+---
+
+## Розширені можливості
+
+### Інтеграція з електронною поштою
+
+```bash
+#!/bin/bash
+# send-package-email.sh
+
+SUPPLIER=$1
+EMAIL=$2
+ORDER=$3
+
+# Generate package links
+LINKS=$(raps object list supplier-packages --prefix "suppliers/${SUPPLIER}/${ORDER}/" --output json | \
+  jq -r '.[].key' | while read key; do
+    filename=$(basename "$key")
+    url=$(raps object signed-url supplier-packages "$key" --minutes 1440)
+    echo "- ${filename}: ${url}"
+  done)
+
+# Send email (using mailx or similar)
+cat <<EOF | mail -s "Download Package for ${ORDER}" "$EMAIL"
+Dear Supplier,
+
+Your requested files for ${ORDER} are ready for download.
+
+Files:
+${LINKS}
+
+These links will expire in 24 hours.
+
+Best regards,
+Manufacturing Team
+EOF
+```
+
+### Відстеження пакетів
+
+```bash
+# Log package creation
+echo "$(date),${SUPPLIER},${ORDER},created" >> package-log.csv
+
+# Track downloads (requires webhook setup)
+raps webhook create \
+  --event "download.complete" \
+  --callback "https://myapp.com/track-download" \
+  --scope "data:read"
+```
+
+### Очищення прострочених пакетів
+
+```bash
+# Delete packages older than 7 days
+CUTOFF=$(date -d '-7 days' +%Y%m%d)
+
+raps object list supplier-packages --prefix "suppliers/" --output json | \
+  jq -r '.[] | select(.lastModified < "'"$CUTOFF"'") | .key' | \
+  while read key; do
+    echo "Deleting expired: $key"
+    raps object delete supplier-packages "$key"
+  done
+```
+
+---
+
+## Пов'язане
+
+- [Відстеження ітерацій проєктування](/cookbook/cookbook-mfg-iterations)
+- [Конвеєр трансляції CAD](/cookbook/cookbook-mfg-translation)
+- [Cookbook: Виробництво](/cookbook/cookbook-manufacturing)

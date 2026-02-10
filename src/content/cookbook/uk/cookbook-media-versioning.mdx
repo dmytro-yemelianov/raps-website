@@ -1,0 +1,447 @@
+---
+title: "Контроль версій ресурсів"
+description: "Відстеження версій ресурсів з організованим сховищем"
+category: "media"
+order: 47
+icon: "📚"
+---
+
+# Контроль версій ресурсів
+
+Відстеження версій 3D-ресурсів з організованим сховищем та порівнянням.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Історія версій</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/v1.0/model.fbx</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/v1.1/model.fbx</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/v2.0/model.fbx</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300 font-mono text-xs">assets/hero/latest/model.fbx</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Трансляції</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 v1.0</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 v1.1</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 v2.0</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Порівняння</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Кількість полігонів</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Кількість матеріалів</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Розмір файлу</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Завантаження з версією
+
+```bash
+ASSET_NAME="hero-character"
+VERSION="v2.0"
+
+# Upload versioned asset
+raps object upload media-assets model.fbx --key "assets/${ASSET_NAME}/${VERSION}/model.fbx"
+
+# Also update latest reference
+raps object upload media-assets model.fbx --key "assets/${ASSET_NAME}/latest/model.fbx"
+```
+
+### Крок 2: Перелік усіх версій
+
+```bash
+ASSET_NAME="hero-character"
+
+# List all versions
+raps object list media-assets --prefix "assets/${ASSET_NAME}/" --output json | \
+  jq -r '.[] | .key' | sort -V
+
+# Output:
+# assets/hero-character/latest/model.fbx
+# assets/hero-character/v1.0/model.fbx
+# assets/hero-character/v1.1/model.fbx
+# assets/hero-character/v2.0/model.fbx
+```
+
+### Крок 3: Трансляція всіх версій
+
+```bash
+# Translate each version
+raps object list media-assets --prefix "assets/${ASSET_NAME}/v" --output json | \
+  jq -r '.[].key' | while read key; do
+    URN=$(raps object urn media-assets "$key" --output plain)
+    raps translate start "$URN" --format svf2
+    echo "Started translation: $key"
+  done
+
+# Wait for all
+sleep 60
+
+# Check status
+raps object list media-assets --prefix "assets/${ASSET_NAME}/v" --output json | \
+  jq -r '.[].key' | while read key; do
+    URN=$(raps object urn media-assets "$key" --output plain)
+    STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+    echo "$key: $STATUS"
+  done
+```
+
+### Крок 4: Порівняння версій
+
+```bash
+V1_URN=$(raps object urn media-assets "assets/${ASSET_NAME}/v1.0/model.fbx" --output plain)
+V2_URN=$(raps object urn media-assets "assets/${ASSET_NAME}/v2.0/model.fbx" --output plain)
+
+# Get metadata for comparison
+raps derivative metadata "$V1_URN" --output json > v1-meta.json
+raps derivative metadata "$V2_URN" --output json > v2-meta.json
+
+# Compare
+echo "Version Comparison: $ASSET_NAME"
+echo "================================"
+echo "v1.0 polygons: $(jq '.polygons // "N/A"' v1-meta.json)"
+echo "v2.0 polygons: $(jq '.polygons // "N/A"' v2-meta.json)"
+```
+
+---
+
+## Конвеєр CI/CD
+
+```yaml
+# .github/workflows/asset-versioning.yml
+name: Asset Version Management
+
+on:
+  push:
+    paths:
+      - 'assets/**'
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version type (patch, minor, major)'
+        default: 'patch'
+
+env:
+  BUCKET: media-assets
+
+jobs:
+  version-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Determine version
+        run: |
+          # Get latest version tag or start at v1.0.0
+          LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || echo "v0.0.0")
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+
+          case "${{ inputs.version_bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Upload versioned assets
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'assets/**'); do
+            [ -f "$file" ] || continue
+
+            # Extract asset name from path (assets/NAME/file.ext)
+            ASSET_NAME=$(echo "$file" | cut -d'/' -f2)
+            FILENAME=$(basename "$file")
+
+            # Upload versioned
+            raps object upload "$BUCKET" "$file" --key "assets/${ASSET_NAME}/${VERSION}/${FILENAME}"
+
+            # Upload as latest
+            raps object upload "$BUCKET" "$file" --key "assets/${ASSET_NAME}/latest/${FILENAME}"
+
+            echo "Uploaded: ${ASSET_NAME} as ${VERSION}"
+          done
+
+      - name: Translate new versions
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'assets/**/*.fbx' 'assets/**/*.obj'); do
+            [ -f "$file" ] || continue
+
+            ASSET_NAME=$(echo "$file" | cut -d'/' -f2)
+            FILENAME=$(basename "$file")
+
+            URN=$(raps object urn "$BUCKET" "assets/${ASSET_NAME}/${VERSION}/${FILENAME}" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+          done
+
+      - name: Generate version report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# Asset Version Report" > version-report.md
+          echo "Version: $VERSION" >> version-report.md
+          echo "Date: $(date)" >> version-report.md
+          echo "" >> version-report.md
+
+          echo "## Updated Assets" >> version-report.md
+          git diff --name-only HEAD~1 HEAD -- 'assets/**' | while read file; do
+            echo "- $file" >> version-report.md
+          done
+
+      - name: Tag release
+        run: |
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-report-${{ env.VERSION }}
+          path: version-report.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Змінено ресурси</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Версіонування</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Обчислення версії</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження v-X.Y.Z</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Оновлення latest</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Обробка</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Трансляція</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Генерація звіту</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Реліз</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Git-тег</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція MCP
+
+### Завантаження нової версії
+
+```
+User: "Upload the updated hero model as a new version"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Завантажити як нову версію</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_list(prefix="assets/hero/v")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Перелік версій</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Поточні версії</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Визначення наступної версії (v2.1)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(key="assets/hero/v2.1/...")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Завантаження версіонованого</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(key="assets/hero/latest/...")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Оновлення latest</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Трансляція</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-400 ml-2">Завантажено як v2.1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Завантажено hero-character.fbx як версію v2.1:
+>
+> **Історія версій:**
+> | Версія | Дата | Полігони | Розмір |
+> |--------|------|----------|--------|
+> | v2.1 | 16 лют 2024 | 48,000 | 14.2 MB |
+> | v2.0 | 10 лют 2024 | 45,000 | 12.8 MB |
+> | v1.1 | 1 лют 2024 | 42,000 | 11.5 MB |
+> | v1.0 | 20 січ 2024 | 38,000 | 10.2 MB |
+>
+> **Зміни від v2.0:**
+> - Кількість полігонів: +3,000 (+6.7%)
+> - Розмір файлу: +1.4 MB (+10.9%)
+
+### Порівняння версій
+
+```
+User: "Compare v1.0 and v2.0 of the hero character"
+```
+
+**Відповідь AI:**
+> **Порівняння версій Hero Character:**
+>
+> | Метрика | v1.0 | v2.0 | Зміна |
+> |---------|------|------|-------|
+> | Полігони | 38,000 | 45,000 | +18.4% |
+> | Матеріали | 5 | 7 | +2 |
+> | Кістки | 60 | 65 | +5 |
+> | Анімації | 4 | 6 | +2 |
+> | Розмір файлу | 10.2 MB | 12.8 MB | +25.5% |
+>
+> **Основні зміни:**
+> - Додано лицьовий ріг (5 нових кісток)
+> - Нові анімації "Run" та "Jump"
+> - Вища деталізація рук та обличчя
+
+---
+
+## Найкращі практики
+
+### Конвенція найменування
+
+```
+bucket/assets/
+└── {asset-name}/
+    ├── v1.0/
+    │   └── model.fbx
+    ├── v1.1/
+    │   └── model.fbx
+    ├── v2.0/
+    │   └── model.fbx
+    └── latest/
+        └── model.fbx
+```
+
+### Семантичне версіонування
+
+```
+v{MAJOR}.{MINOR}.{PATCH}
+
+MAJOR: Несумісні зміни, повний редизайн
+MINOR: Нові можливості, значні оновлення
+PATCH: Виправлення помилок, незначні правки
+```
+
+### Політика збереження
+
+```bash
+# Keep only last 5 versions
+ASSET="hero-character"
+VERSIONS=$(raps object list media-assets --prefix "assets/${ASSET}/v" --output json | \
+  jq -r '.[].key' | grep -E '/v[0-9]+\.[0-9]+\.[0-9]+/' | sort -rV)
+
+COUNT=0
+echo "$VERSIONS" | while read key; do
+  COUNT=$((COUNT + 1))
+  if [ $COUNT -gt 5 ]; then
+    echo "Deleting old version: $key"
+    raps object delete media-assets "$key"
+  fi
+done
+```
+
+---
+
+## Пов'язане
+
+- [Генерація каталогу ресурсів](/cookbook/cookbook-media-catalog)
+- [Трансляція 3D-ресурсів](/cookbook/cookbook-media-translation)
+- [Cookbook: Медіа та розваги](/cookbook/cookbook-media)

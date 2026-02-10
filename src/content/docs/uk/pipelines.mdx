@@ -1,0 +1,271 @@
+---
+title: "Пайплайни"
+description: "Автоматизація складних робочих процесів за допомогою YAML/JSON файлів пайплайнів"
+section: "guides"
+order: 2
+icon: "📋"
+---
+
+# Пайплайни
+
+Виконуйте пакетні операції з YAML або JSON файлів пайплайнів для складних робочих процесів автоматизації.
+
+## Огляд
+
+Пайплайни дозволяють:
+- Визначати багатокрокові робочі процеси в декларативних файлах
+- Використовувати підстановку змінних для динамічних значень
+- Коректно обробляти помилки з опцією continue-on-error
+- Перевіряти перед виконанням у режимі dry-run
+
+## Базова структура пайплайну
+
+```yaml
+# pipeline.yaml
+name: Model Processing Pipeline
+description: Upload and translate models
+
+variables:
+  bucket: my-project-bucket
+  region: US
+
+steps:
+  - name: Create Bucket
+    command: bucket create
+    args:
+      key: "{{ bucket }}"
+      policy: persistent
+      region: "{{ region }}"
+
+  - name: Upload Model
+    command: object upload
+    args:
+      bucket: "{{ bucket }}"
+      file: "./models/building.rvt"
+
+  - name: Start Translation
+    command: translate start
+    args:
+      urn: "{{ steps.Upload Model.output.urn }}"
+      format: svf2
+      wait: true
+```
+
+## Запуск пайплайнів
+
+```bash
+# Виконати пайплайн
+raps pipeline run pipeline.yaml
+
+# Dry-run (перевірка без виконання)
+raps pipeline run pipeline.yaml --dry-run
+
+# Перевизначити змінні
+raps pipeline run pipeline.yaml --var bucket=custom-bucket --var region=EMEA
+
+# Продовжити при помилках
+raps pipeline run pipeline.yaml --continue-on-error
+```
+
+## Підстановка змінних
+
+### Статичні змінні
+
+Визначте змінні на початку вашого пайплайну:
+
+```yaml
+variables:
+  project_name: Downtown Office
+  bucket_prefix: company-aps
+```
+
+Використовуйте з `{{ variable_name }}`:
+
+```yaml
+steps:
+  - name: Create Bucket
+    command: bucket create
+    args:
+      key: "{{ bucket_prefix }}-{{ project_name | slugify }}"
+```
+
+### Змінні середовища
+
+Доступ до змінних середовища:
+
+```yaml
+steps:
+  - name: Upload
+    command: object upload
+    args:
+      bucket: "{{ env.BUCKET_NAME }}"
+      file: "{{ env.MODEL_PATH }}"
+```
+
+### Результати кроків
+
+Посилання на результати попередніх кроків:
+
+```yaml
+steps:
+  - name: Upload Model
+    id: upload
+    command: object upload
+    args:
+      bucket: my-bucket
+      file: model.rvt
+
+  - name: Get URN
+    command: object urn
+    args:
+      bucket: my-bucket
+      object: "{{ steps.upload.output.object_key }}"
+```
+
+## Умовні кроки
+
+Виконання кроків на основі умов:
+
+```yaml
+steps:
+  - name: Create Bucket
+    command: bucket create
+    args:
+      key: my-bucket
+    condition: "{{ env.CREATE_BUCKET == 'true' }}"
+
+  - name: Upload
+    command: object upload
+    args:
+      bucket: my-bucket
+      file: model.rvt
+    condition: "{{ steps['Create Bucket'].success or env.BUCKET_EXISTS == 'true' }}"
+```
+
+## Обробка помилок
+
+### Продовження при помилці
+
+```yaml
+steps:
+  - name: Delete Old Bucket
+    command: bucket delete
+    args:
+      key: old-bucket
+    continue_on_error: true
+
+  - name: Create New Bucket
+    command: bucket create
+    args:
+      key: new-bucket
+```
+
+### Повторна спроба при невдачі
+
+```yaml
+steps:
+  - name: Upload Large File
+    command: object upload
+    args:
+      bucket: my-bucket
+      file: large-model.ifc
+    retry:
+      attempts: 3
+      delay: 10  # секунди
+```
+
+## Повний приклад
+
+Готовий до продакшену пайплайн для обробки моделей:
+
+```yaml
+name: Production Model Pipeline
+description: Full workflow for processing architectural models
+
+variables:
+  project_id: project-2024-001
+  bucket_name: "aps-{{ project_id }}"
+  output_formats:
+    - svf2
+    - obj
+    - thumbnail
+
+steps:
+  - name: Verify Authentication
+    command: auth test
+
+  - name: Create Project Bucket
+    command: bucket create
+    args:
+      key: "{{ bucket_name }}"
+      policy: persistent
+      region: US
+    continue_on_error: true  # Може вже існувати
+
+  - name: Upload Models
+    command: object upload
+    args:
+      bucket: "{{ bucket_name }}"
+      file: "./models/*.rvt"
+      batch: true
+      parallel: true
+      concurrency: 5
+
+  - name: Process Each Model
+    foreach: "{{ steps['Upload Models'].output.objects }}"
+    as: model
+    steps:
+      - name: Get URN
+        command: object urn
+        args:
+          bucket: "{{ bucket_name }}"
+          object: "{{ model.key }}"
+
+      - name: Translate to Formats
+        foreach: "{{ output_formats }}"
+        as: format
+        steps:
+          - name: "Translate to {{ format }}"
+            command: translate start
+            args:
+              urn: "{{ parent.steps['Get URN'].output.urn }}"
+              format: "{{ format }}"
+              wait: true
+            retry:
+              attempts: 2
+              delay: 30
+
+  - name: Generate Report
+    command: pipeline report
+    args:
+      output: "./reports/{{ project_id }}-report.json"
+```
+
+## Команди пайплайнів
+
+```bash
+# Запустити пайплайн
+raps pipeline run pipeline.yaml
+
+# Перевірити синтаксис
+raps pipeline validate pipeline.yaml
+
+# Показати план виконання
+raps pipeline plan pipeline.yaml
+
+# Відновити невдалий пайплайн
+raps pipeline resume .raps-pipeline-state.json
+```
+
+## Найкращі практики
+
+1. **Використовуйте описові назви кроків** — Полегшує читання логів
+2. **Встановлюйте continue_on_error обдумано** — Тільки для некритичних кроків
+3. **Спочатку використовуйте dry-run** — Перевіряйте перед виконанням
+4. **Зберігайте секрети в змінних середовища** — Ніколи у файлах пайплайнів
+5. **Використовуйте retry для мережевих операцій** — API можуть мати тимчасові збої
+
+## Наступні кроки
+
+- [Приклади](/docs/examples) — Більше прикладів робочих процесів
+- [Коди виходу](/docs/exit-codes) — Інтеграція з CI/CD

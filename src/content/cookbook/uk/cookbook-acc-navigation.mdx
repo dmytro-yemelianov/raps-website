@@ -1,0 +1,398 @@
+---
+title: "Навігація по проєкту"
+description: "Навігація ієрархією проєктів ACC/BIM 360"
+category: "construction"
+order: 31
+icon: "🗂️"
+---
+
+# Навігація по проєкту
+
+Навігація ієрархією проєктів ACC/BIM 360 для пошуку та доступу до ресурсів.
+
+![RAPS project navigation demo](/terminal/data-management-demo.gif)
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Автентифікація</div>
+      <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">3-Legged OAuth</div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Ієрархія проєкту</div>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Хаби</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Проєкти</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Кореневі теки</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Підтеки</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Елементи</span>
+        <span class="text-slate-600">→</span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Версії</span>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Операції</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Перелік</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Деталі</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Завантаження</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Автентифікація
+
+```bash
+# Login with browser-based OAuth
+raps auth login
+
+# Check authentication status
+raps auth status
+```
+
+### Крок 2: Перелік хабів
+
+```bash
+# List all available hubs (accounts)
+raps hub list
+
+# Output:
+# ID                                    | Name            | Type
+# b.12345678-1234-1234-1234-123456789abc | Acme Corp      | BIM 360
+# b.87654321-4321-4321-4321-cba987654321 | Beta Inc       | ACC
+```
+
+### Крок 3: Перелік проєктів
+
+```bash
+HUB_ID="b.12345678-1234-1234-1234-123456789abc"
+
+# List projects in hub
+raps project list "$HUB_ID"
+
+# Get project details
+PROJECT_ID="b.project-id"
+raps project info "$PROJECT_ID"
+```
+
+### Крок 4: Перегляд тек
+
+```bash
+PROJECT_ID="b.project-id"
+
+# List top-level folders (Plans, Project Files, etc.)
+raps folder list "$PROJECT_ID" --top
+
+# Output:
+# ID                                      | Name           | Type
+# urn:adsk.wipprod:fs.folder:abc123       | Plans          | folder
+# urn:adsk.wipprod:fs.folder:def456       | Project Files  | folder
+# urn:adsk.wipprod:fs.folder:ghi789       | Photos         | folder
+
+# Browse specific folder
+FOLDER_ID="urn:adsk.wipprod:fs.folder:abc123"
+raps folder list "$PROJECT_ID" "$FOLDER_ID"
+```
+
+### Крок 5: Пошук та доступ до елементів
+
+```bash
+# List items in folder
+raps folder list "$PROJECT_ID" "$FOLDER_ID" --output json > items.json
+
+# Get item details
+ITEM_ID=$(jq -r '.[0].id' items.json)
+raps item info "$PROJECT_ID" "$ITEM_ID"
+
+# List item versions
+raps item versions "$PROJECT_ID" "$ITEM_ID"
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/acc-navigation.yml
+name: ACC Project Navigator
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project name to search for'
+        required: true
+      folder_path:
+        description: 'Folder path (e.g., "Project Files/Models")'
+        required: false
+
+jobs:
+  navigate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: |
+          raps auth refresh
+
+      - name: Find project
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Find hub
+          HUB_ID=$(raps hub list --output json | jq -r '.[0].id')
+
+          # Find project by name
+          PROJECT_ID=$(raps project list "$HUB_ID" --output json | \
+            jq -r '.[] | select(.name | contains("${{ inputs.project_name }}")) | .id' | head -1)
+
+          echo "HUB_ID=$HUB_ID" >> $GITHUB_ENV
+          echo "PROJECT_ID=$PROJECT_ID" >> $GITHUB_ENV
+
+      - name: Navigate to folder
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # List top folders
+          raps folder list "$PROJECT_ID" --top --output json > folders.json
+
+          # Navigate path if specified
+          if [ -n "${{ inputs.folder_path }}" ]; then
+            IFS='/' read -ra PARTS <<< "${{ inputs.folder_path }}"
+            CURRENT_FOLDER=""
+
+            for part in "${PARTS[@]}"; do
+              if [ -z "$CURRENT_FOLDER" ]; then
+                CURRENT_FOLDER=$(cat folders.json | jq -r ".[] | select(.name == \"$part\") | .id")
+              else
+                raps folder list "$PROJECT_ID" "$CURRENT_FOLDER" --output json > folders.json
+                CURRENT_FOLDER=$(cat folders.json | jq -r ".[] | select(.name == \"$part\") | .id")
+              fi
+            done
+
+            raps folder list "$PROJECT_ID" "$CURRENT_FOLDER" --output json > contents.json
+          fi
+
+      - name: Generate report
+        run: |
+          echo "# Project Navigation Report" > report.md
+          echo "Project: ${{ inputs.project_name }}" >> report.md
+          echo "" >> report.md
+
+          if [ -f contents.json ]; then
+            echo "## Folder Contents" >> report.md
+            jq -r '.[] | "- \(.name) (\(.type))"' contents.json >> report.md
+          else
+            echo "## Top Folders" >> report.md
+            jq -r '.[] | "- \(.name)"' folders.json >> report.md
+          fi
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: navigation-report
+          path: report.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Вхідні дані</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">project_name</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">folder_path</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Навігація</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Автентифікація</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Пошук хабу</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Пошук проєкту</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Навігація за шляхом</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Результат</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Вміст теки</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Звіт</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Перегляд проєкту
+
+```
+User: "Show me what's in the Main Street project"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">Користувач</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI-асистент</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">Корист.</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Показати вміст проєкту Main Street</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_hub_list()</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_project_list(hub_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Пошук проєкту "Main Street"</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_folder_list(project_id, top=true)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Структура проєкту</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">Корист.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> **Структура проєкту Main Street:**
+>
+> - **Plans** (12 елементів)
+> - **Project Files** (45 елементів)
+>   - Models/ (8 файлів)
+>   - Drawings/ (23 файли)
+>   - Specs/ (14 файлів)
+> - **Photos** (156 елементів)
+> - **Issues** (34 відкриті)
+>
+> Бажаєте переглянути якусь з цих тек?
+
+### Пошук конкретного файлу
+
+```
+User: "Find the latest architectural model in Main Street project"
+```
+
+**Відповідь AI:**
+> Знайдено архітектурну модель у проєкті Main Street:
+>
+> **Файл:** MainStreet-Architectural.rvt
+> **Розташування:** Project Files/Models/
+> **Версія:** 42
+> **Останні зміни:** 14 лютого 2024 р., John Smith
+> **Розмір:** 156 MB
+>
+> Бажаєте завантажити або отримати додаткові деталі?
+
+---
+
+## Допоміжні інструменти навігації
+
+### Рекурсивний перелік тек
+
+```bash
+#!/bin/bash
+# list-recursive.sh
+
+list_folder() {
+  local project_id=$1
+  local folder_id=$2
+  local prefix=$3
+
+  raps folder list "$project_id" "$folder_id" --output json | \
+    jq -r '.[] | "\(.type)|\(.id)|\(.name)"' | while IFS='|' read type id name; do
+      echo "${prefix}${name}"
+      if [ "$type" = "folders" ]; then
+        list_folder "$project_id" "$id" "${prefix}  "
+      fi
+    done
+}
+
+# Usage
+PROJECT_ID="b.project-id"
+list_folder "$PROJECT_ID" "" ""
+```
+
+### Пошук за назвою
+
+```bash
+# Search for files matching pattern
+PATTERN="*.rvt"
+
+raps folder list "$PROJECT_ID" "$FOLDER_ID" --output json | \
+  jq -r --arg pattern "$PATTERN" '.[] | select(.name | test($pattern)) | .name'
+```
+
+### Отримання повного шляху
+
+```bash
+# Build full path for an item
+get_path() {
+  local project_id=$1
+  local item_id=$2
+
+  # This would require traversing parent folders
+  # Implementation depends on item metadata
+  raps item info "$project_id" "$item_id" --output json | jq -r '.path // .name'
+}
+```
+
+---
+
+## Пов'язане
+
+- [Управління документами](/cookbook/cookbook-acc-documents)
+- [Управління проблемами та RFI](/cookbook/cookbook-acc-issues)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

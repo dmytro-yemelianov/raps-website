@@ -1,0 +1,228 @@
+---
+title: "DevCon 2026: Від нуля до продакшну -- спідран CLI"
+description: "За 30 хвилин перейдіть від нуля інструментів до готового до продакшну робочого процесу з автентифікацією, управлінням файлами, трансляцією моделей та інтеграцією AI-асистента."
+pubDate: 2026-01-20
+author: "Dmytro Yemelianov"
+tags: ["devcon", "cli", "tutorial", "installation", "speedrun"]
+featured: true
+draft: false
+---
+
+> **DevCon 2026 Сесія 1258** | 30-хвилинний глибокий аналіз | Трек розробників
+
+![Zero to Production Hero](/blog/devcon/1258-zero-to-production-hero.png)
+
+## Проблема
+
+Кожен APS-проєкт починається однаково. Ви створюєте застосунок у порталі розробника. Копіюєте client ID та secret. Потім відкриваєте свій улюблений HTTP-клієнт і починаєте формувати запити. Base64-кодуєте облікові дані. POST на ендпоінт токена. Копіюєте access token. Не забудьте додати префікс "Bearer". Вставляєте в наступний запит. Повторюєте, коли токен закінчується через годину.
+
+На дворі 2026 рік. Можна краще.
+
+Ця сесія -- спідран. За 30 хвилин ми пройдемо від нуля інструментів до готового до продакшну робочого процесу, що охоплює автентифікацію, управління файлами, трансляцію моделей та -- ось несподіванка -- інтеграцію AI-асистента.
+
+## Частина 1: Встановлення (оберіть свій шлях)
+
+![Multi-Platform Install](/blog/devcon/1258-zero-to-production-installation.png)
+
+Шість способів встановлення -- виберіть той, від якого у вас не тремтить око.
+
+### Скрипти швидкого встановлення (рекомендовано)
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/dmytro-yemelianov/raps/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/dmytro-yemelianov/raps/main/install.ps1 | iex
+```
+
+### Менеджери пакетів
+
+```bash
+# npm
+npm install -g @dmytro-yemelianov/raps-cli
+
+# pip
+pip install raps
+
+# Homebrew (macOS/Linux)
+brew install dmytro-yemelianov/tap/raps
+
+# Scoop (Windows)
+scoop bucket add raps https://github.com/dmytro-yemelianov/scoop-bucket
+scoop install raps
+
+# Cargo (Rust)
+cargo install raps
+```
+
+### Перевірка встановлення
+
+```bash
+raps --version
+# raps 4.3.0
+```
+
+## Налаштування: зробіть його своїм
+
+### Створення першого профілю
+
+```bash
+# Interactive setup
+raps config profile create dev
+
+# Or set values directly
+raps config set client_id "your_client_id"
+raps config set client_secret "your_client_secret"
+```
+
+### Кілька середовищ
+
+```bash
+# Create profiles for each environment
+raps config profile create dev
+raps config profile create staging
+raps config profile create production
+
+# Switch between them
+raps config profile use staging
+
+# Check active profile
+raps config profile current
+# → staging
+```
+
+### Перевірка налаштування
+
+```bash
+raps auth test
+# ✓ Authentication successful
+#   Token expires in: 59 minutes
+#   Scopes: data:read data:write bucket:create ...
+```
+
+## Частина 2: Основні операції
+
+![CLI Workflow](/blog/devcon/1258-zero-to-production-workflow.png)
+
+### Бакети: ваше хмарне сховище
+
+```bash
+# Create a bucket
+raps bucket create --key hospital-project-2026 --policy persistent --region us
+
+# List your buckets
+raps bucket list
+# ┌─────────────────────────┬────────────┬────────┐
+# │ Bucket Key              │ Policy     │ Region │
+# ├─────────────────────────┼────────────┼────────┤
+# │ hospital-project-2026   │ persistent │ US     │
+# │ temp-uploads            │ transient  │ US     │
+# └─────────────────────────┴────────────┴────────┘
+```
+
+### Завантаження: робота з реальними файлами
+
+```bash
+# Upload a file (auto-chunks large files)
+raps object upload hospital-project-2026 model.rvt
+# [████████████████████████████████] 100% | 245 MB
+# ✓ Upload complete!
+#   URN (for translation): dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6aG9z...
+
+# Batch upload with parallel processing
+raps object upload-batch hospital-project-2026 *.dwg --parallel 4
+```
+
+### Трансляція: момент істини
+
+```bash
+# Start a translation
+raps translate start dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6aG9z... --format svf2
+
+# Wait for completion (no manual polling!)
+raps translate status dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6aG9z... --wait
+# Translation progress: 15%... 42%... 78%... 100%
+# ✓ Translation complete!
+```
+
+### Управління даними: навігація ACC/BIM 360
+
+```bash
+# List your hubs (requires 3-legged auth)
+raps auth login  # Opens browser for OAuth flow
+raps hub list
+
+# Navigate the hierarchy
+raps project list b.abc123-hub-id
+raps folder list b.xyz789-project-id urn:folder:root
+raps item versions b.xyz789-project-id urn:item:12345
+```
+
+## Частина 3: AI-інтеграція
+
+![Speedrun Timer](/blog/devcon/1258-zero-to-production-speedrun.png)
+
+### Запуск MCP-сервера
+
+```bash
+raps serve
+```
+
+Все. CLI тепер є MCP-сервером, що надає **35 інструментів** для AI-асистентів.
+
+### Підключення Claude Desktop
+
+Відредагуйте конфігурацію Claude:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Linux:** `~/.config/claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"],
+      "env": {
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+### Що можна з цим робити?
+
+Після підключення природна мова стає API-операціями:
+
+- "List all my OSS buckets" → AI викликає `bucket_list`
+- "Create a bucket named 'new-project' with transient policy" → AI викликає `bucket_create`
+- "What's the status of my translation job?" → AI викликає `translate_status`
+- "Add user@company.com to all active projects" → AI викликає `admin_user_add`
+
+## Ширша картина
+
+APS -- потужний інструмент. API комплексні. Але є прогалина -- і велика -- між читанням документації та фактичним написанням продакшн-коду. Ця прогалина заповнена тертям: OAuth-танець, Base64-кодування URN, цикли опитування з магічними sleep-таймерами.
+
+Хороші інструменти зменшують цю прогалину. Вони дозволяють зосередитися на тому, що ви фактично створюєте, замість боротьби з механікою.
+
+## Ключові висновки
+
+1. **CLI краще за клікання** для всього, що ви робите більш ніж двічі
+2. **150+ команд** для 15 API -- ймовірно, покриває те, що вам потрібно
+3. **Виберіть спосіб встановлення**: npm, pip, brew, scoop, cargo або curl-bash
+4. **Профілі рятують ваш розум** при жонглюванні staging та prod
+5. **MCP -- це реальність** -- 35 інструментів, працює сьогодні, не демо
+6. **Відкритий код** означає, що ви можете виправляти баги, не чекаючи тікету вендора
+
+## Ресурси
+
+- [GitHub-репозиторій](https://github.com/dmytro-yemelianov/raps)
+- [Посібник з встановлення](/docs/installation)
+- [Довідка команд](/docs/commands)
+- [Посібник MCP-сервера](/docs/mcp-server)

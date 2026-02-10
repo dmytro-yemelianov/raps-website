@@ -1,0 +1,190 @@
+---
+title: "DevCon 2026: AI-парний асистент для операторів APS"
+description: "Що, якби ви могли керувати APS-процесами, просто попросивши свого AI-асистента? Ця сесія досліджує, як MCP з'єднує Claude з реальними APS API для операцій природною мовою."
+pubDate: 2026-01-20
+author: "Dmytro Yemelianov"
+tags: ["devcon", "mcp", "ai", "automation", "claude"]
+featured: true
+draft: false
+---
+
+import { Image } from 'astro:assets';
+
+> **DevCon 2026 Сесія 1257** | 30-хвилинний глибокий аналіз | AI-трек
+
+![AI Pair-Assistant Hero](/blog/devcon/1257-ai-pair-assistant-hero.png)
+
+## Проблема 23:00
+
+23:00. Ви налагоджуєте невдале завдання трансляції. Маніфест повертає загадкові коди статусу. Ви перемикаєтеся між трьома вкладками браузера -- документація API, Postman та Stack Overflow -- намагаючись згадати точний ендпоінт для перевірки статусу деривативу. Ваша кава вже холодна.
+
+Що, якби замість цього ви могли просто запитати: **"Чому мій файл Revit не вдалося трансльувати і як це виправити?"**
+
+Ця сесія досліджує майбутнє, яке вже настало: AI-асистенти, які не просто відповідають на питання про APS -- вони фактично *виконують дії* в APS. Через Model Context Protocol (MCP) ми під'єднали Claude до реальних APS API. AI не галюцинує ендпоінти та не вгадує параметри. Він виконує реальні операції: створює бакети, перевіряє статус трансляції, переглядає ваші проєкти.
+
+## Що таке MCP насправді?
+
+![MCP Architecture](/blog/devcon/1257-ai-pair-assistant-mcp-diagram.png)
+
+Уявіть MCP як універсальний адаптер між AI-асистентами та зовнішніми інструментами. Без MCP, коли ви питаєте Claude про ваші APS-бакети, він може дати лише загальну інформацію зі своїх навчальних даних. З MCP Claude може фактично викликати OSS API і сказати вам *ваші конкретні бакети, прямо зараз*.
+
+Протокол простий:
+1. Ви запускаєте MCP-сервер (у нашому випадку, `raps serve`)
+2. AI-асистент під'єднується до нього
+3. Сервер надає "інструменти" -- функції, які AI може викликати
+4. Коли ви ставите питання, що вимагає живих даних, AI використовує відповідний інструмент
+
+## 35 інструментів, які ми створили
+
+MCP-сервер raps надає **35 інструментів**, що покривають комплексні APS-операції:
+
+**Автентифікація:**
+```
+auth_test      - Test 2-legged OAuth credentials
+auth_status    - Check current authentication state
+```
+
+**Управління бакетами:**
+```
+bucket_list    - List all accessible buckets
+bucket_create  - Create a new bucket with policy and region
+bucket_get     - Get detailed bucket information
+bucket_delete  - Delete an empty bucket
+```
+
+**Операції з об'єктами:**
+```
+object_list       - List objects in a bucket
+object_delete     - Delete an object
+object_signed_url - Generate pre-signed download URL
+object_urn        - Get Base64-encoded URN for translation
+```
+
+**Процес трансляції:**
+```
+translate_start   - Start a translation job
+translate_status  - Check translation progress and results
+```
+
+**Управління даними:**
+```
+hub_list       - List BIM 360/ACC hubs
+project_list   - List projects in a hub
+folder_list    - List folder contents
+item_info      - Get item details
+```
+
+**Операції ACC:**
+```
+issue_list/create/update  - Manage issues
+rfi_list/get              - RFI operations
+acc_assets_list           - Asset management
+acc_submittals_list       - Submittal tracking
+acc_checklists_list       - Quality checklists
+```
+
+**Адміністрування облікового запису (масові операції):**
+```
+admin_user_add            - Add user to projects
+admin_user_remove         - Remove user from projects
+admin_user_update_role    - Update user roles
+```
+
+## Демо: Реальна розмова
+
+![Conversation Flow](/blog/devcon/1257-ai-pair-assistant-conversation.png)
+
+```
+User: "I need to set up storage for a new hospital project.
+       Create a bucket with persistent retention in the US region."
+
+AI: I'll create that bucket for you. What would you like to name it?
+
+User: "hospital-central-2026"
+
+AI: [Calls bucket_create tool]
+    ✓ Created bucket 'hospital-central-2026'
+    - Policy: persistent (files kept until explicitly deleted)
+    - Region: US
+
+    Ready for uploads. Would you like me to show you the upload command?
+
+User: "What's the status of the translation I started this morning?"
+
+AI: [Calls object_list, then translate_status]
+    Found it. Translation status for hospital-model.rvt:
+
+    Status: success ✓
+    Progress: 100%
+    Output formats available:
+    - SVF2 (3D viewer)
+    - Thumbnail (PNG)
+```
+
+Це не наукова фантастика. Це працює вже сьогодні.
+
+## Чесні обмеження
+
+![Before vs After](/blog/devcon/1257-ai-pair-assistant-before-after.png)
+
+**Де AI-допомога працює добре:**
+- Дослідження та виявлення ("які бакети в мене є?")
+- Усунення неполадок ("чому ця трансляція не вдалася?")
+- Разові операції ("створи бакет для цього нового проєкту")
+- Навчання ("яка різниця між SVF та SVF2?")
+
+**Чого AI-допомога не замінює:**
+- Продакшн-пайплайни (потрібні детерміновані, версіоновані скрипти)
+- Високонавантажені операції (пакетна обробка 10 000 файлів потребує спеціальних інструментів)
+- Складні процеси (багатокрокові процеси з обробкою помилок)
+- Вимоги аудиту (скрипти забезпечують відстежувані, повторювані операції)
+
+Відповідь на "Це кінець скриптів?" -- ні. Але це може бути кінець того, щоб *починати* зі скриптів. Використовуйте AI для дослідження, потім кодифікуйте те, що працює, в автоматизацію.
+
+## Початок роботи
+
+### Налаштування для Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"],
+      "env": {
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+### Налаштування для Cursor IDE
+
+Додайте `.cursor/mcp.json` до вашого проєкту:
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+## Ключові висновки
+
+1. **MCP дозволяє AI-асистентам безпечно взаємодіяти з APS API** через 35 спеціалізованих інструментів
+2. **Природна мова знижує поріг входу в автоматизацію APS** для дослідження та налагодження
+3. **AI-допомога доповнює, а не замінює продакшн-автоматизацію**
+4. **Майбутнє -- гібридне**: AI для дослідження, скрипти для повторюваних процесів
+5. **raps CLI надає і традиційний CLI, і режим MCP-сервера** в одному інструменті з відкритим кодом
+
+## Ресурси
+
+- [GitHub-репозиторій](https://github.com/dmytro-yemelianov/raps)
+- [Посібник MCP-сервера](/docs/mcp-server)
+- [Model Context Protocol](https://modelcontextprotocol.io)

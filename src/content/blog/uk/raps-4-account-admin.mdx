@@ -1,0 +1,278 @@
+---
+title: "RAPS 4.0: масове адміністрування акаунтів для ACC/BIM 360"
+description: "Анонс RAPS v4.0 з потужним новим модулем Account Admin для масового управління користувачами у сотнях проєктів ACC/BIM 360."
+pubDate: 2026-01-16
+author: "Dmytro Yemelianov"
+tags: ["release", "acc", "bim360", "automation", "user-management"]
+featured: true
+draft: false
+---
+
+## Що нового у RAPS 4.0
+
+RAPS 4.0 представляє нову важливу можливість: **масове адміністрування акаунтів** для Autodesk Construction Cloud (ACC) та BIM 360. Якщо вам коли-небудь доводилося підключати нового члена команди до 50+ проєктів або відключати працівника, що звільняється, від усього портфоліо проєктів, ви знаєте біль прокликування через інтерфейс по одному проєкту за раз.
+
+Тепер це можна зробити однією командою.
+
+```bash
+# Add user to all projects
+raps admin user add "$ACCOUNT_ID" "new.hire@company.com" --role project_admin
+
+# Remove departing employee from all projects
+raps admin user remove "$ACCOUNT_ID" "former@company.com"
+```
+
+## Проблема, яку ми вирішуємо
+
+Розглянемо типовий сценарій:
+
+> "Ми щойно найняли нового BIM-менеджера, якому потрібен доступ project admin до всіх 127 активних проєктів."
+
+Через веб-інтерфейс ACC вам довелося б:
+1. Перейти до кожного проєкту
+2. Відкрити панель учасників
+3. Знайти користувача
+4. Призначити роль
+5. Повторити 127 разів
+
+Це приблизно **3-5 хвилин на проєкт**, або **6-10 годин** клікання. А якщо ви помилилися? Починайте спочатку.
+
+З RAPS 4.0:
+
+```bash
+raps admin user add "$ACCOUNT_ID" "new.bim.manager@company.com" \
+  --role project_admin \
+  --filter "^Active-" \
+  --dry-run  # Preview first!
+```
+
+Уся операція завершується за **менше 2 хвилин** з повним відстеженням прогресу.
+
+## Ключові можливості
+
+### 1. Паралельна обробка (50 одночасних запитів)
+
+RAPS обробляє до 50 проєктів одночасно, дотримуючись обмежень швидкості Autodesk:
+
+```
+Adding user to projects...
+[████████████████████████████████████████] 127/127
+
+Results:
+┌──────────────┬───────┐
+│ Status       │ Count │
+├──────────────┼───────┤
+│ Succeeded    │ 125   │
+│ Skipped      │ 2     │
+└──────────────┴───────┘
+```
+
+### 2. Розумні повторні спроби з експоненційним відступом
+
+Досягли обмеження швидкості? RAPS автоматично відступає та повторює:
+
+```
+[45/127] Rate limited, waiting 2s before retry...
+[45/127] Retry 1/3 for project-xyz
+[45/127] Success after retry
+```
+
+### 3. Відновлювані операції
+
+Збій мережі? Тайм-аут з'єднання? Не проблема. RAPS автоматично зберігає стан операції:
+
+```bash
+# Resume from where you left off
+raps admin operation resume
+```
+
+### 4. Режим сухого запуску
+
+Попередній перегляд того, що саме станеться, перед виконанням:
+
+```bash
+raps admin user add "$ACCOUNT_ID" "user@company.com" \
+  --role viewer --dry-run
+
+Dry run results:
+┌─────────────────────────────┬────────────┐
+│ Project                     │ Action     │
+├─────────────────────────────┼────────────┤
+│ Downtown Tower              │ Would add  │
+│ Hospital Wing               │ Would add  │
+│ University Library          │ Would skip │
+└─────────────────────────────┴────────────┘
+```
+
+### 5. Фільтрація проєктів
+
+Вибір конкретних проєктів за шаблонами regex:
+
+```bash
+# Only 2024 projects
+raps admin user add "$ACCOUNT_ID" "user@company.com" \
+  --role viewer --filter "^2024-"
+
+# Multiple patterns
+raps admin user add "$ACCOUNT_ID" "user@company.com" \
+  --role viewer --filter "Downtown|Hospital|University"
+```
+
+## Нові команди
+
+### Управління користувачами
+
+| Команда | Опис |
+|---------|------|
+| `raps admin user add` | Додати користувача до кількох проєктів |
+| `raps admin user remove` | Видалити користувача з проєктів |
+| `raps admin user update-role` | Змінити роль користувача в проєктах |
+
+### Права доступу до тек
+
+| Команда | Опис |
+|---------|------|
+| `raps admin folder rights` | Масове оновлення прав доступу до тек |
+
+Підтримувані рівні доступу: `view`, `view_download`, `upload`, `edit`, `control`
+
+Підтримувані типи тек: `project_files`, `plans` або користувацький URN теки
+
+### Управління операціями
+
+| Команда | Опис |
+|---------|------|
+| `raps admin operation status` | Переглянути прогрес |
+| `raps admin operation resume` | Відновити перервану операцію |
+| `raps admin operation cancel` | Скасувати операцію в процесі |
+| `raps admin operation list` | Переглянути історію операцій |
+
+### Список проєктів
+
+```bash
+raps admin project list "$ACCOUNT_ID" --status active --platform acc
+```
+
+## Робочі процеси з реального життя
+
+### Підключення підрядника
+
+```bash
+#!/bin/bash
+# onboard-contractor.sh
+
+ACCOUNT_ID="your-account-id"
+EMAIL="contractor@partner.com"
+PROJECT_FILTER="^2024-Active"
+
+# 1. Add to filtered projects as viewer
+raps admin user add "$ACCOUNT_ID" "$EMAIL" \
+  --role viewer --filter "$PROJECT_FILTER"
+
+# 2. Grant edit access to Project Files
+raps admin folder rights "$ACCOUNT_ID" "$EMAIL" \
+  --permission edit --folder project_files \
+  --filter "$PROJECT_FILTER"
+
+echo "Contractor onboarded to $(raps admin project list "$ACCOUNT_ID" --filter "$PROJECT_FILTER" | wc -l) projects"
+```
+
+### Щомісячний аудит доступу
+
+```bash
+#!/bin/bash
+# access-review.sh
+
+ACCOUNT_ID="your-account-id"
+
+# Export all projects with user counts
+raps admin project list "$ACCOUNT_ID" --output json > projects.json
+
+# For each project, export users
+for project_id in $(jq -r '.[].id' projects.json); do
+  raps acc project-user list "$project_id" --output json >> users.jsonl
+done
+
+# Generate report
+echo "Access Review Report - $(date)" > report.md
+echo "Total projects: $(jq length projects.json)" >> report.md
+```
+
+### Інтеграція з CI/CD
+
+```yaml
+name: User Offboarding
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Email to offboard'
+        required: true
+
+jobs:
+  offboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Remove user from all projects
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps admin user remove "${{ secrets.ACCOUNT_ID }}" \
+            "${{ github.event.inputs.email }}" \
+            --output json > result.json
+
+      - name: Upload audit log
+        uses: actions/upload-artifact@v4
+        with:
+          name: offboarding-audit
+          path: result.json
+```
+
+## Архітектура
+
+RAPS 4.0 представляє новий крейт `raps-admin`, що оркеструє масові операції:
+
+- **Збереження стану**: операції зберігаються на диску, що дозволяє відновлення після збоїв
+- **Контроль конкурентності**: обмеження на основі семафорів до 50 паралельних запитів
+- **Логіка повторних спроб**: експоненційний відступ для обробки обмежень швидкості (помилки 429)
+- **Відстеження прогресу**: індикатори прогресу в реальному часі з indicatif
+
+Крейт інтегрується з існуючим модулем `raps-acc` для доступу до API ACC та додає новий `FolderPermissionsClient` для управління правами доступу на рівні тек.
+
+## Примітки щодо оновлення
+
+RAPS 4.0 зворотно сумісний з командами 3.x. Нова підкоманда `admin` є доповненням.
+
+```bash
+# Upgrade
+cargo install raps --force
+
+# Verify
+raps --version
+# raps 4.0.0
+```
+
+## Що далі
+
+Ми плануємо додати:
+- **Операції на основі шаблонів**: визначення шаблонів підключення/відключення
+- **Журналювання аудиту**: детальні логи всіх операцій адміністрування
+- **Підтримка відкату**: скасування останніх операцій
+- **Заплановані операції**: управління користувачами за розкладом
+
+## Документація
+
+- [Довідник команд Admin](/docs/admin)
+- [Кулінарна книга адміністрування акаунтів](/docs/cookbook-acc-admin)
+
+## Зворотний зв'язок
+
+Знайшли баг або маєте пропозицію щодо нової функції? [Відкрийте issue](https://github.com/dmytro-yemelianov/raps/issues) на GitHub.
+
+---
+
+*RAPS -- проєкт з відкритим кодом під ліцензією Apache 2.0. Поставте зірку на [GitHub](https://github.com/dmytro-yemelianov/raps)!*

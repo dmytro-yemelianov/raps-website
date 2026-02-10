@@ -1,0 +1,372 @@
+---
+title: "Конвеєр трансляції CAD"
+description: "Обробка різних CAD-форматів для веб-перегляду"
+category: "manufacturing"
+order: 21
+icon: "🔧"
+---
+
+# Конвеєр трансляції CAD
+
+Обробка різних CAD-форматів (Inventor, Fusion, STEP, IGES) для веб-перегляду.
+
+## Огляд процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Джерела CAD</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Inventor IAM/IPT</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Fusion 360</div>
+        <div class="bg-slate-800 rounded px-2 py-1">STEP/STP</div>
+        <div class="bg-slate-800 rounded px-2 py-1">IGES/IGS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">SolidWorks</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Завантаження RAPS</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1 font-mono">raps object upload</div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Сховище APS</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">OSS Bucket</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Model Derivative</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Механізм трансляції</div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Результати</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">SVF2 Viewable</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Мініатюри</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Метадані</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Вхід</span>
+      <span class="text-slate-600">→</span>
+      <span>Завантаження</span>
+      <span class="text-slate-600">→</span>
+      <span>Сховище</span>
+      <span class="text-slate-600">→</span>
+      <span>Трансляція</span>
+      <span class="text-slate-600">→</span>
+      <span>Вихід</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Створення бакета для CAD
+
+```bash
+raps bucket create --key cad-library --policy persistent --region US
+```
+
+### Крок 2: Завантаження CAD-файлів
+
+```bash
+# Збірка Inventor
+raps object upload cad-library assembly.iam
+
+# Деталь Inventor
+raps object upload cad-library part.ipt
+
+# Файл STEP
+raps object upload cad-library model.stp
+
+# Файл IGES
+raps object upload cad-library legacy.igs
+```
+
+### Крок 3: Трансляція у SVF2
+
+```bash
+# Отримати URN та транслювати
+URN=$(raps object urn cad-library assembly.iam --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Крок 4: Перевірка трансляції
+
+```bash
+# Перевірити маніфест
+raps translate manifest "$URN"
+
+# Отримати доступні види
+raps derivative views "$URN" --output json
+```
+
+### Підтримувані формати
+
+| Формат | Розширення | Примітки |
+|--------|-----------|----------|
+| Inventor Assembly | .iam | Повна ієрархія збірки |
+| Inventor Part | .ipt | Окремі файли деталей |
+| STEP | .stp, .step | AP203/AP214 |
+| IGES | .igs, .iges | Застарілий формат |
+| SolidWorks | .sldprt, .sldasm | Деталі та збірки |
+| Fusion 360 | .f3d | Безпосередньо з Fusion |
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/cad-translation.yml
+name: CAD Translation Pipeline
+
+on:
+  push:
+    paths:
+      - 'cad/**/*.iam'
+      - 'cad/**/*.ipt'
+      - 'cad/**/*.stp'
+      - 'cad/**/*.igs'
+
+env:
+  BUCKET: cad-library-${{ github.repository_id }}
+
+jobs:
+  translate-cad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Upload and translate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'cad/**'); do
+            [ -f "$file" ] || continue
+
+            echo "Processing: $file"
+            raps object upload "$BUCKET" "$file"
+
+            key=$(basename "$file")
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+
+            echo "Translated: $key"
+          done
+
+      - name: Generate translation report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# CAD Translation Report" > report.md
+          echo "Date: $(date)" >> report.md
+          echo "" >> report.md
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+            echo "- $key: $STATUS" >> report.md
+          done
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-report
+          path: report.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Git Push</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">CAD-файли змінено</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Обробка</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження в OSS</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Запуск трансляції</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Очікування завершення</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Результат</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">translation-report.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Трансляція одного файлу
+
+```
+User: "Upload and translate the new assembly.iam file for web viewing"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">Користувач</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Транслювати assembly.iam</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Завантаження файлу</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Завантаження завершено</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_urn(bucket, key)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">URN</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(urn, format="svf2")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Запуск трансляції</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Очікування завершення</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_manifest(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Перевірка статусу</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Трансляція завершена</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> assembly.iam було завантажено та успішно транслійовано.
+> - **Розмір файлу:** 45 МБ
+> - **Компоненти:** 234 деталі
+> - **Час трансляції:** 2 хв 34 с
+> - **URL переглядача:** https://viewer.autodesk.com/...
+
+### Трансляція кількох форматів
+
+```
+User: "I have STEP and IGES files from a supplier. Translate them all for review."
+```
+
+**Відповідь AI:**
+> Трансляція 5 файлів з теки постачальника:
+>
+> | Файл | Формат | Статус | Час |
+> |------|--------|--------|-----|
+> | bracket.stp | STEP | Завершено | 45 с |
+> | housing.stp | STEP | Завершено | 1 хв 12 с |
+> | shaft.igs | IGES | Завершено | 32 с |
+> | gear.igs | IGES | Завершено | 28 с |
+> | mount.stp | STEP | Завершено | 55 с |
+>
+> Усі файли готові для перегляду.
+
+---
+
+## Параметри для конкретних форматів
+
+### Трансляція STEP
+
+```bash
+# Стандартна трансляція STEP
+raps translate start "$URN" --format svf2 --wait
+
+# З конкретними видами на виході
+raps translate start "$URN" --format svf2 --views "3d"
+```
+
+### Збірка Inventor з посиланнями
+
+```bash
+# Завантажити збірку з усіма пов'язаними деталями
+raps object upload cad-library assembly.iam
+raps object upload cad-library part1.ipt
+raps object upload cad-library part2.ipt
+
+# Транслювати збірку (посилання розв'язуються автоматично)
+URN=$(raps object urn cad-library assembly.iam --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### ZIP-пакет з кореневим файлом
+
+```bash
+# Створити zip зі збіркою та деталями
+zip -r model-package.zip assembly.iam *.ipt
+
+# Завантажити пакет
+raps object upload cad-library model-package.zip
+
+# Транслювати з вказаним кореневим файлом
+URN=$(raps object urn cad-library model-package.zip --output plain)
+raps translate start "$URN" --format svf2 --root "assembly.iam" --wait
+```
+
+---
+
+## Пов'язане
+
+- [Пакетна обробка кількох форматів](/cookbook/cookbook-mfg-batch)
+- [Витяг специфікації матеріалів](/cookbook/cookbook-mfg-bom)
+- [Cookbook: Виробництво](/cookbook/cookbook-manufacturing)

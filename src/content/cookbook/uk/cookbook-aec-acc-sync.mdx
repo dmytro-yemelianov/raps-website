@@ -1,0 +1,457 @@
+---
+title: "Синхронізація BIM 360/ACC"
+description: "Синхронізація моделей між ACC та локальним сховищем"
+category: "aec"
+order: 16
+icon: "☁️"
+---
+
+# Синхронізація BIM 360/ACC
+
+Завантаження моделей з BIM 360/ACC та локальна обробка.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Хмара BIM 360 / ACC</div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+          <span class="text-sm text-slate-300">Хаб</span>
+        </div>
+        <div class="ml-4 border-l border-blue-500/30 pl-3 space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+            <span class="text-sm text-slate-300">Проєкт</span>
+          </div>
+          <div class="ml-4 border-l border-blue-500/30 pl-3 space-y-2">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+              <span class="text-sm text-slate-300">Тека</span>
+            </div>
+            <div class="ml-4 border-l border-blue-500/30 pl-3 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                <span class="text-sm text-slate-300">Елемент</span>
+              </div>
+              <div class="ml-4 border-l border-blue-500/30 pl-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                  <span class="text-sm text-slate-300">Версія</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Автентифікація</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">3-Legged OAuth</div>
+        <div class="flex justify-center text-amber-500">&#8595;</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm font-mono text-amber-300">raps auth login</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Операції RAPS</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Перегляд/Навігація</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Завантаження</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Отримання метаданих</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Отримання версій</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Локальна обробка</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Локальні файли</div>
+        <div class="flex justify-center text-emerald-500">&#8595;</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Трансляція</div>
+        <div class="flex justify-center text-emerald-500">&#8595;</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Витяг даних</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Автентифікація
+
+```bash
+# Вхід через 3-legged OAuth (відкриє браузер)
+raps auth login
+
+# Або використання існуючого refresh-токена
+raps auth refresh
+```
+
+### Крок 2: Навігація ієрархією проєкту
+
+```bash
+# Перелік усіх хабів (акаунтів)
+raps hub list
+
+# Збереження ID хабу
+HUB_ID="b.your-hub-id"
+
+# Перелік проєктів у хабі
+raps project list "$HUB_ID"
+
+# Збереження ID проєкту
+PROJECT_ID="b.your-project-id"
+
+# Перелік тек верхнього рівня
+raps folder list "$PROJECT_ID" --top
+
+# Перелік вмісту конкретної теки
+FOLDER_ID="urn:adsk.wipprod:fs.folder:abc123"
+raps folder list "$PROJECT_ID" "$FOLDER_ID"
+```
+
+### Крок 3: Завантаження файлів
+
+```bash
+# Перелік елементів у теці
+raps folder list "$PROJECT_ID" "$FOLDER_ID" --output json > items.json
+
+# Завантаження конкретного елемента
+ITEM_ID=$(jq -r '.[0].id' items.json)
+raps item download "$PROJECT_ID" "$ITEM_ID" --output ./downloads/
+
+# Завантаження всіх елементів з теки
+jq -r '.[].id' items.json | while read item_id; do
+  raps item download "$PROJECT_ID" "$item_id" --output ./downloads/
+done
+```
+
+### Крок 4: Отримання історії версій
+
+```bash
+# Перелік усіх версій елемента
+raps item versions "$PROJECT_ID" "$ITEM_ID" --output json > versions.json
+
+# Завантаження конкретної версії
+VERSION_ID=$(jq -r '.[0].id' versions.json)
+raps item download "$PROJECT_ID" "$ITEM_ID" --version "$VERSION_ID" --output ./downloads/
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/acc-sync.yml
+name: ACC Model Sync
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Щоденно о 6:00
+  workflow_dispatch:
+
+env:
+  HUB_ID: ${{ secrets.ACC_HUB_ID }}
+  PROJECT_ID: ${{ secrets.ACC_PROJECT_ID }}
+  FOLDER_ID: ${{ secrets.ACC_MODELS_FOLDER_ID }}
+
+jobs:
+  sync-models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate with ACC
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: |
+          raps auth refresh
+
+      - name: Sync models from ACC
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./synced-models
+
+          # Перелік та завантаження всіх моделей Revit
+          raps folder list "$PROJECT_ID" "$FOLDER_ID" --output json | \
+            jq -r '.[] | select(.name | endswith(".rvt")) | .id' | \
+            while read item_id; do
+              raps item download "$PROJECT_ID" "$item_id" --output ./synced-models/
+            done
+
+      - name: Upload to OSS for processing
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="acc-synced-$(date +%Y%m%d)"
+          raps bucket create --key "$BUCKET" --policy transient --region US 2>/dev/null || true
+
+          for model in ./synced-models/*.rvt; do
+            [ -f "$model" ] || continue
+
+            key=$(basename "$model")
+            raps object upload "$BUCKET" "$model"
+
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            raps translate start "$URN" --format svf2
+          done
+
+      - name: Generate sync report
+        run: |
+          echo "# ACC Sync Report" > sync-report.md
+          echo "Date: $(date)" >> sync-report.md
+          echo "" >> sync-report.md
+          echo "## Synced Files" >> sync-report.md
+          ls -la ./synced-models/ >> sync-report.md
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-report
+          path: |
+            sync-report.md
+            ./synced-models/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Розклад/Ручний</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Щоденно о 6:00</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-amber-500/50 bg-amber-950/30 p-3">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">Автентифікація</div>
+      <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Refresh Token</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Синхронізація ACC</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Перегляд теки</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Завантаження моделей</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Обробка OSS</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Завантаження в бакет</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Трансляція SVF2</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Результат</div>
+      <div class="space-y-1">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">sync-report.md</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">synced-models/</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Навігація та завантаження
+
+```
+User: "Download the latest architectural model from the Main Street project in ACC"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">Користувач</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI-асистент</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">Хмара ACC</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Завантажити модель Main Street</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_hub_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Отримати хаби</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_project_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Отримати проєкти</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_folder_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Отримати вміст</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_item_download()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Завантажити файл</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Завантаження завершено</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Завантажено 'MainStreet-Architectural-v42.rvt' (156 МБ)
+> - **Останнє редагування:** 14 лютого 2024, John Smith
+> - **Версія:** 42
+> - **Збережено в:** ./downloads/MainStreet-Architectural-v42.rvt
+
+### Перегляд останніх змін
+
+```
+User: "Show me what models changed in the Main Street project this week"
+```
+
+**Відповідь AI:**
+> Файли, змінені в проєкті Main Street (12-16 лютого 2024):
+>
+> | Файл | Змінено | Автор | Версія |
+> |------|---------|-------|--------|
+> | Architectural.rvt | 14 лют | John Smith | v42 |
+> | MEP.rvt | 13 лют | Jane Doe | v28 |
+> | Structural.rvt | 12 лют | Bob Wilson | v31 |
+>
+> Бажаєте завантажити будь-який з них?
+
+### Синхронізація та обробка
+
+```
+User: "Sync all the Revit models from the Design folder and translate them"
+```
+
+**Відповідь AI:**
+> Синхронізація 5 моделей з теки Design...
+>
+> | Файл | Розмір | Статус |
+> |------|--------|--------|
+> | Building-A.rvt | 124 МБ | Завантажено, трансляція... |
+> | Building-B.rvt | 98 МБ | Завантажено, трансляція... |
+> | Site.rvt | 45 МБ | Завантажено, транслятовано |
+> | Landscape.rvt | 23 МБ | Завантажено, транслятовано |
+> | Parking.rvt | 67 МБ | Завантажено, трансляція... |
+>
+> Усі файли синхронізовано. 3 трансляції в процесі, 2 завершено.
+
+---
+
+## Типові шаблони
+
+### Інкрементальна синхронізація
+
+```bash
+# Відстеження часу останньої синхронізації
+LAST_SYNC=$(cat .last-sync 2>/dev/null || echo "1970-01-01")
+
+# Отримання елементів, змінених після останньої синхронізації
+raps folder list "$PROJECT_ID" "$FOLDER_ID" --output json | \
+  jq --arg since "$LAST_SYNC" '[.[] | select(.lastModified > $since)]' | \
+  jq -r '.[].id' | while read item_id; do
+    raps item download "$PROJECT_ID" "$item_id" --output ./synced/
+  done
+
+# Оновлення часу останньої синхронізації
+date -Iseconds > .last-sync
+```
+
+### Дзеркалювання структури тек
+
+```bash
+# Рекурсивна синхронізація структури тек
+sync_folder() {
+  local project_id=$1
+  local folder_id=$2
+  local local_path=$3
+
+  mkdir -p "$local_path"
+
+  raps folder list "$project_id" "$folder_id" --output json | while read -r item; do
+    type=$(echo "$item" | jq -r '.type')
+    name=$(echo "$item" | jq -r '.name')
+    id=$(echo "$item" | jq -r '.id')
+
+    if [ "$type" = "folders" ]; then
+      sync_folder "$project_id" "$id" "$local_path/$name"
+    else
+      raps item download "$project_id" "$id" --output "$local_path/"
+    fi
+  done
+}
+
+sync_folder "$PROJECT_ID" "$FOLDER_ID" "./local-mirror"
+```
+
+---
+
+## Пов'язане
+
+- [Конвеєр координації моделей](/cookbook/cookbook-aec-coordination)
+- [Відстеження версій моделей](/cookbook/cookbook-aec-versioning)
+- [Cookbook: AEC та BIM](/cookbook/cookbook-aec)

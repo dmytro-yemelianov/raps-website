@@ -1,0 +1,252 @@
+---
+title: "Приклади"
+description: "Типові робочі процеси та сценарії використання RAPS CLI"
+section: "guides"
+order: 1
+icon: "💡"
+---
+
+# Приклади
+
+Типові робочі процеси та сценарії використання RAPS CLI.
+
+![Демонстрація наскрізного робочого процесу RAPS](/terminal/end-to-end-demo.gif)
+
+## Режим інтерактивної оболонки
+
+Для навчання та експериментів використовуйте інтерактивну оболонку з автодоповненням TAB:
+
+```bash
+# Запуск інтерактивного режиму
+raps shell
+
+# Використовуйте автодоповнення TAB для пошуку команд
+raps> bucket [TAB]
+create    delete    get       list
+
+raps> bucket create <BUCKET_KEY>
+raps> bucket create my-project
+
+raps> object upload my-project [TAB completion shows file picker]
+raps> object upload my-project ./building.rvt
+
+# Вихід з оболонки
+raps> exit
+```
+
+**Переваги інтерактивного режиму:**
+- **Автодоповнення TAB** для всіх команд та параметрів
+- **Підказки параметрів** показують обов'язкові аргументи
+- **Історія команд** з навігацією клавішами-стрілками
+- **Зручний для навчання** з вбудованою довідкою
+
+Дивіться [Інтерактивна оболонка](/docs/interactive-shell) для повної інформації.
+
+## Завантаження та трансляція моделі
+
+Найпоширеніший робочий процес RAPS: завантаження CAD-файлу та його трансляція для перегляду.
+
+```bash
+# 1. Створення бакета (або використання існуючого)
+raps bucket create --key my-project --policy persistent --region US
+
+# 2. Завантаження моделі
+raps object upload my-project building.rvt
+
+# 3. Отримання URN
+URN=$(raps object urn my-project building.rvt --output plain)
+
+# 4. Запуск трансляції у SVF2
+raps translate start "$URN" --format svf2 --wait
+
+# 5. Перевірка маніфесту
+raps translate manifest "$URN"
+```
+
+## Пакетне завантаження кількох файлів
+
+Завантаження цілої директорії файлів з паралельною обробкою.
+
+```bash
+# Завантаження всіх DWG-файлів
+raps object upload my-bucket ./drawings/*.dwg --batch --parallel --concurrency 10
+
+# Завантаження з користувацькими ключами (збереження структури папок)
+for file in ./models/**/*.rvt; do
+  relative="${file#./models/}"
+  raps object upload my-bucket "$file" --key "$relative"
+done
+```
+
+## Перегляд проєктів BIM 360/ACC
+
+Навігація ієрархією проєктів BIM 360 або ACC.
+
+```bash
+# Вхід через 3-legged OAuth
+raps auth login
+
+# Перегляд усіх хабів
+raps hub list
+
+# Збереження ID хаба для подальшого використання
+HUB_ID="b.12345678-1234-1234-1234-123456789abc"
+
+# Перегляд проєктів
+raps project list "$HUB_ID"
+
+# Збереження ID проєкту
+PROJECT_ID="b.proj-123"
+
+# Перегляд папок верхнього рівня
+raps folder list "$PROJECT_ID" --top
+
+# Перегляд конкретної папки
+FOLDER_ID="urn:adsk.wipprod:fs.folder:abc123"
+raps folder list "$PROJECT_ID" "$FOLDER_ID"
+```
+
+## Експорт даних у JSON
+
+Експорт даних для обробки іншими інструментами.
+
+```bash
+# Експорт списку бакетів
+raps bucket list --output json > buckets.json
+
+# Обробка за допомогою jq
+raps bucket list --output json | jq '.[] | select(.policy == "persistent") | .key'
+
+# Експорт структури проєктів
+raps hub list --output json > hubs.json
+for hub in $(jq -r '.[].id' hubs.json); do
+  raps project list "$hub" --output json >> projects.json
+done
+```
+
+## Приклад конвеєра CI/CD
+
+Повний робочий процес CI/CD для валідації та трансляції моделей.
+
+```yaml
+# .github/workflows/model-pipeline.yml
+name: Model Pipeline
+
+on:
+  push:
+    paths:
+      - 'models/**/*.rvt'
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Create bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="ci-${{ github.run_id }}"
+          raps bucket create --key "$BUCKET" --policy transient --region US
+          echo "BUCKET=$BUCKET" >> $GITHUB_ENV
+
+      - name: Upload and translate models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in models/**/*.rvt; do
+            name=$(basename "$file")
+            raps object upload "$BUCKET" "$file"
+            URN=$(raps object urn "$BUCKET" "$name" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+          done
+```
+
+## Генерація підписаних URL для спільного доступу
+
+Створення тимчасових посилань для завантаження файлів.
+
+```bash
+# Генерація URL на 60 хвилин
+raps object signed-url my-bucket model.rvt --minutes 60
+
+# Генерація URL для всіх файлів у бакеті
+for obj in $(raps object list my-bucket --output json | jq -r '.[].key'); do
+  echo "$obj:"
+  raps object signed-url my-bucket "$obj" --minutes 120
+done
+```
+
+## Налаштування вебхуків
+
+Налаштування вебхуків для отримання сповіщень про події.
+
+```bash
+# Створення вебхука для подій трансляції
+raps webhook create \
+  --event "extraction.finished" \
+  --callback "https://myapp.com/webhooks/translation" \
+  --scope "data:read"
+
+# Перегляд активних вебхуків
+raps webhook list
+
+# Видалення вебхука
+raps webhook delete webhook-id-here
+```
+
+## Design Automation
+
+Запуск робочих елементів Design Automation для обробки CAD-файлів.
+
+```bash
+# Перегляд доступних рушіїв
+raps da engine list
+
+# Створення активності
+raps da activity create \
+  --id "ExtractData" \
+  --engine "Autodesk.Revit+2024" \
+  --command "$(Get-Content ./appbundle/command.json)"
+
+# Надсилання робочого елемента
+raps da workitem create \
+  --activity "my-nickname.ExtractData+prod" \
+  --input "urn:adsk..." \
+  --output "https://my-bucket.s3.amazonaws.com/output"
+
+# Моніторинг робочого елемента
+raps da workitem status work-item-id --wait
+```
+
+## Reality Capture
+
+Створення фотограмметричних моделей зі знімків.
+
+```bash
+# Створення фотосцени
+raps rc photoscene create --name "Site Survey" --type "object"
+
+# Завантаження фотографій
+raps rc photoscene upload photoscene-id ./photos/*.jpg
+
+# Запуск обробки
+raps rc photoscene process photoscene-id
+
+# Перевірка прогресу
+raps rc photoscene status photoscene-id --wait
+
+# Завантаження результатів
+raps rc photoscene download photoscene-id --output ./output/
+```
+
+## Наступні кроки
+
+- [Конвеєри](/docs/pipelines) — Автоматизація складних робочих процесів
+- [MCP Server](/docs/mcp-server) — Інтеграція з ШІ-помічниками

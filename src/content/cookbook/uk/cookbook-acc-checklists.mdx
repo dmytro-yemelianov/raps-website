@@ -1,0 +1,382 @@
+---
+title: "Експорт чек-листів"
+description: "Експорт чек-листів для звітності та відповідності"
+category: "construction"
+order: 33
+icon: "✅"
+---
+
+# Експорт чек-листів
+
+Експортуйте чек-листи ACC для звітності, відповідності вимогам та інтеграції з іншими системами.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Чек-листи ACC</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Шаблони чек-листів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Екземпляри чек-листів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Пункти чек-листів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Вкладення</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Витягування</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Список чек-листів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Отримання пунктів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Отримання відповідей</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Експорт</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Експорт у JSON</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт у CSV</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт у PDF</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Інтеграція</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Система якості</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">БД відповідності</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Дашборд</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Чек-листи → Витягування → Експорт → Інтеграція</div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Перегляд усіх чек-листів
+
+```bash
+PROJECT_ID="b.project-id"
+
+# List all checklists
+raps acc checklist list "$PROJECT_ID"
+
+# Export to JSON
+raps acc checklist list "$PROJECT_ID" --output json > checklists.json
+
+# Filter by status
+cat checklists.json | jq '[.[] | select(.status == "completed")]' > completed.json
+```
+
+### Отримання деталей чек-листа
+
+```bash
+CHECKLIST_ID="checklist-123"
+
+# Get checklist with items
+raps acc checklist get "$PROJECT_ID" "$CHECKLIST_ID" --output json > checklist-detail.json
+
+# View structure
+jq '.title, .status, (.items | length)' checklist-detail.json
+```
+
+### Експорт пунктів чек-листа
+
+```bash
+# Get all items with status
+raps acc checklist items "$PROJECT_ID" "$CHECKLIST_ID" --output json > items.json
+
+# Export to CSV
+cat items.json | jq -r '
+  ["Item", "Status", "Response", "Assignee", "Date"],
+  (.[] | [
+    .title,
+    .status,
+    .response // "",
+    .assignee // "",
+    .completedAt // ""
+  ]) | @csv
+' > checklist-report.csv
+```
+
+### Пакетний експорт усіх чек-листів
+
+```bash
+mkdir -p ./checklist-exports
+
+jq -r '.[].id' checklists.json | while read id; do
+  NAME=$(jq -r ".[] | select(.id == \"$id\") | .title" checklists.json | tr ' ' '_')
+
+  raps acc checklist get "$PROJECT_ID" "$id" --output json > "./checklist-exports/${NAME}.json"
+
+  # Also create CSV
+  raps acc checklist items "$PROJECT_ID" "$id" --output json | jq -r '
+    ["Item","Status","Response"],
+    (.[] | [.title, .status, .response // ""]) | @csv
+  ' > "./checklist-exports/${NAME}.csv"
+
+  echo "Exported: $NAME"
+done
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/checklist-export.yml
+name: Checklist Export Pipeline
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Project ID'
+        required: true
+
+jobs:
+  export-checklists:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Export all checklists
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          PROJECT_ID: ${{ inputs.project_id || secrets.ACC_PROJECT_ID }}
+        run: |
+          mkdir -p ./exports
+
+          # Get all checklists
+          raps acc checklist list "$PROJECT_ID" --output json > ./exports/checklists.json
+
+          # Export each checklist
+          jq -r '.[].id' ./exports/checklists.json | while read id; do
+            raps acc checklist get "$PROJECT_ID" "$id" --output json > "./exports/checklist-${id}.json"
+            raps acc checklist items "$PROJECT_ID" "$id" --output json > "./exports/items-${id}.json"
+          done
+
+      - name: Generate summary report
+        run: |
+          echo "# Checklist Export Summary" > ./exports/summary.md
+          echo "Generated: $(date)" >> ./exports/summary.md
+          echo "" >> ./exports/summary.md
+
+          TOTAL=$(jq 'length' ./exports/checklists.json)
+          COMPLETED=$(jq '[.[] | select(.status == "completed")] | length' ./exports/checklists.json)
+          IN_PROGRESS=$(jq '[.[] | select(.status == "in_progress")] | length' ./exports/checklists.json)
+
+          echo "## Summary" >> ./exports/summary.md
+          echo "- Total Checklists: $TOTAL" >> ./exports/summary.md
+          echo "- Completed: $COMPLETED" >> ./exports/summary.md
+          echo "- In Progress: $IN_PROGRESS" >> ./exports/summary.md
+          echo "" >> ./exports/summary.md
+
+          echo "## Checklists" >> ./exports/summary.md
+          jq -r '.[] | "- \(.title): \(.status)"' ./exports/checklists.json >> ./exports/summary.md
+
+      - name: Create combined CSV
+        run: |
+          echo "Checklist,Item,Status,Response,Assignee" > ./exports/all-items.csv
+
+          for items_file in ./exports/items-*.json; do
+            CHECKLIST_ID=$(basename "$items_file" | sed 's/items-\(.*\)\.json/\1/')
+            CHECKLIST_NAME=$(jq -r ".[] | select(.id == \"$CHECKLIST_ID\") | .title" ./exports/checklists.json)
+
+            jq -r --arg name "$CHECKLIST_NAME" '.[] | [$name, .title, .status, (.response // ""), (.assignee // "")] | @csv' "$items_file" >> ./exports/all-items.csv
+          done
+
+      - name: Upload exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: checklist-exports
+          path: ./exports/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Тригер</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Щоденно/Вручну</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Експорт</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Список чек-листів</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Експорт кожного</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання пунктів</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Звіти</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">summary.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">all-items.csv</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Індивідуальні JSON</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Отримання статусу чек-листів
+
+```
+User: "What's the status of our quality checklists?"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">Користувач</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI-асистент</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">Корист.</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Статус чек-листів якості</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_checklist_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Отримання чек-листів</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Список чек-листів</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Групування за статусом + Розрахунок відсотків завершення</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Зведення статусу</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">Корист.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> **Статус чек-листів якості:**
+>
+> | Статус | Кількість | % |
+> |--------|-----------|---|
+> | Завершено | 45 | 75% |
+> | В процесі | 12 | 20% |
+> | Не розпочато | 3 | 5% |
+>
+> **Нещодавня активність:**
+> - "Інспекція MEP рівня 3" завершена сьогодні
+> - "Перевірка каркасу" на 80%
+> - "Зовнішня гідроізоляція" починається завтра
+
+### Експорт конкретного чек-листа
+
+```
+User: "Export the fire safety inspection checklist to CSV"
+```
+
+**Відповідь AI:**
+> Експортовано чек-лист "Інспекція пожежної безпеки":
+>
+> **Зведення:**
+> - Всього пунктів: 42
+> - Пройдено: 38
+> - Не пройдено: 2
+> - Очікує: 2
+>
+> **Непройдені пункти:**
+> - Знаки аварійних виходів (Будівля A, Рівень 2)
+> - Бирка огляду вогнегасника (Будівля B, Рівень 1)
+>
+> CSV-файл: fire-safety-inspection.csv
+
+---
+
+## Звітність щодо відповідності
+
+### Зведення пройдених/непройдених пунктів
+
+```bash
+cat items.json | jq '
+  {
+    total: length,
+    passed: [.[] | select(.status == "passed")] | length,
+    failed: [.[] | select(.status == "failed")] | length,
+    pending: [.[] | select(.status == "pending")] | length,
+    na: [.[] | select(.status == "na")] | length
+  } |
+  . + {passRate: ((.passed / .total) * 100 | floor)}
+'
+```
+
+### Звіт по непройдених пунктах
+
+```bash
+cat items.json | jq '[.[] | select(.status == "failed") | {
+  item: .title,
+  reason: .response,
+  assignee: .assignee,
+  date: .updatedAt
+}]'
+```
+
+### Хронологія завершення
+
+```bash
+cat items.json | jq '
+  [.[] | select(.completedAt != null)] |
+  group_by(.completedAt[:10]) |
+  map({date: .[0].completedAt[:10], completed: length}) |
+  sort_by(.date)'
+```
+
+---
+
+## Пов'язане
+
+- [Процеси контролю якості](/cookbook/cookbook-acc-quality)
+- [Управління проблемами та RFI](/cookbook/cookbook-acc-issues)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

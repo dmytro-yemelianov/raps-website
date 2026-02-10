@@ -1,0 +1,459 @@
+---
+title: "Спільне рецензування"
+description: "Підготовка ресурсів для командного огляду"
+category: "media"
+order: 48
+icon: "👥"
+---
+
+# Спільне рецензування
+
+Підготовка 3D-ресурсів для командного огляду із посиланнями для спільного перегляду.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Ресурси для огляду</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Моделі для рецензування</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Підготовка</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення бакету для огляду</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження ресурсів</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Трансляція в SVF2</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Розповсюдження</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Генерація URL-адрес перегляду</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення посилань для огляду</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Процес рецензування</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Учасники команди</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Збір зворотного зв'язку</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Створення сесії огляду
+
+```bash
+# Create dedicated review bucket
+REVIEW_ID="review-$(date +%Y%m%d-%H%M)"
+raps bucket create --key "$REVIEW_ID" --policy transient --region US
+echo "Review session: $REVIEW_ID"
+```
+
+### Крок 2: Завантаження ресурсів для огляду
+
+```bash
+# Upload assets for review
+for asset in ./review-assets/*; do
+  [ -f "$asset" ] || continue
+  raps object upload "$REVIEW_ID" "$asset"
+  echo "Uploaded: $(basename "$asset")"
+done
+```
+
+### Крок 3: Трансляція всіх ресурсів
+
+```bash
+# Translate each asset
+raps object list "$REVIEW_ID" --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn "$REVIEW_ID" "$key" --output plain)
+  raps translate start "$URN" --format svf2
+  echo "Translating: $key"
+done
+
+# Wait for all translations
+sleep 60
+
+# Check status
+raps object list "$REVIEW_ID" --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn "$REVIEW_ID" "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+  echo "$key: $STATUS"
+done
+```
+
+### Крок 4: Генерація посилань для огляду
+
+```bash
+echo "# Review Session: $REVIEW_ID" > review-links.md
+echo "Created: $(date)" >> review-links.md
+echo "" >> review-links.md
+echo "## Assets for Review" >> review-links.md
+echo "" >> review-links.md
+
+raps object list "$REVIEW_ID" --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn "$REVIEW_ID" "$key" --output plain)
+
+  # Check if translated
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+  if [ "$STATUS" = "success" ]; then
+    # URL-encode the URN for viewer link
+    ENCODED_URN=$(echo -n "$URN" | base64 | tr '+/' '-_' | tr -d '=')
+
+    echo "### $key" >> review-links.md
+    echo "- [Open in Viewer](https://viewer.autodesk.com/viewer?urn=${ENCODED_URN})" >> review-links.md
+    echo "" >> review-links.md
+  fi
+done
+
+cat review-links.md
+```
+
+### Крок 5: Надання доступу команді
+
+```bash
+# Generate downloadable links for reference files
+echo "" >> review-links.md
+echo "## Reference Downloads" >> review-links.md
+echo "(Links valid for 24 hours)" >> review-links.md
+echo "" >> review-links.md
+
+raps object list "$REVIEW_ID" --output json | jq -r '.[].key' | while read key; do
+  URL=$(raps object signed-url "$REVIEW_ID" "$key" --minutes 1440)
+  echo "- [$key]($URL)" >> review-links.md
+done
+```
+
+---
+
+## Конвеєр CI/CD
+
+```yaml
+# .github/workflows/review-session.yml
+name: Create Review Session
+
+on:
+  workflow_dispatch:
+    inputs:
+      review_name:
+        description: 'Review session name'
+        required: true
+      assets_path:
+        description: 'Path to assets (glob pattern)'
+        required: true
+      reviewers:
+        description: 'Comma-separated reviewer emails'
+        required: false
+
+jobs:
+  create-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Create review bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          REVIEW_ID="review-$(date +%Y%m%d)-${{ github.run_id }}"
+          raps bucket create --key "$REVIEW_ID" --policy transient --region US
+          echo "REVIEW_ID=$REVIEW_ID" >> $GITHUB_ENV
+
+      - name: Upload assets
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in ${{ inputs.assets_path }}; do
+            [ -f "$file" ] || continue
+            raps object upload "$REVIEW_ID" "$file"
+            echo "Uploaded: $(basename "$file")"
+          done
+
+      - name: Translate assets
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps object list "$REVIEW_ID" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$REVIEW_ID" "$key" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+          done
+
+      - name: Generate review document
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# Review Session: ${{ inputs.review_name }}" > review.md
+          echo "Created: $(date)" >> review.md
+          echo "Review ID: $REVIEW_ID" >> review.md
+          echo "" >> review.md
+          echo "## Assets" >> review.md
+          echo "" >> review.md
+
+          raps object list "$REVIEW_ID" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$REVIEW_ID" "$key" --output plain)
+            ENCODED=$(echo -n "$URN" | base64 | tr '+/' '-_' | tr -d '=')
+
+            echo "### $key" >> review.md
+            echo "- [View in Browser](https://viewer.autodesk.com/viewer?urn=$ENCODED)" >> review.md
+
+            # Generate download link
+            DOWNLOAD=$(raps object signed-url "$REVIEW_ID" "$key" --minutes 1440)
+            echo "- [Download]($DOWNLOAD)" >> review.md
+            echo "" >> review.md
+          done
+
+          echo "## Feedback" >> review.md
+          echo "" >> review.md
+          echo "Please add your comments below or reply to the review email." >> review.md
+
+      - name: Upload review document
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-${{ inputs.review_name }}
+          path: review.md
+
+      # Optional: Send email notification
+      # - name: Notify reviewers
+      #   if: inputs.reviewers != ''
+      #   run: |
+      #     # Email notification logic here
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Ручний запуск</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">review_name + assets_path</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Налаштування</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення бакету для огляду</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження ресурсів</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Обробка</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Трансляція всіх ресурсів</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Генерація URL-адрес перегляду</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Результат</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">review.md з посиланнями</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція MCP
+
+### Створення сесії огляду
+
+```
+User: "Set up a review session for the character models with links for the team"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Створити сесію огляду</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_bucket_create(key="review-...")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Створення бакету</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, file)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Завантаження</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Трансляція</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Генерація URL-адрес перегляду</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-400 ml-2">Посилання для огляду готові</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Створено сесію огляду "Character Models Review":
+>
+> **ID огляду:** review-20240216-001
+> **Ресурси:** 5 моделей
+> **Статус:** Усі транслювано та готово
+>
+> **Посилання для перегляду:**
+>
+> | Ресурс | Перегляд | Завантаження |
+> |--------|---------|-------------|
+> | hero_v2.fbx | [Відкрити](https://viewer...) | [Завантажити](https://...) |
+> | villain.fbx | [Відкрити](https://viewer...) | [Завантажити](https://...) |
+> | npc_guard.fbx | [Відкрити](https://viewer...) | [Завантажити](https://...) |
+> | pet_companion.fbx | [Відкрити](https://viewer...) | [Завантажити](https://...) |
+> | mount_horse.fbx | [Відкрити](https://viewer...) | [Завантажити](https://...) |
+>
+> Посилання дійсні протягом 24 годин. Поділіться з командою!
+
+### Перевірка статусу огляду
+
+```
+User: "How many people viewed the review assets?"
+```
+
+**Відповідь AI:**
+> Статистика сесії огляду (review-20240216-001):
+>
+> **Активність перегляду:** (За останні 24 години)
+>
+> | Ресурс | Перегляди | Унікальні глядачі |
+> |--------|----------|-------------------|
+> | hero_v2.fbx | 12 | 5 |
+> | villain.fbx | 8 | 4 |
+> | npc_guard.fbx | 6 | 3 |
+> | pet_companion.fbx | 4 | 2 |
+> | mount_horse.fbx | 3 | 2 |
+>
+> **Всього унікальних глядачів:** 6
+> **Посилання закінчуються через:** 18 годин
+
+---
+
+## Шаблони огляду
+
+### Форма зворотного зв'язку
+
+```markdown
+# Asset Review Feedback
+
+**Asset:** [Asset Name]
+**Reviewer:** [Your Name]
+**Date:** [Date]
+
+## Overall Assessment
+- [ ] Approved
+- [ ] Approved with minor changes
+- [ ] Needs revision
+- [ ] Rejected
+
+## Criteria Rating (1-5)
+
+| Criteria | Rating | Notes |
+|----------|--------|-------|
+| Visual Quality | | |
+| Polygon Count | | |
+| Texture Quality | | |
+| Animation Quality | | |
+| Technical Specs | | |
+
+## Comments
+
+[Your detailed feedback here]
+
+## Requested Changes
+
+1.
+2.
+3.
+
+```
+
+### Скрипт очищення
+
+```bash
+#!/bin/bash
+# cleanup-old-reviews.sh
+
+# Delete review buckets older than 7 days
+raps bucket list --output json | jq -r '.[] | select(.key | startswith("review-")) | .key' | while read bucket; do
+  # Extract date from bucket name
+  DATE=$(echo "$bucket" | grep -oE '[0-9]{8}')
+
+  if [ -n "$DATE" ]; then
+    BUCKET_AGE=$(( ($(date +%s) - $(date -d "$DATE" +%s)) / 86400 ))
+
+    if [ "$BUCKET_AGE" -gt 7 ]; then
+      echo "Deleting old review: $bucket (${BUCKET_AGE} days old)"
+      raps bucket delete "$bucket" --force
+    fi
+  fi
+done
+```
+
+---
+
+## Пов'язане
+
+- [Генерація каталогу ресурсів](/cookbook/cookbook-media-catalog)
+- [Контроль версій ресурсів](/cookbook/cookbook-media-versioning)
+- [Cookbook: Медіа та розваги](/cookbook/cookbook-media)

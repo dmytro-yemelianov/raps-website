@@ -1,0 +1,330 @@
+---
+title: "Тестування RAPS за допомогою raps-mock: наша стратегія інтеграційного тестування"
+description: "Як ми використовуємо raps-mock для тестування raps-cli без звернень до production API. Глибоке занурення у наш паттерн TestServer та чому ми відмовились від wiremock."
+pubDate: 2026-01-15
+author: "Dmytro Yemelianov"
+tags: ["testing", "rust", "integration-tests", "development"]
+series: "RAPS Ecosystem"
+seriesOrder: 2
+---
+
+## Виклик тестування
+
+Тестування CLI, що огортає зовнішні API, -- справа непроста. Потрібно перевірити:
+
+- Форматування запитів відповідає специфікаціям API
+- Парсинг відповідей обробляє всі крайні випадки
+- Обробка помилок працює для різних режимів збоїв
+- Потоки автентифікації функціонують правильно
+
+Наївний підхід -- мокати окремі HTTP-відповіді за допомогою бібліотек на кшталт [wiremock](https://crates.io/crates/wiremock). Ми так робили місяцями. Це працювало, але мало проблеми.
+
+## Чому ми відмовились від wiremock
+
+Наша початкова конфігурація тестів виглядала так:
+
+```rust
+use wiremock::{MockServer, Mock, ResponseTemplate};
+use wiremock::matchers::{method, path};
+
+#[tokio::test]
+async fn test_list_buckets() {
+    let server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/oss/v2/buckets"))
+        .respond_with(ResponseTemplate::new(200)
+            .set_body_json(json!({
+                "items": [
+                    {"bucketKey": "test-bucket", "createdDate": "2024-01-01"}
+                ]
+            })))
+        .mount(&server)
+        .await;
+
+    let client = create_client(&server.uri());
+    let buckets = client.list_buckets().await.unwrap();
+
+    assert_eq!(buckets.len(), 1);
+}
+```
+
+Це працювало, але у нас були **сотні** таких моків у 8 крейтах. Проблеми:
+
+1. **Тягар підтримки**: кожна зміна API вимагала оновлення багатьох мок-відповідей
+2. **Розходження з реальністю**: наші мок-відповіді відхилялися від реальної поведінки API
+3. **Неповне покриття**: ми мокали тільки щасливий шлях, пропускаючи крайні випадки
+4. **Дублювання**: один і той самий мок-код копіпастився між тестовими файлами
+
+Рішення було очевидним: використовувати реальні API-схеми.
+
+## Зустрічайте raps-mock
+
+[raps-mock](https://github.com/dmytro-yemelianov/raps-mock) автоматично генерує мок-відповіді з офіційних специфікацій Autodesk OpenAPI. Замість ручного створення JSON-відповідей ми отримуємо реалістичні дані, що відповідають production.
+
+Але справжнім проривом став хелпер `TestServer`, доданий у v0.2.0.
+
+## Паттерн TestServer
+
+Ось наша нова конфігурація тестів:
+
+```rust
+use raps_mock::TestServer;
+
+#[tokio::test]
+async fn test_list_buckets() {
+    // Start mock server on random port
+    let server = TestServer::start_default().await.unwrap();
+
+    // Point client at mock server
+    let client = create_client(&server.url);
+
+    // Make real API calls - responses come from OpenAPI specs
+    let buckets = client.list_buckets().await.unwrap();
+
+    // Verify behavior
+    assert!(buckets.is_ok());
+}
+```
+
+Ось і все. Жодного налаштування моків. Жодних шаблонів відповідей. Жодної підтримки.
+
+### Як це працює
+
+`TestServer::start_default()` виконує всю важку роботу:
+
+1. Прив'язується до випадкового доступного порту на localhost
+2. Парсить специфікації OpenAPI з `aps-sdk-openapi`
+3. Генерує маршрути для всіх задокументованих ендпоінтів
+4. Повертає приклади відповідей зі специфікацій
+5. Працює у фоновому завданні до знищення
+
+```rust
+pub struct TestServer {
+    pub url: String,           // e.g., "http://127.0.0.1:54321"
+    _task: JoinHandle<()>,     // Background server task
+}
+
+impl TestServer {
+    pub async fn start_default() -> Result<Self> {
+        let server = MockServer::new(MockServerConfig::default()).await?;
+        let app = server.router();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await?;
+        let addr = listener.local_addr()?;
+
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        Ok(Self { url: format!("http://{}", addr), _task: task })
+    }
+}
+```
+
+Коли `TestServer` знищується, фонове завдання автоматично скасовується.
+
+## Реальні приклади з RAPS
+
+### Тести автентифікації
+
+```rust
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+
+    fn create_mock_auth_client(mock_url: &str) -> AuthClient {
+        let config = Config {
+            client_id: "test-client-id".to_string(),
+            client_secret: "test-client-secret".to_string(),
+            base_url: mock_url.to_string(),
+            ..Default::default()
+        };
+        AuthClient::new(config)
+    }
+
+    #[tokio::test]
+    async fn test_get_2leg_token_success() {
+        let server = raps_mock::TestServer::start_default().await.unwrap();
+        let client = create_mock_auth_client(&server.url);
+
+        let result = client.get_token().await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_is_logged_in_false_initially() {
+        let server = raps_mock::TestServer::start_default().await.unwrap();
+        let client = create_mock_auth_client(&server.url);
+
+        assert!(!client.is_logged_in().await);
+    }
+}
+```
+
+### Тести OSS-клієнта
+
+```rust
+#[tokio::test]
+async fn test_list_buckets_with_mock_server() {
+    let server = raps_mock::TestServer::start_default().await.unwrap();
+    let client = create_mock_client(&server.url);
+
+    // raps-mock auto-generates bucket list from OpenAPI examples
+    let result = client.list_buckets(None, None).await;
+    // Response structure matches real API
+    let _ = result;
+}
+
+#[tokio::test]
+async fn test_create_bucket_with_mock_server() {
+    let server = raps_mock::TestServer::start_default().await.unwrap();
+    let client = create_mock_client(&server.url);
+
+    let result = client.create_bucket("test-bucket", BucketPolicy::Persistent).await;
+    // Mock server returns valid bucket response
+    let _ = result;
+}
+```
+
+### Тести Webhook-ів
+
+```rust
+#[tokio::test]
+async fn test_list_webhooks_with_mock_server() {
+    let server = raps_mock::TestServer::start_default().await.unwrap();
+    let client = create_mock_webhooks_client(&server.url);
+
+    let result = client.list_webhooks("data", "dm.version.added").await;
+    // OpenAPI spec defines webhook response format
+    let _ = result;
+}
+```
+
+## Паттерн тестового хелпера
+
+Кожен крейт дотримується одного паттерну:
+
+```rust
+/// Create a client configured to use the mock server
+fn create_mock_client(mock_url: &str) -> OssClient {
+    let config = Config {
+        client_id: "test-client-id".to_string(),
+        client_secret: "test-client-secret".to_string(),
+        base_url: mock_url.to_string(),
+        callback_url: "http://localhost:8080/callback".to_string(),
+        da_nickname: None,
+        http_config: HttpClientConfig::default(),
+    };
+    let auth = AuthClient::new(config.clone());
+    OssClient::new(config, auth)
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_client_creation() {
+        let server = raps_mock::TestServer::start_default().await.unwrap();
+        let client = create_mock_client(&server.url);
+
+        // Verify client is configured correctly
+        assert!(client.auth.config().base_url.starts_with("http://"));
+    }
+
+    // ... more tests
+}
+```
+
+## Інтеграція з CI/CD
+
+У нашому робочому процесі GitHub Actions raps-mock завантажується з GitHub:
+
+```toml
+# Cargo.toml
+[workspace.dependencies]
+raps-mock = {
+    git = "https://github.com/dmytro-yemelianov/raps-mock.git",
+    tag = "v0.2.0"
+}
+```
+
+Тести запускаються без жодного спеціального налаштування:
+
+```yaml
+- name: Run tests
+  run: cargo test --workspace
+```
+
+Жодних контейнерів мок-серверів. Жодного налаштування середовища. Просто `cargo test`.
+
+## Переваги цього підходу
+
+### До (wiremock)
+- ~4000 рядків коду налаштування моків
+- Вручну підтримувані JSON-відповіді
+- Розходження з реальною поведінкою API
+- Копіпастні паттерни моків
+
+### Після (raps-mock)
+- ~300 рядків тестового коду
+- Відповіді з офіційних специфікацій OpenAPI
+- Гарантована сумісність з API
+- Один виклик `TestServer::start_default()`
+
+Міграція видалила **3,700 рядків** тестового шаблонного коду, покращивши при цьому покриття.
+
+## Коли використовувати кожен режим
+
+raps-mock підтримує два режими:
+
+### Режим без стану (за замовчуванням)
+Повертає фіксовані приклади відповідей зі специфікацій OpenAPI. Ідеально для:
+- Юніт-тестів, що перевіряють парсинг запитів/відповідей
+- Швидких smoke-тестів
+- CI-конвеєрів
+
+```rust
+let server = TestServer::start_default().await.unwrap();
+```
+
+### Режим зі станом
+Підтримує стан у пам'яті. Створюєте бакет -- він зберігається. Завантажуєте об'єкт -- ви можете його отримати.
+
+```rust
+let config = MockServerConfig {
+    mode: MockMode::Stateful,
+    ..Default::default()
+};
+let server = TestServer::start(config).await.unwrap();
+```
+
+Використовуйте режим зі станом для:
+- Наскрізних тестів робочих процесів
+- Операцій, залежних від стану
+- Складних багатокрокових сценаріїв
+
+## Поради щодо міграції
+
+Якщо ви розглядаєте подібну міграцію:
+
+1. **Почніть з одного крейта**: мігруйте поступово, не переписуйте все одразу
+2. **Спрощуйте перевірки**: довіряйте мок-відповідям, тестуйте поведінку вашого коду
+3. **Використовуйте паттерн хелпера**: створюйте функції `create_mock_client()` для консистентності
+4. **Запускайте `cargo fmt`**: міграція може внести зміни форматування
+
+## Що далі
+
+Ми плануємо:
+
+- **Кастомізація відповідей**: перевизначення конкретних відповідей для тестування крайніх випадків
+- **Імітація затримок**: тестування обробки тайм-аутів
+- **Впровадження збоїв**: тестування логіки повторних спроб з налаштовуваними помилками
+- **Запис запитів**: захоплення реальних API-відповідей для відтворення
+
+---
+
+*raps-mock v0.2.0 доступний зараз. [Переглянути на GitHub](https://github.com/dmytro-yemelianov/raps-mock)*
+
+*Цей пост є частиною [серії RAPS Ecosystem](/blog?series=RAPS+Ecosystem). Дивіться також: [raps-mock: ваше локальне середовище тестування APS](/blog/raps-mock-local-aps-testing)*

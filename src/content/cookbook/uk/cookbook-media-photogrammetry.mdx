@@ -1,0 +1,466 @@
+---
+title: "Конвеєр фотограмметрії"
+description: "Створення 3D-моделей з фотографій за допомогою Reality Capture"
+category: "media"
+order: 42
+icon: "📷"
+---
+
+# Конвеєр фотограмметрії
+
+Створення 3D-моделей з фотографій за допомогою Reality Capture API.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Фотозйомка</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Камера/Телефон</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Дрон</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Сканер</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Набір фотографій</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">20-200+ зображень</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Завантаження RAPS</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення фотосцени</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження фотографій</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Обробка RC</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Детекція ознак</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Хмара точок</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Генерація меша</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Текстурне накладання</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Результати</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">OBJ-меш</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Хмара точок</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Ортофото</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Створення фотосцени
+
+```bash
+# Create a new photoscene for an object
+SCENE=$(raps rc photoscene create --name "Product Scan" --type "object" --output json)
+SCENE_ID=$(echo "$SCENE" | jq -r '.id')
+echo "Created photoscene: $SCENE_ID"
+```
+
+### Крок 2: Завантаження фотографій
+
+```bash
+# Upload all photos (minimum 20-30 recommended)
+for photo in ./product-photos/*.jpg; do
+  raps rc photoscene upload "$SCENE_ID" "$photo"
+  echo "Uploaded: $photo"
+done
+
+# Or batch upload
+raps rc photoscene upload "$SCENE_ID" ./product-photos/*.jpg --batch
+```
+
+### Крок 3: Запуск обробки
+
+```bash
+# Start the reconstruction
+raps rc photoscene process "$SCENE_ID"
+```
+
+### Крок 4: Моніторинг прогресу
+
+```bash
+# Check status
+raps rc photoscene status "$SCENE_ID"
+
+# Wait for completion
+raps rc photoscene status "$SCENE_ID" --wait
+
+# Or poll manually
+while true; do
+  STATUS=$(raps rc photoscene status "$SCENE_ID" --output json | jq -r '.status')
+  PROGRESS=$(raps rc photoscene status "$SCENE_ID" --output json | jq -r '.progress // 0')
+
+  echo "Status: $STATUS - Progress: $PROGRESS%"
+
+  [ "$STATUS" = "done" ] && break
+  [ "$STATUS" = "failed" ] && { echo "Processing failed"; exit 1; }
+
+  sleep 30
+done
+```
+
+### Крок 5: Завантаження результатів
+
+```bash
+# Download OBJ mesh
+raps rc photoscene download "$SCENE_ID" --format obj --output ./output/
+
+# Download point cloud
+raps rc photoscene download "$SCENE_ID" --format rcm --output ./output/
+
+# List available outputs
+raps rc photoscene download "$SCENE_ID" --list
+```
+
+---
+
+## Конвеєр CI/CD
+
+```yaml
+# .github/workflows/photogrammetry.yml
+name: Photogrammetry Processing
+
+on:
+  workflow_dispatch:
+    inputs:
+      photos_path:
+        description: 'Path to photos folder'
+        required: true
+      scene_name:
+        description: 'Name for the photoscene'
+        required: true
+      scene_type:
+        description: 'Type (object or aerial)'
+        default: 'object'
+
+jobs:
+  process-photogrammetry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Create photoscene
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          SCENE=$(raps rc photoscene create \
+            --name "${{ inputs.scene_name }}" \
+            --type "${{ inputs.scene_type }}" \
+            --output json)
+          SCENE_ID=$(echo "$SCENE" | jq -r '.id')
+          echo "SCENE_ID=$SCENE_ID" >> $GITHUB_ENV
+
+      - name: Upload photos
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          PHOTO_COUNT=0
+          for photo in ${{ inputs.photos_path }}/*.{jpg,jpeg,png}; do
+            [ -f "$photo" ] || continue
+            raps rc photoscene upload "$SCENE_ID" "$photo"
+            PHOTO_COUNT=$((PHOTO_COUNT + 1))
+            echo "Uploaded: $PHOTO_COUNT - $(basename "$photo")"
+          done
+          echo "Total photos: $PHOTO_COUNT"
+
+      - name: Process photoscene
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps rc photoscene process "$SCENE_ID"
+
+      - name: Wait for completion
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          MAX_WAIT=7200  # 2 hours
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            STATUS=$(raps rc photoscene status "$SCENE_ID" --output json | jq -r '.status')
+            PROGRESS=$(raps rc photoscene status "$SCENE_ID" --output json | jq -r '.progress // 0')
+
+            echo "Status: $STATUS - Progress: $PROGRESS%"
+
+            [ "$STATUS" = "done" ] && break
+            [ "$STATUS" = "failed" ] && exit 1
+
+            sleep 60
+            ELAPSED=$((ELAPSED + 60))
+          done
+
+      - name: Download results
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./photogrammetry-output
+          raps rc photoscene download "$SCENE_ID" --format obj --output ./photogrammetry-output/
+          raps rc photoscene download "$SCENE_ID" --format rcm --output ./photogrammetry-output/
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: photogrammetry-${{ inputs.scene_name }}
+          path: ./photogrammetry-output/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Ручний запуск</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">photos_path + name</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Налаштування</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення фотосцени</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Завантаження</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження фотографій</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Обробка</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Запуск обробки</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Очікування завершення</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Результат</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження OBJ</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження хмари точок</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція MCP
+
+### Створення сканування
+
+```
+User: "Create a 3D model from the photos in the product-shoot folder"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">Reality Capture</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Створити 3D-модель з фотографій</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_create(name, type)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Створення фотосцени</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Scene ID</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Пошук фотографій у папці</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_upload(scene_id, photo)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Завантаження</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-400 ml-2">45 фотографій завантажено</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_process(scene_id)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Запуск обробки</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_status(scene_id)</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">RC</span>
+        <span class="text-slate-400 ml-2">Перевірка статусу</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_rc_photoscene_download(scene_id, format="obj")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">OBJ-файл</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-400 ml-2">3D-модель готова</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Створено 3D-модель з фотографій продукту:
+>
+> **Фотосцена:** Product Scan
+> **Оброблено фотографій:** 45
+> **Час обробки:** 12 хвилин
+>
+> **Вихідні файли:**
+> - product_scan.obj (12.4 MB)
+> - product_scan.mtl
+> - product_scan_texture.jpg (8.2 MB)
+>
+> **Метрики якості:**
+> - Якість реконструкції: Висока
+> - Покриття: 98%
+> - Полігони: 245,000
+>
+> Готово до завантаження: ./output/product_scan.obj
+
+### Перевірка статусу
+
+```
+User: "What's the status of my photogrammetry job?"
+```
+
+**Відповідь AI:**
+> **Фотосцена: Site Survey 2024-02-15**
+>
+> - Статус: Обробка
+> - Прогрес: 67%
+> - Етап: Генерація меша
+> - Приблизний залишок часу: ~8 хвилин
+>
+> Фотографії: 124 / 124 оброблено
+> Хмара точок: 2.3 мільйони точок
+
+---
+
+## Найкращі практики
+
+### Рекомендації щодо фотозйомки
+
+```
+For Objects:
+- 30-100 photos from all angles
+- 60-80% overlap between shots
+- Consistent lighting
+- Plain background
+
+For Sites/Aerial:
+- 100-500 photos
+- 70%+ overlap
+- Nadir (straight down) shots
+- Include oblique angles
+```
+
+### Налаштування якості
+
+```bash
+# High quality (slower, more detail)
+raps rc photoscene process "$SCENE_ID" --quality high
+
+# Standard quality (balanced)
+raps rc photoscene process "$SCENE_ID" --quality medium
+
+# Draft (quick preview)
+raps rc photoscene process "$SCENE_ID" --quality draft
+```
+
+### Обробка помилок
+
+```bash
+# Check for failed photos
+raps rc photoscene status "$SCENE_ID" --output json | jq '.failedPhotos'
+
+# Retry with adjusted settings
+raps rc photoscene cancel "$SCENE_ID"
+raps rc photoscene process "$SCENE_ID" --quality medium
+```
+
+---
+
+## Пов'язане
+
+- [Робочий процес Site Capture](/cookbook/cookbook-media-sitecapture)
+- [Трансляція 3D-ресурсів](/cookbook/cookbook-media-translation)
+- [Cookbook: Медіа та розваги](/cookbook/cookbook-media)

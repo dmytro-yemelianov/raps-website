@@ -1,0 +1,294 @@
+---
+title: "Конвеєр координації моделей"
+description: "Завантаження та координація мультидисциплінарних BIM-моделей"
+category: "aec"
+order: 11
+icon: "🔄"
+---
+
+# Конвеєр координації моделей
+
+Завантаження моделей різних дисциплін та підготовка їх до координаційної перевірки.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Вихідні моделі</div>
+      <div class="space-y-2">
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Revit ARCH</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Revit STRUCT</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Revit MEP</div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">IFC Other</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Завантаження RAPS</div>
+      <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">raps object upload</div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Сховище APS</div>
+      <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">Бакет OSS</div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4 flex flex-col justify-center">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Model Derivative</div>
+      <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Трансляція SVF2</div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Результати</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Metadata JSON</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Viewables SVF2</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Thumbnails PNG</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Джерела</span>
+      <span>&#8594;</span>
+      <span>Завантаження</span>
+      <span>&#8594;</span>
+      <span>Сховище</span>
+      <span>&#8594;</span>
+      <span>Трансляція</span>
+      <span>&#8594;</span>
+      <span>Результати</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Створення бакету проєкту
+
+```bash
+raps bucket create --key coord-project-2024 --policy persistent --region US
+```
+
+### Крок 2: Завантаження дисциплінарних моделей
+
+```bash
+raps object upload coord-project-2024 ./models/architectural.rvt
+raps object upload coord-project-2024 ./models/structural.rvt
+raps object upload coord-project-2024 ./models/mep.rvt
+```
+
+### Крок 3: Трансляція всіх моделей
+
+```bash
+for model in architectural structural mep; do
+  URN=$(raps object urn coord-project-2024 "${model}.rvt" --output plain)
+  echo "Translating ${model}..."
+  raps translate start "$URN" --format svf2 --wait
+done
+```
+
+### Крок 4: Перевірка статусу трансляції
+
+```bash
+raps object list coord-project-2024 --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn coord-project-2024 "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" | jq -r '.status')
+  echo "$key: $STATUS"
+done
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/model-coordination.yml
+name: Model Coordination Pipeline
+
+on:
+  push:
+    paths:
+      - 'models/**/*.rvt'
+      - 'models/**/*.ifc'
+
+env:
+  BUCKET_NAME: coord-${{ github.repository_id }}
+
+jobs:
+  upload-and-translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Ensure bucket exists
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET_NAME" --policy persistent --region US 2>/dev/null || true
+
+      - name: Upload changed models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'models/**/*.rvt' 'models/**/*.ifc'); do
+            if [ -f "$file" ]; then
+              echo "Uploading: $file"
+              raps object upload "$BUCKET_NAME" "$file"
+            fi
+          done
+
+      - name: Translate models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'models/**/*.rvt' 'models/**/*.ifc'); do
+            if [ -f "$file" ]; then
+              key=$(basename "$file")
+              URN=$(raps object urn "$BUCKET_NAME" "$key" --output plain)
+              raps translate start "$URN" --format svf2 --wait
+              echo "Translated: $key"
+            fi
+          done
+
+      - name: Generate coordination report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# Coordination Report" > coordination-report.md
+          echo "Generated: $(date)" >> coordination-report.md
+          echo "" >> coordination-report.md
+          raps object list "$BUCKET_NAME" --output json | jq -r '.[] | "- \(.key)"' >> coordination-report.md
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coordination-report
+          path: coordination-report.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Тригер</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">Push до models/</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">GitHub Actions</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Checkout</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Встановлення RAPS</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Створення бакету</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Завантаження моделей</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Трансляція</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Генерація звіту</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Результат</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">coordination-report.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+Використовуйте природну мову з AI-асистентами для координації моделей.
+
+### Завантаження та трансляція
+
+```
+User: "Upload all the Revit models from the models folder and translate them for coordination review"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">Користувач</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI-асистент</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">Хмара APS</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Завантажити моделі для координації</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_bucket_create()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Створити бакет</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="border-l-2 border-purple-500/30 ml-4 pl-4 py-2 my-2">
+        <div class="text-xs text-purple-400 mb-2">Для кожної моделі:</div>
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 text-right text-purple-400">aps_object_upload()</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-amber-400">Завантажити файл</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-emerald-400"></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 text-right text-purple-400">aps_translate_start()</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-amber-400">Запустити трансляцію</div>
+            <div class="text-slate-500">&#8594;</div>
+            <div class="flex-1 text-emerald-400"></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Усі 3 моделі завантажено та транслюються</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+### Перевірка статусу трансляції
+
+```
+User: "Check if all the models in the coordination bucket have been translated successfully"
+```
+
+**Відповідь AI:**
+> Усі 3 моделі успішно транслятовано:
+> - arch.rvt: Завершено
+> - struct.rvt: Завершено
+> - mep.rvt: Завершено
+
+---
+
+## Пов'язане
+
+- [Відстеження версій моделей](/cookbook/cookbook-aec-versioning)
+- [Витяг метаданих](/cookbook/cookbook-aec-metadata)
+- [Cookbook: AEC та BIM](/cookbook/cookbook-aec)

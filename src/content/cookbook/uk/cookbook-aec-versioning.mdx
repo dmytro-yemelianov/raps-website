@@ -1,0 +1,413 @@
+---
+title: "Відстеження версій моделей"
+description: "Відстеження та порівняння версій моделей у часі"
+category: "aec"
+order: 13
+icon: "📅"
+---
+
+# Відстеження версій моделей
+
+Відстеження версій моделей з організованим зберіганням та порівнянням.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Історія версій</div>
+      <div class="space-y-2">
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">v-20240101</span><br/>building.rvt
+        </div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">v-20240115</span><br/>building.rvt
+        </div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">v-20240201</span><br/>building.rvt
+        </div>
+        <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+          <span class="font-mono text-blue-400">latest</span><br/>building.rvt
+        </div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Структура бакету OSS</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/v-20240101/</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/v-20240115/</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/v-20240201/</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-xs font-mono text-amber-300">bucket/building/latest/</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Viewables SVF2</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-v1</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-v2</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-v3</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm font-mono text-purple-300">URN-latest</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Порівняння версій</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-3 text-sm text-slate-300 text-center">
+        <div class="font-semibold mb-2">Звіт відмінностей</div>
+        <div class="flex justify-center gap-3 text-xs">
+          <span class="text-green-400">+45</span>
+          <span class="text-red-400">-12</span>
+          <span class="text-yellow-400">~78</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Версії</span>
+      <span>&#8594;</span>
+      <span>Сховище</span>
+      <span>&#8594;</span>
+      <span>Трансляція</span>
+      <span>&#8594;</span>
+      <span>Порівняння</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Завантаження версійної моделі
+
+```bash
+# Створення версійного ключа об'єкта з часовою міткою
+VERSION=$(date +%Y%m%d-%H%M%S)
+raps object upload my-bucket building.rvt --key "building/v-${VERSION}/building.rvt"
+
+# Також завантаження як "latest" для швидкого доступу
+raps object upload my-bucket building.rvt --key "building/latest/building.rvt"
+```
+
+### Крок 2: Перелік усіх версій
+
+```bash
+raps object list my-bucket --prefix "building/v-" --output json | \
+  jq -r '.[] | .key' | sort -r
+```
+
+**Вивід:**
+```
+building/v-20240201-110530/building.rvt
+building/v-20240115-143022/building.rvt
+building/v-20240101-090000/building.rvt
+```
+
+### Крок 3: Порівняння версій
+
+```bash
+# Отримання URN для обох версій
+OLD_URN=$(raps object urn my-bucket "building/v-20240101-090000/building.rvt" --output plain)
+NEW_URN=$(raps object urn my-bucket "building/v-20240115-143022/building.rvt" --output plain)
+
+# Витяг кількості елементів
+OLD_COUNT=$(raps derivative properties "$OLD_URN" --output json | jq 'length')
+NEW_COUNT=$(raps derivative properties "$NEW_URN" --output json | jq 'length')
+
+echo "Version comparison:"
+echo "  Old version: $OLD_COUNT elements"
+echo "  New version: $NEW_COUNT elements"
+echo "  Difference: $((NEW_COUNT - OLD_COUNT)) elements"
+```
+
+### Крок 4: Детальне порівняння за категоріями
+
+```bash
+# Порівняння категорій між версіями
+echo "Category Comparison:"
+echo "===================="
+
+for category in "Walls" "Doors" "Windows" "Rooms"; do
+  OLD=$(raps derivative properties "$OLD_URN" --output json | jq "[.[] | select(.category == \"$category\")] | length")
+  NEW=$(raps derivative properties "$NEW_URN" --output json | jq "[.[] | select(.category == \"$category\")] | length")
+  DIFF=$((NEW - OLD))
+
+  if [ $DIFF -gt 0 ]; then
+    echo "$category: $OLD -> $NEW (+$DIFF)"
+  elif [ $DIFF -lt 0 ]; then
+    echo "$category: $OLD -> $NEW ($DIFF)"
+  else
+    echo "$category: $OLD (no change)"
+  fi
+done
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/version-tracking.yml
+name: Model Version Tracking
+
+on:
+  push:
+    paths:
+      - 'models/**/*.rvt'
+
+jobs:
+  version-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Version and upload models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          VERSION=$(date +%Y%m%d-%H%M%S)
+          BUCKET="versioned-models"
+
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'models/**/*.rvt'); do
+            [ -f "$file" ] || continue
+
+            basename=$(basename "$file" .rvt)
+
+            # Завантаження версійної копії
+            raps object upload "$BUCKET" "$file" --key "${basename}/v-${VERSION}/${basename}.rvt"
+
+            # Завантаження як latest
+            raps object upload "$BUCKET" "$file" --key "${basename}/latest/${basename}.rvt"
+
+            # Трансляція latest
+            URN=$(raps object urn "$BUCKET" "${basename}/latest/${basename}.rvt" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+
+            echo "Uploaded ${basename} as version ${VERSION}"
+          done
+
+      - name: Generate version comparison
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Отримання двох останніх версій та порівняння
+          echo "# Version Comparison Report" > comparison.md
+          echo "Generated: $(date)" >> comparison.md
+          # Додайте логіку порівняння тут
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-log
+          path: comparison.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Git Push</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm font-mono text-blue-300">models/*.rvt changed</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Версіонування</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Генерація часової мітки</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Завантаження v-YYYYMMDD</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Завантаження як latest</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Обробка</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Трансляція latest</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Порівняння з попередньою</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Звіт</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">comparison.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Завантаження нової версії
+
+```
+User: "Upload the new version of the building model and compare it with last week's version"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">Користувач</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI-асистент</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">Хмара APS</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Завантажити та порівняти версії</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_upload()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Завантажити нову версію</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_translate_start()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Транслятувати нову версію</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_list()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Перелік версій</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-emerald-400">Список версій</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties(old)</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties(new)</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-center text-purple-400 italic">Обчислення відмінностей</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Звіт порівняння версій</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Нову версію завантажено та транслятовано. Порівняння з v-20240208:
+> - **Додано:** 23 нові стіни, 8 дверей, 12 вікон
+> - **Видалено:** 5 стін, 2 двері
+> - **Змінено:** 45 елементів з оновленими властивостями
+> - **Загалом елементів:** 1 892 (було 1 854)
+
+### Перегляд історії версій
+
+```
+User: "Show me all versions of the office building model"
+```
+
+**Відповідь AI:**
+> Історія версій office-building.rvt:
+>
+> | Версія | Дата | Елементів | Розмір |
+> |--------|------|-----------|--------|
+> | v-20240215 | 15 лют 2024 | 1 892 | 156 МБ |
+> | v-20240208 | 8 лют 2024 | 1 854 | 152 МБ |
+> | v-20240201 | 1 лют 2024 | 1 823 | 148 МБ |
+> | v-20240125 | 25 січ 2024 | 1 756 | 142 МБ |
+
+---
+
+## Найкращі практики
+
+### Конвенція іменування
+
+```
+bucket/
+└── {model-name}/
+    ├── v-YYYYMMDD-HHMMSS/
+    │   └── {model-name}.rvt
+    ├── v-YYYYMMDD-HHMMSS/
+    │   └── {model-name}.rvt
+    └── latest/
+        └── {model-name}.rvt
+```
+
+### Політика зберігання
+
+```bash
+# Зберігати лише останні 10 версій
+VERSIONS=$(raps object list my-bucket --prefix "building/v-" --output json | jq -r '.[].key' | sort -r)
+COUNT=0
+
+echo "$VERSIONS" | while read key; do
+  COUNT=$((COUNT + 1))
+  if [ $COUNT -gt 10 ]; then
+    echo "Deleting old version: $key"
+    raps object delete my-bucket "$key"
+  fi
+done
+```
+
+---
+
+## Пов'язане
+
+- [Конвеєр координації моделей](/cookbook/cookbook-aec-coordination)
+- [Синхронізація BIM 360/ACC](/cookbook/cookbook-aec-acc-sync)
+- [Cookbook: AEC та BIM](/cookbook/cookbook-aec)

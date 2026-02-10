@@ -1,0 +1,525 @@
+---
+title: "Криза масових операцій: чому AEC-команди витрачають години на кліки"
+description: "490 запитів на функціонал. 3 860 голосів. Одна спільна тема: користувачі ACC відчайдушно потребують масових операцій. Ось дані та рішення."
+pubDate: 2026-01-16
+author: "Dmytro Yemelianov"
+tags: ["acc", "automation", "bulk-operations", "productivity", "aec"]
+series: "ACC Pain Points"
+seriesOrder: 2
+featured: false
+draft: false
+---
+
+import PerformanceChart from '@/components/PerformanceChart.astro';
+
+*Це частина 2 нашої серії [ACC Pain Points](/blog/acc-forum-analysis). Ми проаналізували 4 295 запитів на функціонал з форуму ACC Ideas.*
+
+---
+
+## Цифри з першого погляду
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div class="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">490</div>
+    <div class="text-amber-200 text-sm mt-1">Ідей масових операцій</div>
+  </div>
+  <div class="bg-gradient-to-br from-orange-600 to-orange-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">3 860</div>
+    <div class="text-orange-200 text-sm mt-1">Голосів спільноти</div>
+  </div>
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">344</div>
+    <div class="text-red-200 text-sm mt-1">Лайків у топ-1 ідеї</div>
+  </div>
+  <div class="bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">6+</div>
+    <div class="text-slate-200 text-sm mt-1">Років очікування</div>
+  </div>
+</div>
+
+У кожній категорії -- користувачі, фото, документи, задачі, сабмітали -- з'являється один і той самий запит: **"Дайте нам робити це масово."**
+
+---
+
+## Запит №1 за кількістю голосів
+
+<div class="not-prose my-8 bg-gradient-to-r from-red-900/50 to-slate-900/50 rounded-2xl p-8 border border-red-700/50">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">#1 ЗА ГОЛОСАМИ</div>
+    <div class="px-3 py-1 bg-amber-500/20 text-amber-400 text-xs font-bold rounded-full">344 ЛАЙКИ</div>
+  </div>
+  <blockquote class="text-xl text-white italic border-l-4 border-red-500 pl-4 mb-4">
+    "There is a major need to be able to add a new hire to many projects in ACC. Instead of wasting my time opening each project and manually adding a new user to 20 projects, we need a tool that will automate this process!"
+  </blockquote>
+  <div class="flex items-center gap-4 text-sm text-slate-400">
+    <a href="https://forums.autodesk.com/t5/acc-ideas/allow-adding-a-user-s-to-multiple-projects/idi-p/12714729" class="text-blue-400 hover:underline">Переглянути на форумі</a>
+    <span>•</span>
+    <span>Початково подано до BIM360 <strong class="text-red-400">понад 6 років тому</strong></span>
+  </div>
+</div>
+
+---
+
+## Математика ручної роботи
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-4">Додавання 1 користувача до 50 проєктів (вручну)</h3>
+    <div class="grid grid-cols-5 gap-2 mb-6">
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">🖱️</div>
+        <div class="text-white font-bold">15с</div>
+        <div class="text-xs text-slate-400">Навігація</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">📂</div>
+        <div class="text-white font-bold">5с</div>
+        <div class="text-xs text-slate-400">Відкрити панель</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">🔍</div>
+        <div class="text-white font-bold">10с</div>
+        <div class="text-xs text-slate-400">Пошук користувача</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">👤</div>
+        <div class="text-white font-bold">5с</div>
+        <div class="text-xs text-slate-400">Обрати роль</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-3 text-center">
+        <div class="text-2xl mb-1">✓</div>
+        <div class="text-white font-bold">5с</div>
+        <div class="text-xs text-slate-400">Підтвердити</div>
+      </div>
+    </div>
+    <div class="flex items-center justify-between p-4 bg-red-900/30 rounded-xl border border-red-700/50">
+      <div>
+        <div class="text-slate-400 text-sm">На проєкт</div>
+        <div class="text-white font-bold">40 секунд</div>
+      </div>
+      <div class="text-4xl">×</div>
+      <div>
+        <div class="text-slate-400 text-sm">Проєктів</div>
+        <div class="text-white font-bold">50</div>
+      </div>
+      <div class="text-4xl">=</div>
+      <div>
+        <div class="text-slate-400 text-sm">Загальний час</div>
+        <div class="text-3xl font-black text-red-400">33 хв</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+Для великого підприємства з 200+ проєктами? **Понад 2 години клікання.** А тепер помножте на кожного нового працівника, кожного звільненого та кожну зміну ролі.
+
+---
+
+## Де бракує масових операцій
+
+<div class="not-prose my-8">
+  <svg viewBox="0 0 800 420" class="w-full max-w-4xl mx-auto" role="img" aria-label="Чотири категорії відсутніх масових операцій в ACC">
+    <defs>
+      <linearGradient id="userGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#3b82f6"/>
+        <stop offset="100%" style="stop-color:#1d4ed8"/>
+      </linearGradient>
+      <linearGradient id="photoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ec4899"/>
+        <stop offset="100%" style="stop-color:#be185d"/>
+      </linearGradient>
+      <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8b5cf6"/>
+        <stop offset="100%" style="stop-color:#6d28d9"/>
+      </linearGradient>
+      <linearGradient id="issueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#f59e0b"/>
+        <stop offset="100%" style="stop-color:#d97706"/>
+      </linearGradient>
+      <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3"/>
+      </filter>
+    </defs>
+
+    {/* Картка управління користувачами */}
+    <g filter="url(#cardShadow)">
+      <rect x="20" y="20" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="20" y="20" width="370" height="50" rx="16" fill="url(#userGrad)"/>
+      <rect x="20" y="54" width="370" height="16" fill="url(#userGrad)"/>
+      <text x="50" y="52" class="fill-white text-lg font-bold" style="font-size:18px">👥 Управління користувачами</text>
+      <text x="40" y="100" class="fill-slate-300" style="font-size:14px">• Додати до кількох проєктів</text>
+      <text x="40" y="125" class="fill-slate-300" style="font-size:14px">• Видалити з кількох проєктів</text>
+      <text x="40" y="150" class="fill-slate-300" style="font-size:14px">• Оновити ролі між проєктами</text>
+      <text x="40" y="175" class="fill-slate-300" style="font-size:14px">• Копіювати команду між проєктами</text>
+    </g>
+
+    {/* Картка фото та медіа */}
+    <g filter="url(#cardShadow)">
+      <rect x="410" y="20" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="410" y="20" width="370" height="50" rx="16" fill="url(#photoGrad)"/>
+      <rect x="410" y="54" width="370" height="16" fill="url(#photoGrad)"/>
+      <text x="440" y="52" class="fill-white text-lg font-bold" style="font-size:18px">📷 Фото та медіа</text>
+      <text x="430" y="100" class="fill-slate-300" style="font-size:14px">• Масове редагування фото</text>
+      <text x="430" y="125" class="fill-slate-300" style="font-size:14px">• Масове тегування фото</text>
+      <text x="430" y="150" class="fill-slate-300" style="font-size:14px">• Пакетне завантаження</text>
+      <text x="430" y="175" class="fill-slate-300" style="font-size:14px">• Масове видалення фото</text>
+    </g>
+
+    {/* Картка документів */}
+    <g filter="url(#cardShadow)">
+      <rect x="20" y="220" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="20" y="220" width="370" height="50" rx="16" fill="url(#docGrad)"/>
+      <rect x="20" y="254" width="370" height="16" fill="url(#docGrad)"/>
+      <text x="50" y="252" class="fill-white text-lg font-bold" style="font-size:18px">📄 Документи</text>
+      <text x="40" y="300" class="fill-slate-300" style="font-size:14px">• Масове завантаження з метаданими</text>
+      <text x="40" y="325" class="fill-slate-300" style="font-size:14px">• Масове оновлення статусів</text>
+      <text x="40" y="350" class="fill-slate-300" style="font-size:14px">• Пакетна зміна дозволів</text>
+      <text x="40" y="375" class="fill-slate-300" style="font-size:14px">• Масове версіонування файлів</text>
+    </g>
+
+    {/* Картка задач та сабміталів */}
+    <g filter="url(#cardShadow)">
+      <rect x="410" y="220" width="370" height="180" rx="16" fill="#1e293b"/>
+      <rect x="410" y="220" width="370" height="50" rx="16" fill="url(#issueGrad)"/>
+      <rect x="410" y="254" width="370" height="16" fill="url(#issueGrad)"/>
+      <text x="440" y="252" class="fill-white text-lg font-bold" style="font-size:18px">⚠️ Задачі та сабмітали</text>
+      <text x="430" y="300" class="fill-slate-300" style="font-size:14px">• Масове створення задач</text>
+      <text x="430" y="325" class="fill-slate-300" style="font-size:14px">• Масове оновлення статусів</text>
+      <text x="430" y="350" class="fill-slate-300" style="font-size:14px">• Пакетна зміна виконавців</text>
+      <text x="430" y="375" class="fill-slate-300" style="font-size:14px">• Масовий експорт у CSV</text>
+    </g>
+  </svg>
+</div>
+
+<PerformanceChart
+  title="Запити на масові операції за категоріями"
+  subtitle="Кількість ідей, що вимагають пакетного/масового функціоналу"
+  data={[
+    { label: "Управління користувачами", value: 175, color: "bg-gradient-to-r from-blue-500 to-blue-600", suffix: " ідей" },
+    { label: "Фото та медіа", value: 163, color: "bg-gradient-to-r from-pink-500 to-pink-600", suffix: " ідей" },
+    { label: "Документи та файли", value: 207, color: "bg-gradient-to-r from-purple-500 to-purple-600", suffix: " ідей" },
+    { label: "Задачі та сабмітали", value: 296, color: "bg-gradient-to-r from-amber-500 to-amber-600", suffix: " ідей" },
+  ]}
+  maxValue={350}
+/>
+
+---
+
+## Чому це важливо для AEC
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-4">Типовий великий будівельний проєкт</h3>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="bg-gradient-to-br from-blue-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-blue-700/30">
+        <div class="text-3xl font-black text-blue-400">200+</div>
+        <div class="text-xs text-slate-400 mt-1">Членів команди</div>
+      </div>
+      <div class="bg-gradient-to-br from-purple-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-purple-700/30">
+        <div class="text-3xl font-black text-purple-400">50+</div>
+        <div class="text-xs text-slate-400 mt-1">Субпідрядників</div>
+      </div>
+      <div class="bg-gradient-to-br from-amber-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-amber-700/30">
+        <div class="text-3xl font-black text-amber-400">100+</div>
+        <div class="text-xs text-slate-400 mt-1">Папок</div>
+      </div>
+      <div class="bg-gradient-to-br from-emerald-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-emerald-700/30">
+        <div class="text-3xl font-black text-emerald-400">10K+</div>
+        <div class="text-xs text-slate-400 mt-1">Документів</div>
+      </div>
+      <div class="bg-gradient-to-br from-red-900/50 to-slate-900/50 rounded-xl p-4 text-center border border-red-700/30">
+        <div class="text-3xl font-black text-red-400">1K+</div>
+        <div class="text-xs text-slate-400 mt-1">Задач</div>
+      </div>
+    </div>
+    <p class="text-slate-400 text-sm mt-4 text-center">Коли кожна операція виконується клік за кліком, BIM-менеджери стають штатними операторами введення даних.</p>
+  </div>
+</div>
+
+---
+
+## Порівняння обхідних рішень
+
+<div class="not-prose my-8">
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="bg-red-900/20 rounded-xl p-6 border border-red-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">❌</div>
+        <h4 class="text-lg font-bold text-white">Ручна праця</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Доручити стажеру клікати</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Висока вартість робочої сили</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Схильність до помилок</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">•</span> Нестерпно монотонна робота</li>
+      </ul>
+    </div>
+    <div class="bg-amber-900/20 rounded-xl p-6 border border-amber-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">⚠️</div>
+        <h4 class="text-lg font-bold text-white">Десктопні інструменти (Naviate)</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Корпоративна ціна (не опублікована)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Лише Windows (300MB+)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Неможливо автоматизувати в CI/CD</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">•</span> Обмежене покриття функцій</li>
+      </ul>
+    </div>
+    <div class="bg-blue-900/20 rounded-xl p-6 border border-blue-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">🔧</div>
+        <h4 class="text-lg font-bold text-white">Власні скрипти</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Потребує ресурсів розробників</li>
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Відсутні стандартні патерни</li>
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Кожна команда винаходить велосипед</li>
+        <li class="flex items-center gap-2"><span class="text-blue-400">•</span> Навантаження на підтримку</li>
+      </ul>
+    </div>
+    <div class="bg-emerald-900/20 rounded-xl p-6 border border-emerald-700/30">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="text-2xl">✅</div>
+        <h4 class="text-lg font-bold text-white">RAPS CLI</h4>
+      </div>
+      <ul class="space-y-2 text-sm text-slate-300">
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> Безкоштовний та з відкритим кодом</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> Кросплатформний (один бінарний файл)</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> Готовий до CI/CD</li>
+        <li class="flex items-center gap-2"><span class="text-emerald-400">•</span> 50 паралельних операцій</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+---
+
+## Порівняння продуктивності
+
+<PerformanceChart
+  title="Час додавання користувача до 200 проєктів"
+  subtitle="Порівняння різних підходів"
+  data={[
+    { label: "Ручний UI", value: 133, color: "bg-gradient-to-r from-red-500 to-red-600", suffix: " хв" },
+    { label: "Naviate Desktop", value: 30, color: "bg-gradient-to-r from-amber-500 to-amber-600", suffix: " хв" },
+    { label: "RAPS CLI", value: 0.75, color: "bg-gradient-to-r from-emerald-500 to-emerald-600", suffix: " хв" },
+  ]}
+  maxValue={140}
+/>
+
+<div class="not-prose my-6 p-6 bg-gradient-to-r from-emerald-900/40 to-slate-900/40 rounded-xl border border-emerald-700/50">
+  <div class="flex items-center justify-between">
+    <div>
+      <div class="text-slate-400 text-sm">Ручний UI</div>
+      <div class="text-3xl font-black text-red-400">2+ години</div>
+    </div>
+    <div class="text-4xl text-slate-600">→</div>
+    <div>
+      <div class="text-slate-400 text-sm">RAPS CLI</div>
+      <div class="text-3xl font-black text-emerald-400">45 секунд</div>
+    </div>
+    <div class="text-right">
+      <div class="text-slate-400 text-sm">Прискорення</div>
+      <div class="text-3xl font-black text-white">у 177 разів швидше</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Рішення RAPS
+
+### Додати користувача до всіх проєктів
+
+```bash
+# Add new hire to all 200 projects
+raps admin user add "$ACCOUNT_ID" "newhire@company.com" --role project_admin
+```
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">Вивід:</div>
+  <div class="text-emerald-400">Adding user to projects...</div>
+  <div class="flex items-center gap-2 my-2">
+    <div class="flex-1 bg-slate-700 rounded-full h-3 overflow-hidden">
+      <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+    </div>
+    <span class="text-white">200/200</span>
+  </div>
+  <div class="text-white">✓ Completed in 45 seconds</div>
+</div>
+
+### Фільтрація за шаблоном проєкту
+
+```bash
+# Only add to 2024 projects
+raps admin user add "$ACCOUNT_ID" "contractor@partner.com" \
+  --role viewer --filter "^2024-"
+```
+
+### Попередній перегляд (dry-run)
+
+```bash
+# See what would happen without executing
+raps admin user add "$ACCOUNT_ID" "user@company.com" --dry-run
+```
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">Результати dry run:</div>
+  <table class="w-full text-left">
+    <thead class="text-slate-500 border-b border-slate-700">
+      <tr><th class="py-2">Проєкт</th><th>Дія</th></tr>
+    </thead>
+    <tbody class="text-slate-300">
+      <tr><td class="py-1">Downtown Tower</td><td class="text-emerald-400">Буде додано</td></tr>
+      <tr><td class="py-1">Hospital Wing</td><td class="text-emerald-400">Буде додано</td></tr>
+      <tr><td class="py-1">University Library</td><td class="text-amber-400">Буде пропущено (існує)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+### Інтеграція з CI/CD
+
+```yaml
+name: User Onboarding
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        required: true
+        description: 'New user email'
+
+jobs:
+  onboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add to all projects
+        run: |
+          raps admin user add "$ACCOUNT_ID" "${{ github.event.inputs.email }}" \
+            --role project_admin
+```
+
+---
+
+## Що доступно зараз
+
+<div class="not-prose my-8 grid md:grid-cols-2 gap-4">
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <h4 class="text-emerald-400 font-bold mb-4 flex items-center gap-2">
+      <span>✓</span> Доступно в RAPS 4.0
+    </h4>
+    <ul class="space-y-2 text-slate-300 text-sm">
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin user add</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin user remove</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin user update-role</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin folder rights</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin project list</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin operation resume</code></li>
+    </ul>
+  </div>
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <h4 class="text-amber-400 font-bold mb-4 flex items-center gap-2">
+      <span>🚧</span> Незабаром
+    </h4>
+    <ul class="space-y-2 text-slate-300 text-sm">
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin issue bulk-create</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin photo bulk-tag</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin submittal bulk-update</code></li>
+      <li><code class="bg-slate-800 px-2 py-0.5 rounded">raps admin document bulk-upload</code></li>
+    </ul>
+  </div>
+</div>
+
+---
+
+## Ширший патерн
+
+<div class="not-prose my-8">
+  <svg viewBox="0 0 800 280" class="w-full max-w-4xl mx-auto" role="img" aria-label="Порівняння UI-First та API-First дизайну з різницею у масштабованості">
+    <defs>
+      <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#ef4444"/>
+        <stop offset="100%" style="stop-color:#dc2626"/>
+      </linearGradient>
+      <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#22c55e"/>
+        <stop offset="100%" style="stop-color:#16a34a"/>
+      </linearGradient>
+      <linearGradient id="grayGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#475569"/>
+        <stop offset="100%" style="stop-color:#334155"/>
+      </linearGradient>
+      <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
+      </marker>
+      <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+      </marker>
+    </defs>
+
+    {/* Рядок UI-First (зверху) */}
+    <text x="400" y="30" text-anchor="middle" class="fill-red-400 font-bold" style="font-size:16px">❌ UI-First дизайн</text>
+
+    <rect x="40" y="50" width="140" height="50" rx="8" fill="url(#redGrad)"/>
+    <text x="110" y="80" text-anchor="middle" class="fill-white font-semibold" style="font-size:13px">UI-First дизайн</text>
+
+    <line x1="180" y1="75" x2="230" y2="75" stroke="#ef4444" stroke-width="3" marker-end="url(#arrowRed)"/>
+
+    <rect x="240" y="50" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="310" y="72" text-anchor="middle" class="fill-white" style="font-size:12px">Працює для</text>
+    <text x="310" y="88" text-anchor="middle" class="fill-amber-400 font-bold" style="font-size:14px">10 проєктів</text>
+
+    <line x1="380" y1="75" x2="430" y2="75" stroke="#ef4444" stroke-width="3" marker-end="url(#arrowRed)"/>
+
+    <rect x="440" y="50" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="510" y="72" text-anchor="middle" class="fill-white" style="font-size:12px">Ламається на</text>
+    <text x="510" y="88" text-anchor="middle" class="fill-amber-400 font-bold" style="font-size:14px">100 проєктах</text>
+
+    <line x1="580" y1="75" x2="630" y2="75" stroke="#ef4444" stroke-width="3" marker-end="url(#arrowRed)"/>
+
+    <rect x="640" y="50" width="140" height="50" rx="8" fill="url(#redGrad)"/>
+    <text x="710" y="72" text-anchor="middle" class="fill-white" style="font-size:12px">Відмовляє на</text>
+    <text x="710" y="88" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">500 проєктах</text>
+
+    {/* Розділювач */}
+    <line x1="50" y1="140" x2="750" y2="140" stroke="#334155" stroke-width="2" stroke-dasharray="8,4"/>
+
+    {/* Рядок API-First (знизу) */}
+    <text x="400" y="175" text-anchor="middle" class="fill-emerald-400 font-bold" style="font-size:16px">✓ API-First дизайн</text>
+
+    <rect x="40" y="195" width="140" height="50" rx="8" fill="url(#greenGrad)"/>
+    <text x="110" y="225" text-anchor="middle" class="fill-white font-semibold" style="font-size:13px">API-First дизайн</text>
+
+    <line x1="180" y1="220" x2="230" y2="220" stroke="#22c55e" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+    <rect x="240" y="195" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="310" y="217" text-anchor="middle" class="fill-white" style="font-size:12px">Масштабується до</text>
+    <text x="310" y="233" text-anchor="middle" class="fill-emerald-400 font-bold" style="font-size:14px">будь-якого розміру</text>
+
+    <line x1="380" y1="220" x2="430" y2="220" stroke="#22c55e" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+    <rect x="440" y="195" width="140" height="50" rx="8" fill="url(#grayGrad)"/>
+    <text x="510" y="225" text-anchor="middle" class="fill-emerald-400 font-bold" style="font-size:14px">Автоматизований</text>
+
+    <line x1="580" y1="220" x2="630" y2="220" stroke="#22c55e" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+    <rect x="640" y="195" width="140" height="50" rx="8" fill="url(#greenGrad)"/>
+    <text x="710" y="225" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">Готовий до CI/CD</text>
+  </svg>
+</div>
+
+**UI-first дизайн не масштабується.** ACC було спроєктовано для малих та середніх проєктів. Корпоративні сценарії потребують автоматизації через API.
+
+---
+
+## Далі у серії
+
+- [Частина 1: Проблема 96,6%](/blog/acc-forum-analysis) -- Огляд аналізу форуму ACC
+- [Частина 3: Проблема дозволів](/blog/acc-permission-nightmare) -- Коли базове управління доступом відсутнє
+
+---
+
+**Пов'язане:**
+- [Довідка команд адміністрування](/docs/admin)
+- [Кулінарна книга адміністратора облікового запису](/docs/cookbook-acc-admin)
+- [Примітки до випуску RAPS 4.0](/blog/raps-4-account-admin)

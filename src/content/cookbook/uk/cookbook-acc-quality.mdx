@@ -1,0 +1,407 @@
+---
+title: "Процеси контролю якості"
+description: "Автоматизація відстеження інспекцій якості"
+category: "construction"
+order: 36
+icon: "🔍"
+---
+
+# Процеси контролю якості
+
+Автоматизуйте відстеження та звітність інспекцій контролю якості.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Інспекція якості</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Створення чек-листа</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Призначення інспектора</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Проведення інспекції</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Фіксація результатів</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Результати</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-emerald-800/50 rounded text-sm text-emerald-300">Пройдено</div>
+        <div class="px-3 py-2 bg-red-800/50 rounded text-sm text-red-300">Не пройдено</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Н/З</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Подальші дії</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Прикріплення фото</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Створення проблеми</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Планування повторної інспекції</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Звітність</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт якості</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Журнал дефектів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Дашборд метрик</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Інспекція → Результати → Подальші дії → Звітність</div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Створення запису інспекції
+
+```bash
+PROJECT_ID="b.project-id"
+CHECKLIST_ID="checklist-123"
+
+# Get checklist items
+raps acc checklist items "$PROJECT_ID" "$CHECKLIST_ID" --output json > items.json
+
+# View items to inspect
+jq -r '.[] | "\(.id): \(.title)"' items.json
+```
+
+### Оновлення статусу інспекції
+
+```bash
+ITEM_ID="item-456"
+
+# Mark item as passed
+raps acc checklist update-item "$PROJECT_ID" "$CHECKLIST_ID" "$ITEM_ID" --status "passed"
+
+# Mark item as failed with note
+raps acc checklist update-item "$PROJECT_ID" "$CHECKLIST_ID" "$ITEM_ID" \
+  --status "failed" \
+  --note "Missing fire caulking at penetration"
+
+# Attach photo evidence
+raps acc checklist attach "$PROJECT_ID" "$CHECKLIST_ID" "$ITEM_ID" ./photos/deficiency.jpg
+```
+
+### Генерація звіту якості
+
+```bash
+# Get all items with status
+raps acc checklist items "$PROJECT_ID" "$CHECKLIST_ID" --output json > inspection.json
+
+# Generate summary
+cat inspection.json | jq '
+  {
+    total: length,
+    passed: [.[] | select(.status == "passed")] | length,
+    failed: [.[] | select(.status == "failed")] | length,
+    pending: [.[] | select(.status == "pending")] | length,
+    na: [.[] | select(.status == "na")] | length
+  } |
+  . + {
+    passRate: (if .total > 0 then ((.passed / (.total - .na)) * 100 | floor) else 0 end)
+  }'
+```
+
+### Створення проблем для непройдених пунктів
+
+```bash
+# Find failed items and create issues
+jq -r '.[] | select(.status == "failed") | "\(.id)|\(.title)|\(.response)"' inspection.json | \
+  while IFS='|' read id title response; do
+    raps acc issue create "$PROJECT_ID" \
+      --title "QC Deficiency: $title" \
+      --description "$response" \
+      --priority "high" \
+      --type "quality"
+
+    echo "Created issue for: $title"
+  done
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/qc-automation.yml
+name: QC Automation Pipeline
+
+on:
+  schedule:
+    - cron: '0 18 * * 1-5'  # End of day, weekdays
+  workflow_dispatch:
+    inputs:
+      checklist_id:
+        description: 'Specific checklist ID (optional)'
+        required: false
+
+env:
+  PROJECT_ID: ${{ secrets.ACC_PROJECT_ID }}
+
+jobs:
+  qc-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Export QC data
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./qc-data
+
+          # Get all QC checklists
+          raps acc checklist list "$PROJECT_ID" --output json | \
+            jq '[.[] | select(.type | test("quality|inspection"; "i"))]' > ./qc-data/checklists.json
+
+          # Export each checklist's items
+          jq -r '.[].id' ./qc-data/checklists.json | while read id; do
+            raps acc checklist items "$PROJECT_ID" "$id" --output json > "./qc-data/items-${id}.json"
+          done
+
+      - name: Generate QC report
+        run: |
+          echo "# Daily QC Report" > ./qc-data/report.md
+          echo "Generated: $(date)" >> ./qc-data/report.md
+          echo "" >> ./qc-data/report.md
+
+          # Aggregate all items
+          cat ./qc-data/items-*.json | jq -s 'flatten' > ./qc-data/all-items.json
+
+          # Summary
+          TOTAL=$(jq 'length' ./qc-data/all-items.json)
+          PASSED=$(jq '[.[] | select(.status == "passed")] | length' ./qc-data/all-items.json)
+          FAILED=$(jq '[.[] | select(.status == "failed")] | length' ./qc-data/all-items.json)
+          PENDING=$(jq '[.[] | select(.status == "pending")] | length' ./qc-data/all-items.json)
+
+          echo "## Summary" >> ./qc-data/report.md
+          echo "| Metric | Value |" >> ./qc-data/report.md
+          echo "|--------|-------|" >> ./qc-data/report.md
+          echo "| Total Items | $TOTAL |" >> ./qc-data/report.md
+          echo "| Passed | $PASSED |" >> ./qc-data/report.md
+          echo "| Failed | $FAILED |" >> ./qc-data/report.md
+          echo "| Pending | $PENDING |" >> ./qc-data/report.md
+
+          INSPECTED=$((TOTAL - PENDING))
+          if [ $INSPECTED -gt 0 ]; then
+            RATE=$((PASSED * 100 / INSPECTED))
+            echo "| **Pass Rate** | **${RATE}%** |" >> ./qc-data/report.md
+          fi
+
+          # Failed items detail
+          if [ "$FAILED" -gt 0 ]; then
+            echo "" >> ./qc-data/report.md
+            echo "## Deficiencies" >> ./qc-data/report.md
+            jq -r '.[] | select(.status == "failed") | "- \(.title): \(.response // "No details")"' ./qc-data/all-items.json >> ./qc-data/report.md
+          fi
+
+      - name: Create issues for new failures
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Find failed items without linked issues
+          jq -r '.[] | select(.status == "failed" and .linkedIssue == null) | "\(.title)|\(.response // "")"' ./qc-data/all-items.json | \
+            while IFS='|' read title response; do
+              echo "Would create issue for: $title"
+              # Uncomment to actually create:
+              # raps acc issue create "$PROJECT_ID" --title "QC: $title" --description "$response"
+            done
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: qc-report
+          path: ./qc-data/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Кінець дня</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">17:00 будні</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Експорт</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання чек-листів якості</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання всіх пунктів</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Аналіз</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Розрахунок відсотка проходження</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Виявлення дефектів</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Дії</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Генерація звіту</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">Створення проблем</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Отримання статусу якості
+
+```
+User: "What's our quality status for the current inspections?"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">Користувач</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI-асистент</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">Корист.</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Статус якості поточних інспекцій</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_checklist_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-purple-900/20 rounded text-purple-300 text-xs">Цикл: Для кожного чек-листа якості</span>
+      </div>
+      <div class="flex items-center gap-2 ml-4">
+        <span class="w-12 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono text-xs">aps_acc_checklist_items(...)</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-12 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Розрахунок метрик</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Зведення якості</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">Корист.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> **Статус контролю якості:**
+>
+> | Зона інспекції | Відсоток проходження | Пунктів |
+> |----------------|---------------------|---------|
+> | MEP рівня 3 | 95% | 42/44 |
+> | Конструктив рівня 2 | 100% | 28/28 |
+> | Оздоблення рівня 1 | 82% | 37/45 |
+> | Зовнішня оболонка | 88% | 22/25 |
+>
+> **Загальний відсоток проходження:** 91%
+>
+> **Активні дефекти:** 12
+> - 5 очікують повторної інспекції
+> - 4 в ремонті
+> - 3 нещодавно виявлені
+
+### Фіксація результату інспекції
+
+```
+User: "Mark the fire damper inspection as failed - damper not installed at level 2 shaft"
+```
+
+**Відповідь AI:**
+> Зафіксовано невдачу інспекції:
+>
+> **Пункт:** Установка протипожежного клапана
+> **Статус:** Не пройдено
+> **Розташування:** Рівень 2, Шахта A
+> **Примітка:** Клапан не встановлено в шахті рівня 2
+>
+> **Виконані дії:**
+> - Оновлено статус пункту чек-листа
+> - Створено проблему #ISS-234 для відстеження
+> - Призначено підряднику MEP для усунення
+>
+> Бажаєте прикріпити фото?
+
+---
+
+## Метрики та дашборди
+
+### Відсоток проходження за зонами
+
+```bash
+cat all-items.json | jq '
+  group_by(.area) |
+  map({
+    area: .[0].area,
+    total: length,
+    passed: [.[] | select(.status == "passed")] | length,
+    passRate: ([.[] | select(.status == "passed")] | length) * 100 / length | floor
+  }) |
+  sort_by(-.passRate)'
+```
+
+### Тренд дефектів
+
+```bash
+cat all-items.json | jq '
+  [.[] | select(.status == "failed")] |
+  group_by(.failedAt[:10]) |
+  map({date: .[0].failedAt[:10], count: length})'
+```
+
+### Ефективність інспекторів
+
+```bash
+cat all-items.json | jq '
+  group_by(.inspector) |
+  map({
+    inspector: .[0].inspector,
+    inspected: length,
+    passed: [.[] | select(.status == "passed")] | length
+  })'
+```
+
+---
+
+## Пов'язане
+
+- [Експорт чек-листів](/cookbook/cookbook-acc-checklists)
+- [Управління проблемами та RFI](/cookbook/cookbook-acc-issues)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

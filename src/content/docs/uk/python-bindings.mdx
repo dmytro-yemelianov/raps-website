@@ -1,0 +1,415 @@
+---
+title: "Python-бібліотека"
+description: "Нативна Python-бібліотека для програмного доступу до Autodesk Platform Services"
+section: "modes"
+order: 6
+icon: "🐍"
+---
+
+# Python-бібліотека
+
+RAPS надає нативні Python-прив'язки через [PyO3](https://pyo3.rs/), що дозволяє взаємодіяти з Autodesk Platform Services безпосередньо з Python-коду. Це ідеально підходить для скриптів автоматизації, пайплайнів обробки даних та інтеграції з іншими Python-інструментами.
+
+## Встановлення
+
+```bash
+pip install raps-bindings
+```
+
+**Підтримувані платформи:**
+- Linux x64
+- macOS x64 та ARM64 (Apple Silicon)
+- Windows x64
+
+> **Примітка:** Це відрізняється від `pip install raps`, який встановлює CLI бінарний файл. Використовуйте `raps-bindings` для Python-бібліотеки.
+
+## Швидкий старт
+
+```python
+from raps import Client
+
+# Створити клієнт зі змінних середовища
+client = Client.from_env()
+
+# Або з явними обліковими даними
+client = Client(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+
+# Перевірити автентифікацію
+if client.test_auth():
+    print("Authentication successful!")
+
+# Список бакетів
+for bucket in client.buckets.list():
+    print(f"{'{'}bucket.key{'}'}: {'{'}bucket.policy{'}'}")
+```
+
+## Автентифікація
+
+Python-бібліотека використовує **2-legged OAuth** (облікові дані клієнта) для міжсерверних операцій.
+
+### Змінні середовища
+
+Встановіть ваші облікові дані як змінні середовища:
+
+```bash
+export APS_CLIENT_ID="your_client_id"
+export APS_CLIENT_SECRET="your_client_secret"
+```
+
+Потім створіть клієнт:
+
+```python
+from raps import Client
+
+client = Client.from_env()
+```
+
+### Явні облікові дані
+
+```python
+client = Client(
+    client_id="your_client_id",
+    client_secret="your_client_secret"
+)
+```
+
+### Власний базовий URL
+
+Для тестування або використання проксі:
+
+```python
+client = Client(
+    client_id="xxx",
+    client_secret="yyy",
+    base_url="https://custom.api.endpoint"
+)
+```
+
+## Операції з бакетами
+
+### Список бакетів
+
+```python
+# Список усіх бакетів
+buckets = client.buckets.list()
+
+# Фільтр за регіоном
+us_buckets = client.buckets.list(region="US")
+emea_buckets = client.buckets.list(region="EMEA")
+
+# Обмеження результатів
+buckets = client.buckets.list(limit=10)
+```
+
+### Створення бакета
+
+```python
+bucket = client.buckets.create(
+    key="my-unique-bucket-name",
+    policy="transient",  # "transient", "temporary", або "persistent"
+    region="US"          # "US" або "EMEA"
+)
+print(f"Created: {'{'}bucket.key{'}'}")
+```
+
+### Деталі бакета
+
+```python
+bucket = client.buckets.get("my-bucket-key")
+print(f"Policy: {'{'}bucket.policy{'}'}")
+print(f"Created: {'{'}bucket.created_date{'}'}")
+```
+
+### Видалення бакета
+
+```python
+client.buckets.delete("my-bucket-key")
+```
+
+## Операції з об'єктами
+
+Отримайте менеджер об'єктів для конкретного бакета:
+
+```python
+objects = client.objects("my-bucket-key")
+```
+
+### Список об'єктів
+
+```python
+# Список усіх об'єктів
+for obj in objects.list():
+    print(f"{'{'}obj.object_key{'}'}: {'{'}obj.size{'}'} bytes")
+
+# Обмеження результатів
+objects.list(limit=50)
+```
+
+### Завантаження файлу на сервер
+
+```python
+# Завантаження з автоматичним ключем об'єкта (використовує ім'я файлу)
+obj = objects.upload("/path/to/model.rvt")
+
+# Завантаження з власним ключем об'єкта
+obj = objects.upload("/path/to/model.rvt", object_key="projects/building-a.rvt")
+
+print(f"Uploaded: {'{'}obj.object_key{'}'}")
+print(f"URN: {'{'}obj.urn{'}'}")  # Base64-кодований URN для трансляції
+```
+
+### Завантаження файлу з сервера
+
+```python
+path = objects.download("model.rvt", "/local/path/model.rvt")
+print(f"Downloaded to: {'{'}path{'}'}")
+```
+
+### Отримання підписаного URL
+
+```python
+# Отримати підписаний URL для завантаження (за замовчуванням: 2 хвилини)
+url = objects.signed_url("model.rvt")
+
+# Власний термін дії (2-60 хвилин)
+url = objects.signed_url("model.rvt", minutes=30)
+```
+
+### Видалення об'єкта
+
+```python
+objects.delete("model.rvt")
+```
+
+## Трансляція моделей
+
+### Запуск трансляції
+
+```python
+# Спочатку завантажте файл
+obj = client.objects("my-bucket").upload("/path/to/model.rvt")
+
+# Запустити трансляцію в SVF2 (за замовчуванням)
+job = client.translate(obj.urn)
+
+# Або вказати формат
+job = client.translate(obj.urn, output_format="svf2")
+```
+
+### Перевірка статусу
+
+```python
+job = client.get_translation_status(urn)
+print(f"Status: {'{'}job.status{'}'}")
+print(f"Progress: {'{'}job.progress{'}'}")
+```
+
+### Очікування завершення
+
+```python
+# Очікування до 10 хвилин (за замовчуванням: 600 секунд)
+job = client.translate(obj.urn)
+completed = job.wait(timeout=600, poll_interval=5)
+
+if completed.status == "success":
+    print("Translation complete!")
+else:
+    print(f"Translation failed: {'{'}completed.status{'}'}")
+```
+
+### Генерація URN
+
+```python
+# Ручна генерація URN з ключів бакета/об'єкта
+urn = client.get_urn("my-bucket", "model.rvt")
+```
+
+## Керування даними (Hubs)
+
+> **Примітка:** Операції з хабами потребують 3-legged автентифікації. Спочатку необхідно автентифікуватися через CLI за допомогою `raps auth login`.
+
+```python
+# Список хабів (потребує попередньої автентифікації через CLI)
+for hub in client.hubs.list():
+    print(f"{'{'}hub.name{'}'} ({'{'}hub.hub_type{'}'})")
+```
+
+## Обробка винятків
+
+Бібліотека надає специфічні типи винятків для різних умов помилок:
+
+```python
+from raps import (
+    Client,
+    RapsError,
+    AuthenticationError,
+    NotFoundError,
+    RateLimitError,
+    ValidationError
+)
+
+try:
+    client = Client.from_env()
+    bucket = client.buckets.get("nonexistent-bucket")
+except AuthenticationError:
+    print("Invalid credentials")
+except NotFoundError:
+    print("Bucket not found")
+except RateLimitError:
+    print("Rate limit exceeded, retry later")
+except ValidationError as e:
+    print(f"Invalid input: {'{'}e{'}'}")
+except RapsError as e:
+    print(f"RAPS error: {'{'}e{'}'}")
+```
+
+### Ієрархія винятків
+
+```
+RapsError (базовий)
+├── AuthenticationError  # помилки 401
+├── NotFoundError        # помилки 404
+├── RateLimitError       # помилки 429
+└── ValidationError      # помилки 400, невалідний ввід
+```
+
+## Повний приклад
+
+Завантаження моделі Revit, трансляція та отримання URN для в'ювера:
+
+```python
+from raps import Client, RapsError
+
+def translate_model(file_path: str, bucket_key: str) -> str:
+    """Upload and translate a model, returning the URN."""
+    client = Client.from_env()
+
+    # Переконатися, що бакет існує
+    try:
+        client.buckets.get(bucket_key)
+    except:
+        client.buckets.create(bucket_key, policy="transient")
+
+    # Завантажити файл
+    print(f"Uploading {'{'}file_path{'}'}...")
+    obj = client.objects(bucket_key).upload(file_path)
+    print(f"Uploaded as {'{'}obj.object_key{'}'}")
+
+    # Запустити трансляцію
+    print("Starting translation...")
+    job = client.translate(obj.urn, output_format="svf2")
+
+    # Очікувати завершення
+    print("Waiting for translation...")
+    result = job.wait(timeout=600, poll_interval=10)
+
+    if result.status == "success":
+        print("Translation complete!")
+        return obj.urn
+    else:
+        raise RapsError(f"Translation failed: {'{'}result.status{'}'}")
+
+if __name__ == "__main__":
+    urn = translate_model("building.rvt", "my-translations")
+    print(f"Viewer URN: {'{'}urn{'}'}")
+```
+
+## Контекстний менеджер
+
+Клієнт підтримує протокол контекстного менеджера Python:
+
+```python
+from raps import Client
+
+with Client.from_env() as client:
+    buckets = client.buckets.list()
+    # Клієнт автоматично звільняється
+```
+
+## Типізація
+
+Бібліотека включає файли типізації (`.pyi`) для автодоповнення в IDE та перевірки типів:
+
+```python
+from raps import Client, Bucket, Object, TranslationJob
+
+def process_bucket(bucket: Bucket) -> None:
+    print(bucket.key)
+
+client: Client = Client.from_env()
+buckets: list[Bucket] = client.buckets.list()
+```
+
+## Довідник API
+
+### Client
+
+| Метод | Опис |
+|-------|------|
+| `Client(client_id, client_secret, base_url=None)` | Створити клієнт з обліковими даними |
+| `Client.from_env()` | Створити клієнт зі змінних середовища |
+| `test_auth()` | Перевірити автентифікацію, повертає bool |
+| `buckets` | Отримати BucketsManager |
+| `hubs` | Отримати HubsManager |
+| `objects(bucket_key)` | Отримати ObjectsManager для бакета |
+| `translate(urn, output_format="svf2", force=False)` | Запустити трансляцію |
+| `get_translation_status(urn)` | Отримати статус трансляції |
+| `get_urn(bucket_key, object_key)` | Згенерувати URN |
+
+### BucketsManager
+
+| Метод | Опис |
+|-------|------|
+| `list(region=None, limit=None)` | Список бакетів |
+| `create(key, policy="transient", region="US")` | Створити бакет |
+| `get(key)` | Отримати деталі бакета |
+| `delete(key)` | Видалити бакет |
+
+### ObjectsManager
+
+| Метод | Опис |
+|-------|------|
+| `list(limit=None)` | Список об'єктів |
+| `upload(path, object_key=None)` | Завантажити файл |
+| `download(object_key, path)` | Скачати файл |
+| `delete(object_key)` | Видалити об'єкт |
+| `signed_url(object_key, minutes=2)` | Отримати підписаний URL |
+
+### TranslationJob
+
+| Властивість | Опис |
+|-------------|------|
+| `urn` | Вихідний URN |
+| `status` | Поточний статус |
+| `progress` | Відсоток прогресу |
+| `wait(timeout=600, poll_interval=5)` | Очікувати завершення |
+
+### Класи даних
+
+| Клас | Властивості |
+|------|-------------|
+| `Bucket` | `key`, `owner`, `created_date`, `policy`, `region` |
+| `Object` | `bucket_key`, `object_key`, `object_id`, `size`, `sha1`, `urn` |
+| `Hub` | `id`, `name`, `hub_type`, `region` |
+| `Project` | `id`, `name`, `project_type` |
+
+## Порівняння: CLI та Python-бібліотека
+
+| Сценарій використання | CLI | Python-бібліотека |
+|-----------------------|-----|-------------------|
+| Швидкі операції | `raps bucket list` | Більш розгорнутий код |
+| Скрипти/автоматизація | Shell-скрипти | Нативний Python |
+| CI/CD пайплайни | Обидва варіанти | Обидва варіанти |
+| Інтеграція з Python-інструментами | Виклики subprocess | Прямий імпорт |
+| Типобезпека | Відсутня | Повна типізація |
+| Обробка помилок | Коди виходу | Винятки |
+
+## Див. також
+
+- [Встановлення](/docs/installation) — Усі методи встановлення
+- [Автентифікація](/docs/auth) — Розуміння автентифікації APS
+- [Бакети](/docs/buckets) — Операції з бакетами (CLI)
+- [Трансляція](/docs/translation) — Трансляція моделей (CLI)

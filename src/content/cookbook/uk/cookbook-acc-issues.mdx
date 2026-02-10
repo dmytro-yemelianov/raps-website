@@ -1,0 +1,416 @@
+---
+title: "Управління проблемами та RFI"
+description: "Масові операції з проблемами та RFI"
+category: "construction"
+order: 32
+icon: "⚠️"
+---
+
+# Управління проблемами та RFI
+
+Керуйте проблемами та RFI за допомогою масових операцій, експорту та автоматизації.
+
+![RAPS ACC issues demo](/terminal/acc-demo.gif)
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Проблеми ACC</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Issues API</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">RFI</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Вкладення</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Операції</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Перелік/Фільтрація</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Експорт</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Оновлення</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Створення</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Формати експорту</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">JSON</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">CSV</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Аналіз</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Зведення за статусом</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Відстеження прострочених</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт по відповідальних</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Проблеми → Операції → Експорт → Аналіз</div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Перелік усіх проблем
+
+```bash
+PROJECT_ID="b.project-id"
+
+# List all issues
+raps acc issue list "$PROJECT_ID"
+
+# Export to JSON
+raps acc issue list "$PROJECT_ID" --output json > issues.json
+
+# Filter open issues
+cat issues.json | jq '[.[] | select(.status == "open")]' > open-issues.json
+```
+
+### Експорт проблем у CSV
+
+```bash
+cat issues.json | jq -r '
+  ["ID", "Title", "Status", "Priority", "Assignee", "Due Date", "Created"],
+  (.[] | [
+    .id,
+    .title,
+    .status,
+    .priority,
+    .assignee,
+    .dueDate,
+    .createdAt
+  ]) | @csv
+' > issues-report.csv
+```
+
+### Деталі проблеми з вкладеннями
+
+```bash
+ISSUE_ID="issue-123"
+
+# Get issue details
+raps acc issue get "$PROJECT_ID" "$ISSUE_ID" --output json > issue-detail.json
+
+# List attachments
+jq -r '.attachments[] | "\(.id): \(.name)"' issue-detail.json
+
+# Download attachments
+jq -r '.attachments[].id' issue-detail.json | while read attach_id; do
+  raps acc attachment download "$PROJECT_ID" "$attach_id" --output ./attachments/
+done
+```
+
+### Пошук прострочених проблем
+
+```bash
+TODAY=$(date +%Y-%m-%d)
+
+cat issues.json | jq --arg today "$TODAY" '
+  [.[] | select(.status == "open" and .dueDate != null and .dueDate < $today)]
+' > overdue-issues.json
+
+echo "Overdue issues: $(jq 'length' overdue-issues.json)"
+```
+
+### Управління RFI
+
+```bash
+# List all RFIs
+raps acc rfi list "$PROJECT_ID" --output json > rfis.json
+
+# Export RFI summary
+cat rfis.json | jq -r '
+  ["Number", "Subject", "Status", "Ball In Court", "Due Date"],
+  (.[] | [.number, .subject, .status, .ballInCourt, .dueDate])
+  | @csv
+' > rfi-summary.csv
+
+# Find open RFIs
+cat rfis.json | jq '[.[] | select(.status == "open")]' > open-rfis.json
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/issue-management.yml
+name: Issue Management
+
+on:
+  schedule:
+    - cron: '0 8 * * 1-5'  # Weekdays at 8 AM
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.ACC_PROJECT_ID }}
+
+jobs:
+  issue-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Export issues
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps acc issue list "$PROJECT_ID" --output json > issues.json
+          raps acc rfi list "$PROJECT_ID" --output json > rfis.json
+
+      - name: Generate report
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+
+          echo "# Issue & RFI Report" > report.md
+          echo "Generated: $(date)" >> report.md
+          echo "" >> report.md
+
+          # Issues summary
+          echo "## Issues Summary" >> report.md
+          TOTAL=$(jq 'length' issues.json)
+          OPEN=$(jq '[.[] | select(.status == "open")] | length' issues.json)
+          OVERDUE=$(jq --arg today "$TODAY" '[.[] | select(.status == "open" and .dueDate < $today)] | length' issues.json)
+
+          echo "- Total: $TOTAL" >> report.md
+          echo "- Open: $OPEN" >> report.md
+          echo "- Overdue: $OVERDUE" >> report.md
+          echo "" >> report.md
+
+          # RFI summary
+          echo "## RFI Summary" >> report.md
+          RFI_TOTAL=$(jq 'length' rfis.json)
+          RFI_OPEN=$(jq '[.[] | select(.status == "open")] | length' rfis.json)
+
+          echo "- Total: $RFI_TOTAL" >> report.md
+          echo "- Open: $RFI_OPEN" >> report.md
+          echo "" >> report.md
+
+          # Overdue list
+          if [ "$OVERDUE" -gt 0 ]; then
+            echo "## Overdue Issues" >> report.md
+            jq --arg today "$TODAY" -r '
+              .[] | select(.status == "open" and .dueDate < $today) |
+              "- \(.title) (Due: \(.dueDate), Assignee: \(.assignee))"
+            ' issues.json >> report.md
+          fi
+
+      - name: Export CSV
+        run: |
+          jq -r '["ID","Title","Status","Priority","Due Date"], (.[] | [.id,.title,.status,.priority,.dueDate]) | @csv' issues.json > issues.csv
+          jq -r '["Number","Subject","Status","Due Date"], (.[] | [.number,.subject,.status,.dueDate]) | @csv' rfis.json > rfis.csv
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-reports
+          path: |
+            report.md
+            issues.csv
+            rfis.csv
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Розклад</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Щодня о 8:00</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Експорт</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання проблем</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання RFI</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Аналіз</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Підрахунок за статусом</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Пошук прострочених</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Звіти</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">issues.csv</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">rfis.csv</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Зведення проблем
+
+```
+User: "How many open issues do we have on the Main Street project?"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">Користувач</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI-асистент</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">Корист.</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Кількість відкритих проблем Main Street</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_issue_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Отримання всіх проблем</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Issues JSON</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Фільтрація + Групування за пріоритетом/відповідальним</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Зведення проблем</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">Корист.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> **Проєкт Main Street - Відкриті проблеми:**
+>
+> | Пріоритет | Кількість |
+> |-----------|-----------|
+> | Критичний | 2 |
+> | Високий | 8 |
+> | Середній | 15 |
+> | Низький | 5 |
+>
+> **Всього відкритих:** 30 проблем
+> **Прострочених:** 4 проблеми
+>
+> Основні відповідальні:
+> - John Smith: 12 проблем
+> - Jane Doe: 10 проблем
+> - Bob Wilson: 8 проблем
+
+### Пошук конкретних проблем
+
+```
+User: "Show me all critical issues that are overdue"
+```
+
+**Відповідь AI:**
+> **Прострочені критичні проблеми:**
+>
+> | ID | Назва | Термін | Відповідальний |
+> |----|-------|--------|----------------|
+> | ISS-42 | Зіткнення конструктивних балок | 10 лют | John Smith |
+> | ISS-87 | Відсутній клас вогнестійкості | 12 лют | Jane Doe |
+>
+> Обидві проблеми прострочені. Чи бажаєте відправити нагадування?
+
+### Статус RFI
+
+```
+User: "What's the status of our RFIs?"
+```
+
+**Відповідь AI:**
+> **Зведення статусу RFI:**
+>
+> - **Відкриті:** 8 RFI
+> - **Отримано відповідь:** 23 RFI
+> - **Закриті:** 45 RFI
+>
+> **Очікують відповіді (м'яч на боці):**
+> | RFI | Тема | Очікує від | Днів |
+> |-----|------|-----------|------|
+> | RFI-034 | Глибина фундаменту | Інженер-конструктор | 5 |
+> | RFI-041 | Маршрутизація HVAC | Консультант MEP | 3 |
+
+---
+
+## Розширені запити
+
+### Проблеми за відповідальними
+
+```bash
+cat issues.json | jq '
+  group_by(.assignee) |
+  map({assignee: .[0].assignee, count: length, open: [.[] | select(.status == "open")] | length}) |
+  sort_by(-.open)'
+```
+
+### Хронологія проблем
+
+```bash
+# Issues created per week
+cat issues.json | jq '
+  group_by(.createdAt[:10]) |
+  map({date: .[0].createdAt[:10], count: length})'
+```
+
+### Розподіл за пріоритетом
+
+```bash
+cat issues.json | jq '
+  group_by(.priority) |
+  map({priority: .[0].priority, count: length, open: [.[] | select(.status == "open")] | length})'
+```
+
+---
+
+## Пов'язане
+
+- [Експорт чек-листів](/cookbook/cookbook-acc-checklists)
+- [Відстеження подач](/cookbook/cookbook-acc-submittals)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

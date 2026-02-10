@@ -1,0 +1,350 @@
+---
+title: "Витяг метаданих"
+description: "Витяг BIM-метаданих для аналізу та звітності"
+category: "aec"
+order: 12
+icon: "📊"
+---
+
+# Витяг метаданих
+
+Отримання метаданих з транслятованих моделей Revit для аналізу або звітності.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Вхідні дані</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">
+        Транслятована модель<br/><span class="text-blue-400 font-mono text-xs">SVF2 URN</span>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Model Derivative API</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Отримати метадані</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Отримати дерево</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Отримати властивості</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Отримати вигляди</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Результати</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm">
+          <span class="font-mono text-amber-300">metadata.json</span>
+          <span class="text-slate-400 text-xs block">GUID, інфо</span>
+        </div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm">
+          <span class="font-mono text-amber-300">tree.json</span>
+          <span class="text-slate-400 text-xs block">Ієрархія</span>
+        </div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm">
+          <span class="font-mono text-amber-300">properties.json</span>
+          <span class="text-slate-400 text-xs block">BIM-дані</span>
+        </div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm">
+          <span class="font-mono text-amber-300">views.json</span>
+          <span class="text-slate-400 text-xs block">Список виглядів</span>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Експорт</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Звіти</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">CSV</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">База даних</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Вхід</span>
+      <span>&#8594;</span>
+      <span>API</span>
+      <span>&#8594;</span>
+      <span>Результати</span>
+      <span>&#8594;</span>
+      <span>Експорт</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Отримання URN моделі
+
+```bash
+URN=$(raps object urn my-bucket building.rvt --output plain)
+```
+
+### Крок 2: Перевірка статусу трансляції
+
+```bash
+raps translate manifest "$URN"
+```
+
+### Крок 3: Витяг усіх метаданих
+
+```bash
+# Метадані моделі (GUID, вигляди тощо)
+raps derivative metadata "$URN" --output json > metadata.json
+
+# Ієрархія моделі
+raps derivative tree "$URN" --output json > model-tree.json
+
+# Усі властивості (BIM-дані)
+raps derivative properties "$URN" --output json > properties.json
+
+# Доступні вигляди
+raps derivative views "$URN" --output json > views.json
+```
+
+### Крок 4: Аналіз даних
+
+```bash
+# Підрахунок елементів за категорією
+cat properties.json | jq 'group_by(.category) | .[] | {category: .[0].category, count: length}'
+
+# Експорт конкретних властивостей у CSV
+cat properties.json | jq -r '
+  ["ObjectId", "Name", "Category"],
+  (.[] | [.objectid, .name, .category])
+  | @csv' > elements.csv
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/metadata-extraction.yml
+name: BIM Metadata Extraction
+
+on:
+  workflow_dispatch:
+    inputs:
+      bucket:
+        description: 'Bucket name'
+        required: true
+      model:
+        description: 'Model filename'
+        required: true
+
+jobs:
+  extract-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Extract all metadata
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          URN=$(raps object urn "${{ inputs.bucket }}" "${{ inputs.model }}" --output plain)
+
+          mkdir -p ./metadata-export
+
+          raps derivative metadata "$URN" --output json > ./metadata-export/metadata.json
+          raps derivative tree "$URN" --output json > ./metadata-export/tree.json
+          raps derivative properties "$URN" --output json > ./metadata-export/properties.json
+          raps derivative views "$URN" --output json > ./metadata-export/views.json
+
+      - name: Generate summary
+        run: |
+          echo "# Metadata Summary" > ./metadata-export/summary.md
+          echo "Model: ${{ inputs.model }}" >> ./metadata-export/summary.md
+          echo "Elements: $(jq 'length' ./metadata-export/properties.json)" >> ./metadata-export/summary.md
+          echo "Views: $(jq 'length' ./metadata-export/views.json)" >> ./metadata-export/summary.md
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bim-metadata-${{ github.run_id }}
+          path: ./metadata-export/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Ручний запуск</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">
+        workflow_dispatch<br/><span class="text-blue-400 text-xs">bucket + model</span>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Витяг</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Отримання URN</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm font-mono text-purple-300">metadata.json</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm font-mono text-purple-300">tree.json</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm font-mono text-purple-300">properties.json</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm font-mono text-purple-300">views.json</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Аналіз</div>
+      <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Генерація зведення</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Артефакти</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">bim-metadata.zip</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Витяг та зведення
+
+```
+User: "Extract all metadata from building.rvt and summarize the room count"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">Користувач</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI-асистент</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">Хмара APS</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Витягти метадані, підсумок приміщень</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_urn()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Отримати URN</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-amber-400">URN</div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Отримати властивості</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-emerald-400">Properties JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-center text-purple-400 italic">Фільтрація приміщень, розрахунок площ</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Зведення приміщень за поверхами</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Знайдено 47 приміщень у моделі:
+> - Поверх 1: 15 приміщень (320 м² загалом)
+> - Поверх 2: 18 приміщень (390 м² загалом)
+> - Поверх 3: 14 приміщень (288 м² загалом)
+
+### Порівняння моделей
+
+```
+User: "Compare the element counts between v1 and v2 of the building model"
+```
+
+**Відповідь AI:**
+> Порівняння моделей:
+> | Категорія | v1 | v2 | Зміна |
+> |-----------|-----|-----|-------|
+> | Стіни | 245 | 258 | +13 |
+> | Двері | 89 | 92 | +3 |
+> | Вікна | 156 | 156 | 0 |
+> | Приміщення | 47 | 52 | +5 |
+
+---
+
+## Типові запити
+
+### Підрахунок за категорією
+
+```bash
+cat properties.json | jq '
+  group_by(.category) |
+  map({category: .[0].category, count: length}) |
+  sort_by(-.count)'
+```
+
+### Пошук конкретних елементів
+
+```bash
+# Знайти всі двері
+cat properties.json | jq '[.[] | select(.category == "Doors")]'
+
+# Знайти елементи за шаблоном назви
+cat properties.json | jq '[.[] | select(.name | test("Wall.*Exterior"))]'
+```
+
+### Експорт у формат бази даних
+
+```bash
+# Генерація SQL-вставок
+cat properties.json | jq -r '.[] |
+  "INSERT INTO elements (id, name, category) VALUES (\(.objectid), '\''\(.name)'\'', '\''\(.category)'\'');"'
+```
+
+---
+
+## Пов'язане
+
+- [Експорт приміщень і просторів](/cookbook/cookbook-aec-rooms)
+- [Конвеєр координації моделей](/cookbook/cookbook-aec-coordination)
+- [Cookbook: AEC та BIM](/cookbook/cookbook-aec)

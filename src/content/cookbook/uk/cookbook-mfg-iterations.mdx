@@ -1,0 +1,410 @@
+---
+title: "Відстеження ітерацій проєктування"
+description: "Організація CAD-файлів за ревізіями для відстеження проєктування"
+category: "manufacturing"
+order: 24
+icon: "🔁"
+---
+
+# Відстеження ітерацій проєктування
+
+Організація CAD-файлів за ревізіями та відстеження змін проєктування з часом.
+
+## Огляд процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Конвенція іменування</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1 font-mono">parts/&#123;part-number&#125;/&#123;revision&#125;/file.ipt</div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Структура OSS</div>
+      <div class="space-y-1 text-xs text-slate-300 font-mono">
+        <div class="bg-slate-800 rounded px-2 py-1">parts/12345/rev-A/part.ipt</div>
+        <div class="bg-slate-800 rounded px-2 py-1">parts/12345/rev-B/part.ipt</div>
+        <div class="bg-slate-800 rounded px-2 py-1">parts/12345/rev-C/part.ipt</div>
+        <div class="bg-slate-800 rounded px-2 py-1">parts/12345/latest/part.ipt</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Трансляція</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">SVF2 rev-A</div>
+        <div class="bg-slate-800 rounded px-2 py-1">SVF2 rev-B</div>
+        <div class="bg-slate-800 rounded px-2 py-1">SVF2 rev-C</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Порівняння</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Різниця властивостей</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Зміна геометрії</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Конвенція</span>
+      <span class="text-slate-600">→</span>
+      <span>Зберігання</span>
+      <span class="text-slate-600">→</span>
+      <span>Трансляція</span>
+      <span class="text-slate-600">→</span>
+      <span>Порівняння</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Завантаження з метаданими ревізії
+
+```bash
+PART_NUMBER="12345"
+REVISION="rev-B"
+
+# Upload with structured key
+raps object upload cad-library part.ipt --key "parts/${PART_NUMBER}/${REVISION}/part.ipt"
+
+# Also update "latest" reference
+raps object upload cad-library part.ipt --key "parts/${PART_NUMBER}/latest/part.ipt"
+```
+
+### Крок 2: Перелік усіх ревізій
+
+```bash
+PART_NUMBER="12345"
+
+raps object list cad-library --prefix "parts/${PART_NUMBER}/" --output json | \
+  jq -r '.[] | .key' | sort
+
+# Output:
+# parts/12345/latest/part.ipt
+# parts/12345/rev-A/part.ipt
+# parts/12345/rev-B/part.ipt
+# parts/12345/rev-C/part.ipt
+```
+
+### Крок 3: Порівняння ревізій
+
+```bash
+# Get URNs for two revisions
+REV_A_URN=$(raps object urn cad-library "parts/12345/rev-A/part.ipt" --output plain)
+REV_B_URN=$(raps object urn cad-library "parts/12345/rev-B/part.ipt" --output plain)
+
+# Extract properties for comparison
+raps derivative properties "$REV_A_URN" --output json > rev-a-props.json
+raps derivative properties "$REV_B_URN" --output json > rev-b-props.json
+
+# Compare key properties
+echo "Revision Comparison:"
+echo "===================="
+
+for prop in "Mass" "Volume" "Material"; do
+  VAL_A=$(jq -r ".[0].properties[\"$prop\"] // \"N/A\"" rev-a-props.json)
+  VAL_B=$(jq -r ".[0].properties[\"$prop\"] // \"N/A\"" rev-b-props.json)
+
+  if [ "$VAL_A" != "$VAL_B" ]; then
+    echo "$prop: $VAL_A → $VAL_B (CHANGED)"
+  else
+    echo "$prop: $VAL_A (unchanged)"
+  fi
+done
+```
+
+### Крок 4: Генерація звіту про історію ревізій
+
+```bash
+PART_NUMBER="12345"
+
+echo "# Revision History: Part $PART_NUMBER" > revision-history.md
+echo "" >> revision-history.md
+
+raps object list cad-library --prefix "parts/${PART_NUMBER}/rev-" --output json | \
+  jq -r '.[] | .key' | sort | while read key; do
+    REV=$(echo "$key" | grep -oP 'rev-\w+')
+    DATE=$(raps object list cad-library --prefix "$key" --output json | jq -r '.[0].lastModified')
+
+    URN=$(raps object urn cad-library "$key" --output plain)
+    MASS=$(raps derivative properties "$URN" --output json 2>/dev/null | jq -r '.[0].properties.Mass // "N/A"')
+
+    echo "## $REV" >> revision-history.md
+    echo "- Date: $DATE" >> revision-history.md
+    echo "- Mass: $MASS" >> revision-history.md
+    echo "" >> revision-history.md
+  done
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/design-iterations.yml
+name: Design Iteration Tracking
+
+on:
+  push:
+    paths:
+      - 'parts/**/*.ipt'
+      - 'parts/**/*.iam'
+
+jobs:
+  track-iterations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comparison
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Upload new revisions
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          BUCKET="design-iterations"
+          REVISION="rev-$(date +%Y%m%d)"
+
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'parts/**'); do
+            [ -f "$file" ] || continue
+
+            # Extract part number from path (parts/XXXXX/file.ipt)
+            PART_NUM=$(echo "$file" | cut -d'/' -f2)
+            FILENAME=$(basename "$file")
+
+            # Upload versioned
+            raps object upload "$BUCKET" "$file" --key "parts/${PART_NUM}/${REVISION}/${FILENAME}"
+
+            # Upload as latest
+            raps object upload "$BUCKET" "$file" --key "parts/${PART_NUM}/latest/${FILENAME}"
+
+            echo "Uploaded: $PART_NUM $REVISION"
+          done
+
+      - name: Translate latest revisions
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'parts/**'); do
+            [ -f "$file" ] || continue
+
+            PART_NUM=$(echo "$file" | cut -d'/' -f2)
+            FILENAME=$(basename "$file")
+
+            URN=$(raps object urn design-iterations "parts/${PART_NUM}/latest/${FILENAME}" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+          done
+
+      - name: Generate comparison report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# Design Change Report" > change-report.md
+          echo "Commit: ${{ github.sha }}" >> change-report.md
+          echo "" >> change-report.md
+
+          # Add comparison logic here
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-change-report
+          path: change-report.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Git Push</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Файли деталей змінено</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-amber-500/50 rounded-lg p-3 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-xs mb-2">Версіонування</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Генерація ID ревізії</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження rev-YYYYMMDD</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Оновлення latest</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Обробка</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Трансляція останньої версії</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Порівняння з попередньою</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Звіт</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">change-report.md</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Відстеження нової ревізії
+
+```
+User: "Upload the updated bracket design as rev-C and compare it with rev-B"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">Користувач</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Завантажити rev-C та порівняти з rev-B</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(key="parts/12345/rev-C/bracket.ipt")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Завантаження</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Завершено</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(rev-C URN)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Трансляція</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_properties(rev-B URN)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_properties(rev-C URN)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Порівняння властивостей</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Звіт порівняння</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Завантажено bracket.ipt як rev-C та порівняно з rev-B:
+>
+> **Зміни властивостей:**
+> | Властивість | Rev-B | Rev-C | Зміна |
+> |------------|-------|-------|-------|
+> | Mass | 1.25 кг | 1.18 кг | -5.6% |
+> | Volume | 456 см3 | 432 см3 | -5.3% |
+> | Material | Al 6061 | Al 6061 | - |
+>
+> **Підсумок:** Зменшення ваги на 70 г досягнуто завдяки оптимізації геометрії.
+
+### Перегляд історії ревізій
+
+```
+User: "Show me all revisions of part 12345"
+```
+
+**Відповідь AI:**
+> Історія ревізій для деталі 12345:
+>
+> | Ревізія | Дата | Маса | Статус |
+> |---------|------|------|--------|
+> | rev-C | 15 лют. 2024 | 1.18 кг | Поточна |
+> | rev-B | 01 лют. 2024 | 1.25 кг | Замінена |
+> | rev-A | 15 січ. 2024 | 1.32 кг | Замінена |
+>
+> **Примітки:**
+> - rev-B → rev-C: Оптимізація ваги
+> - rev-A → rev-B: Зміна матеріалу
+
+---
+
+## Найкращі практики
+
+### Конвенція іменування
+
+```
+bucket/
+└── parts/
+    └── {part-number}/
+        ├── rev-A/
+        │   └── {part-name}.ipt
+        ├── rev-B/
+        │   └── {part-name}.ipt
+        ├── rev-C/
+        │   └── {part-name}.ipt
+        └── latest/
+            └── {part-name}.ipt
+```
+
+### Скрипт порівняння ревізій
+
+```bash
+#!/bin/bash
+# compare-revisions.sh
+
+BUCKET=$1
+PART=$2
+REV_OLD=$3
+REV_NEW=$4
+
+OLD_URN=$(raps object urn "$BUCKET" "parts/$PART/$REV_OLD/*.ipt" --output plain)
+NEW_URN=$(raps object urn "$BUCKET" "parts/$PART/$REV_NEW/*.ipt" --output plain)
+
+echo "Comparing $PART: $REV_OLD vs $REV_NEW"
+echo "======================================="
+
+# Get properties
+raps derivative properties "$OLD_URN" --output json > /tmp/old.json
+raps derivative properties "$NEW_URN" --output json > /tmp/new.json
+
+# Compare
+diff <(jq -S '.[0].properties' /tmp/old.json) <(jq -S '.[0].properties' /tmp/new.json)
+```
+
+---
+
+## Пов'язане
+
+- [Конвеєр трансляції CAD](/cookbook/cookbook-mfg-translation)
+- [Витяг специфікації матеріалів](/cookbook/cookbook-mfg-bom)
+- [Cookbook: Виробництво](/cookbook/cookbook-manufacturing)

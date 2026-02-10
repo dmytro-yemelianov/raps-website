@@ -1,0 +1,459 @@
+---
+title: "Пакетна обробка кількох форматів"
+description: "Пакетна обробка каталогів з CAD-файлами"
+category: "manufacturing"
+order: 23
+icon: "📦"
+---
+
+# Пакетна обробка кількох форматів
+
+Масова обробка кількох CAD-форматів з паралельною трансляцією.
+
+## Огляд процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Каталог CAD</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">\*.iam</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.ipt</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.stp</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.igs</div>
+        <div class="bg-slate-800 rounded px-2 py-1">\*.sldprt</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Пошук файлів</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Сканування каталогу</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Фільтрація підтримуваних</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Паралельне завантаження</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker 1</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker 2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Upload Worker N</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Паралельна трансляція</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job 1</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job 2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Translate Job N</div>
+      </div>
+    </div>
+    <div class="border-2 border-amber-500/50 rounded-lg p-4 bg-amber-500/10">
+      <div class="text-amber-400 font-semibold text-sm mb-3">Відстеження статусу</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Моніторинг прогресу</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Збір результатів</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Результат</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Звіт про статус</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Журнал помилок</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Вхід</span>
+      <span class="text-slate-600">→</span>
+      <span>Пошук</span>
+      <span class="text-slate-600">→</span>
+      <span>Завантаження</span>
+      <span class="text-slate-600">→</span>
+      <span>Трансляція</span>
+      <span class="text-slate-600">→</span>
+      <span>Моніторинг</span>
+      <span class="text-slate-600">→</span>
+      <span>Вихід</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Пошук та завантаження файлів
+
+```bash
+# Upload all supported CAD files
+for ext in iam ipt stp step igs iges sldprt sldasm; do
+  for file in ./cad-files/*.$ext; do
+    [ -f "$file" ] && raps object upload cad-library "$file"
+  done
+done
+```
+
+### Крок 2: Паралельна трансляція
+
+```bash
+# Start all translations in parallel
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  echo "Starting: $key"
+  raps translate start "$URN" --format svf2 &
+done
+
+# Wait for all background jobs
+wait
+echo "All translations started"
+```
+
+### Крок 3: Моніторинг статусу
+
+```bash
+# Check status of all translations
+echo "Translation Status:"
+echo "==================="
+
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+  PROGRESS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.progress // "0"')
+
+  case $STATUS in
+    success)  echo "✓ $key" ;;
+    failed)   echo "✗ $key (FAILED)" ;;
+    *)        echo "⋯ $key ($STATUS $PROGRESS%)" ;;
+  esac
+done
+```
+
+### Крок 4: Генерація звіту
+
+```bash
+# Create batch processing report
+echo "# Batch Translation Report" > batch-report.md
+echo "Date: $(date)" >> batch-report.md
+echo "" >> batch-report.md
+
+SUCCESS=0
+FAILED=0
+PENDING=0
+
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+  echo "| $key | $STATUS |" >> batch-report.md
+done
+
+echo "" >> batch-report.md
+echo "Summary: $SUCCESS success, $FAILED failed, $PENDING pending" >> batch-report.md
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/batch-processing.yml
+name: Batch CAD Processing
+
+on:
+  push:
+    paths:
+      - 'cad-files/**'
+  workflow_dispatch:
+
+env:
+  BUCKET: batch-cad-${{ github.run_id }}
+
+jobs:
+  process-batch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Create bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy transient --region US
+
+      - name: Upload all CAD files
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          find cad-files -type f \( -name "*.iam" -o -name "*.ipt" -o -name "*.stp" -o -name "*.igs" \) | while read file; do
+            echo "Uploading: $file"
+            raps object upload "$BUCKET" "$file" --parallel
+          done
+
+      - name: Start all translations
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            raps translate start "$URN" --format svf2 &
+          done
+          wait
+
+      - name: Wait for translations
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          MAX_WAIT=1800  # 30 minutes
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            PENDING=$(raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+              URN=$(raps object urn "$BUCKET" "$key" --output plain)
+              STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+              [ "$STATUS" != "success" ] && [ "$STATUS" != "failed" ] && echo "pending"
+            done | wc -l)
+
+            [ "$PENDING" -eq 0 ] && break
+
+            echo "Waiting... $PENDING translations in progress"
+            sleep 30
+            ELAPSED=$((ELAPSED + 30))
+          done
+
+      - name: Generate report
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "# Batch Processing Report" > report.md
+          echo "" >> report.md
+          echo "| File | Status |" >> report.md
+          echo "|------|--------|" >> report.md
+
+          SUCCESS=0
+          FAILED=0
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "unknown"')
+            echo "| $key | $STATUS |" >> report.md
+          done
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-report
+          path: report.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Тригер</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Push до cad-files/</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Налаштування</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Створення тимчасового бакета</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Паралельне завантаження</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Пошук CAD-файлів</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження всіх файлів</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Паралельна трансляція</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Запуск усіх завдань</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Очікування завершення</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Звіт</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Генерація звіту про статус</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження артефакту</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Пакетна обробка каталогу
+
+```
+User: "Process all CAD files in the supplier-parts folder"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">Користувач</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Обробити теку supplier-parts</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Сканування каталогу на CAD-файли</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Для кожного файлу</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_upload(bucket, file)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Завантаження</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Завантажено 15 файлів</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Запуск трансляцій</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_start(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Запуск завдання</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Усі трансляції запущено</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Моніторинг</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_translate_manifest(urn)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Підсумковий звіт</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Обробка теки supplier-parts...
+>
+> **Фаза завантаження:**
+> Завантажено 15 файлів (загалом 245 МБ)
+>
+> **Фаза трансляції:**
+> | Файл | Статус | Час |
+> |------|--------|-----|
+> | bracket-a.stp | Завершено | 45 с |
+> | bracket-b.stp | Завершено | 42 с |
+> | housing.iam | Завершено | 2 хв 15 с |
+> | shaft.ipt | Завершено | 28 с |
+> | ... | ... | ... |
+>
+> **Підсумок:** 15/15 успішно, 0 невдало
+
+### Перевірка статусу пакетної обробки
+
+```
+User: "How many files are still processing in the batch?"
+```
+
+**Відповідь AI:**
+> Статус пакетної обробки:
+> - **Завершено:** 12 файлів
+> - **В обробці:** 3 файли (housing.iam на 75%, gearbox.iam на 45%, frame.sldasm на 30%)
+> - **Невдало:** 0 файлів
+>
+> Орієнтовний час залишку: ~3 хвилини
+
+---
+
+## Поради з оптимізації
+
+### Паралельне завантаження з обмеженням паралелізму
+
+```bash
+# Control concurrency to avoid rate limits
+MAX_CONCURRENT=5
+
+find ./cad-files -type f \( -name "*.stp" -o -name "*.iam" \) | \
+  xargs -P $MAX_CONCURRENT -I {} sh -c '
+    raps object upload cad-library "{}"
+    echo "Uploaded: {}"
+  '
+```
+
+### Пріоритезація за розміром файлу
+
+```bash
+# Process smaller files first for quick wins
+find ./cad-files -type f -name "*.stp" -printf "%s %p\n" | \
+  sort -n | cut -d' ' -f2 | while read file; do
+    raps object upload cad-library "$file"
+  done
+```
+
+### Пропуск вже трансльованих
+
+```bash
+# Check if already translated before starting
+for key in $(raps object list cad-library --output json | jq -r '.[].key'); do
+  URN=$(raps object urn cad-library "$key" --output plain)
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // ""')
+
+  if [ "$STATUS" != "success" ]; then
+    echo "Translating: $key"
+    raps translate start "$URN" --format svf2
+  else
+    echo "Skipping (already done): $key"
+  fi
+done
+```
+
+---
+
+## Пов'язане
+
+- [Конвеєр трансляції CAD](/cookbook/cookbook-mfg-translation)
+- [Генерація каталогу мініатюр](/cookbook/cookbook-mfg-catalog)
+- [Cookbook: Виробництво](/cookbook/cookbook-manufacturing)

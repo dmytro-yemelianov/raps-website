@@ -1,0 +1,382 @@
+---
+title: "Відстеження подач"
+description: "Відстеження та експорт статусу подач"
+category: "construction"
+order: 35
+icon: "📨"
+---
+
+# Відстеження подач
+
+Відстежуйте подачі, керуйте узгодженнями та генеруйте звіти про статус.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Життєвий цикл подачі</div>
+      <div class="flex flex-wrap gap-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Створено</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Подано</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">На розгляді</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-emerald-800/50 rounded text-sm text-emerald-300">Узгоджено/Відхилено</div>
+        <span class="text-slate-600">→</span>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Закрито</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Відстеження</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Список подач</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Фільтрація за статусом</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Контроль термінів</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Звітність</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Журнал подач</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Зведення статусів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт по простроченим</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Перелік усіх подач
+
+```bash
+PROJECT_ID="b.project-id"
+
+# List all submittals
+raps acc submittal list "$PROJECT_ID"
+
+# Export to JSON
+raps acc submittal list "$PROJECT_ID" --output json > submittals.json
+```
+
+### Фільтрація за статусом
+
+```bash
+# Get open submittals
+cat submittals.json | jq '[.[] | select(.status == "open")]' > open-submittals.json
+
+# Get pending review
+cat submittals.json | jq '[.[] | select(.status == "under_review")]' > pending-review.json
+
+# Get approved
+cat submittals.json | jq '[.[] | select(.status == "approved")]' > approved.json
+```
+
+### Експорт журналу подач
+
+```bash
+cat submittals.json | jq -r '
+  ["Number", "Title", "Spec Section", "Status", "Submitted", "Required", "Approved"],
+  (.[] | [
+    .number,
+    .title,
+    .specSection,
+    .status,
+    .submittedDate,
+    .requiredDate,
+    .approvedDate // ""
+  ]) | @csv
+' > submittal-log.csv
+```
+
+### Пошук прострочених подач
+
+```bash
+TODAY=$(date +%Y-%m-%d)
+
+cat submittals.json | jq --arg today "$TODAY" '
+  [.[] | select(.status != "approved" and .requiredDate != null and .requiredDate < $today)]
+' > late-submittals.json
+
+echo "Late submittals: $(jq 'length' late-submittals.json)"
+
+# Detail report
+jq -r '.[] | "- \(.number): \(.title) (Due: \(.requiredDate))"' late-submittals.json
+```
+
+### Зведення статусів
+
+```bash
+cat submittals.json | jq '
+  group_by(.status) |
+  map({status: .[0].status, count: length}) |
+  sort_by(-.count)'
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/submittal-tracking.yml
+name: Submittal Tracking Report
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'  # Weekdays at 7 AM
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.ACC_PROJECT_ID }}
+
+jobs:
+  submittal-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Export submittals
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps acc submittal list "$PROJECT_ID" --output json > submittals.json
+
+      - name: Generate report
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+
+          echo "# Submittal Status Report" > report.md
+          echo "Generated: $(date)" >> report.md
+          echo "" >> report.md
+
+          # Summary
+          TOTAL=$(jq 'length' submittals.json)
+          OPEN=$(jq '[.[] | select(.status == "open")] | length' submittals.json)
+          REVIEW=$(jq '[.[] | select(.status == "under_review")] | length' submittals.json)
+          APPROVED=$(jq '[.[] | select(.status == "approved")] | length' submittals.json)
+          LATE=$(jq --arg today "$TODAY" '[.[] | select(.status != "approved" and .requiredDate < $today)] | length' submittals.json)
+
+          echo "## Summary" >> report.md
+          echo "| Status | Count |" >> report.md
+          echo "|--------|-------|" >> report.md
+          echo "| Total | $TOTAL |" >> report.md
+          echo "| Open | $OPEN |" >> report.md
+          echo "| Under Review | $REVIEW |" >> report.md
+          echo "| Approved | $APPROVED |" >> report.md
+          echo "| **Late** | **$LATE** |" >> report.md
+          echo "" >> report.md
+
+          # Late submittals
+          if [ "$LATE" -gt 0 ]; then
+            echo "## Late Submittals" >> report.md
+            echo "| Number | Title | Required | Days Late |" >> report.md
+            echo "|--------|-------|----------|-----------|" >> report.md
+
+            jq --arg today "$TODAY" -r '
+              .[] |
+              select(.status != "approved" and .requiredDate != null and .requiredDate < $today) |
+              "| \(.number) | \(.title) | \(.requiredDate) | - |"
+            ' submittals.json >> report.md
+          fi
+
+      - name: Export CSV
+        run: |
+          jq -r '
+            ["Number","Title","Spec","Status","Required","Submitted"],
+            (.[] | [.number, .title, .specSection, .status, .requiredDate, .submittedDate])
+            | @csv
+          ' submittals.json > submittal-log.csv
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: submittal-reports
+          path: |
+            report.md
+            submittal-log.csv
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Щоденний звіт</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">7:00 будні</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Експорт</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання подач</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Розрахунок метрик</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Звіти</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">submittal-log.csv</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Отримання статусу подач
+
+```
+User: "What's the status of our submittals?"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">Користувач</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI-асистент</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">Корист.</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Статус подач</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_submittal_list(project_id)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Отримання подач</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Список подач</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Групування за статусом + Пошук прострочених</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Зведення статусу</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">Корист.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> **Зведення статусу подач:**
+>
+> | Статус | Кількість | % |
+> |--------|-----------|---|
+> | Узгоджено | 45 | 60% |
+> | На розгляді | 12 | 16% |
+> | Відкриті | 15 | 20% |
+> | Відхилено | 3 | 4% |
+>
+> **Потребують уваги:**
+> - 4 подачі прострочені
+> - 3 відхилені подачі потребують повторного подання
+>
+> **Найближчі (наступні 7 днів):**
+> - SUB-089: Робочі креслення металоконструкцій (Термін: 18 лют)
+> - SUB-092: Обладнання HVAC (Термін: 20 лют)
+
+### Пошук прострочених подач
+
+```
+User: "Show me all late submittals"
+```
+
+**Відповідь AI:**
+> **Прострочені подачі (4):**
+>
+> | Номер | Назва | Специфікація | Термін | Днів прострочено |
+> |-------|-------|-------------|--------|-----------------|
+> | SUB-045 | Дверна фурнітура | 08 71 00 | 10 лют | 5 |
+> | SUB-052 | Покрівельні матеріали | 07 50 00 | 12 лют | 3 |
+> | SUB-061 | Світильники | 26 51 00 | 13 лют | 2 |
+> | SUB-063 | Сантехнічне обладнання | 22 40 00 | 14 лют | 1 |
+>
+> Бажаєте, щоб я надіслав нагадування відповідальним?
+
+---
+
+## Розширені звіти
+
+### За розділами специфікації
+
+```bash
+cat submittals.json | jq '
+  group_by(.specSection) |
+  map({
+    section: .[0].specSection,
+    total: length,
+    approved: [.[] | select(.status == "approved")] | length,
+    pending: [.[] | select(.status != "approved")] | length
+  }) |
+  sort_by(.section)'
+```
+
+### Аналіз часу обробки
+
+```bash
+cat submittals.json | jq '
+  [.[] | select(.submittedDate != null and .approvedDate != null) |
+   {
+     number: .number,
+     submitted: .submittedDate,
+     approved: .approvedDate
+   }]'
+# Note: Calculate days between dates with additional processing
+```
+
+### Динаміка узгоджень по місяцях
+
+```bash
+cat submittals.json | jq '
+  [.[] | select(.approvedDate != null)] |
+  group_by(.approvedDate[:7]) |
+  map({month: .[0].approvedDate[:7], approved: length})'
+```
+
+---
+
+## Пов'язане
+
+- [Управління проблемами та RFI](/cookbook/cookbook-acc-issues)
+- [Експорт чек-листів](/cookbook/cookbook-acc-checklists)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

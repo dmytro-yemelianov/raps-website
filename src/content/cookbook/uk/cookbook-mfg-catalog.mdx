@@ -1,0 +1,443 @@
+---
+title: "Генерація каталогу мініатюр"
+description: "Побудова візуальних каталогів деталей з мініатюрами"
+category: "manufacturing"
+order: 27
+icon: "🖼️"
+---
+
+# Генерація каталогу мініатюр
+
+Створення візуальних каталогів CAD-деталей з автоматично згенерованими мініатюрами.
+
+## Огляд процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Бібліотека CAD</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Колекція деталей</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Обробка</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Трансляція у SVF2</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Витяг мініатюр</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Витяг метаданих</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Генерація каталогу</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Створення сітки мініатюр</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Побудова індексної сторінки</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Генерація даних пошуку</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Вихід каталогу</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">HTML-галерея</div>
+        <div class="bg-slate-800 rounded px-2 py-1">JSON-індекс</div>
+        <div class="bg-slate-800 rounded px-2 py-1">PDF-каталог</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Вхід</span>
+      <span class="text-slate-600">→</span>
+      <span>Обробка</span>
+      <span class="text-slate-600">→</span>
+      <span>Генерація</span>
+      <span class="text-slate-600">→</span>
+      <span>Вихід</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Генерація мініатюр для всіх деталей
+
+```bash
+mkdir -p ./catalog/thumbnails
+
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+
+  # Check if translation exists and is complete
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "none"')
+
+  if [ "$STATUS" = "success" ]; then
+    # Generate safe filename
+    SAFE_NAME=$(echo "$key" | tr '/' '_' | sed 's/\.[^.]*$//')
+
+    # Download thumbnail
+    raps derivative thumbnail "$URN" --output "./catalog/thumbnails/${SAFE_NAME}.png"
+    echo "Generated: ${SAFE_NAME}.png"
+  else
+    echo "Skipping (not translated): $key"
+  fi
+done
+```
+
+### Крок 2: Витяг метаданих деталей
+
+```bash
+echo "[]" > ./catalog/parts.json
+
+raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+  URN=$(raps object urn cad-library "$key" --output plain)
+
+  STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "none"')
+
+  if [ "$STATUS" = "success" ]; then
+    SAFE_NAME=$(echo "$key" | tr '/' '_' | sed 's/\.[^.]*$//')
+
+    # Get properties
+    PROPS=$(raps derivative properties "$URN" --output json 2>/dev/null | jq '.[0].properties // {}')
+
+    # Add to catalog
+    jq --arg key "$key" \
+       --arg name "$SAFE_NAME" \
+       --argjson props "$PROPS" \
+       '. += [{key: $key, name: $name, thumbnail: ($name + ".png"), properties: $props}]' \
+       ./catalog/parts.json > ./catalog/parts.tmp.json
+
+    mv ./catalog/parts.tmp.json ./catalog/parts.json
+  fi
+done
+```
+
+### Крок 3: Генерація HTML-каталогу
+
+```bash
+cat > ./catalog/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Parts Catalog</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .part { border: 1px solid #ddd; padding: 10px; text-align: center; border-radius: 8px; }
+    .part img { max-width: 100%; height: 150px; object-fit: contain; }
+    .part h3 { font-size: 14px; margin: 10px 0 5px; }
+    .part p { font-size: 12px; color: #666; margin: 0; }
+    .search { margin-bottom: 20px; padding: 10px; width: 100%; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Parts Catalog</h1>
+  <input type="text" class="search" placeholder="Search parts..." onkeyup="filterParts(this.value)">
+  <div class="grid" id="catalog"></div>
+
+  <script>
+    let parts = [];
+
+    fetch('parts.json')
+      .then(r => r.json())
+      .then(data => {
+        parts = data;
+        renderParts(parts);
+      });
+
+    function renderParts(data) {
+      const grid = document.getElementById('catalog');
+      grid.innerHTML = data.map(p => `
+        <div class="part">
+          <img src="thumbnails/${p.thumbnail}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>${p.properties['Part Number'] || ''}</p>
+          <p>${p.properties['Material'] || ''}</p>
+        </div>
+      `).join('');
+    }
+
+    function filterParts(query) {
+      const filtered = parts.filter(p =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        JSON.stringify(p.properties).toLowerCase().includes(query.toLowerCase())
+      );
+      renderParts(filtered);
+    }
+  </script>
+</body>
+</html>
+EOF
+
+echo "Catalog generated at ./catalog/index.html"
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/catalog-generation.yml
+name: Parts Catalog Generation
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+  workflow_dispatch:
+
+jobs:
+  generate-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Generate thumbnails
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./catalog/thumbnails
+
+          raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn cad-library "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "none"')
+
+            if [ "$STATUS" = "success" ]; then
+              SAFE_NAME=$(echo "$key" | tr '/' '_' | sed 's/\.[^.]*$//')
+              raps derivative thumbnail "$URN" --output "./catalog/thumbnails/${SAFE_NAME}.png" 2>/dev/null || true
+            fi
+          done
+
+      - name: Generate metadata
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          echo "[]" > ./catalog/parts.json
+
+          raps object list cad-library --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn cad-library "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "none"')
+
+            if [ "$STATUS" = "success" ]; then
+              SAFE_NAME=$(echo "$key" | tr '/' '_' | sed 's/\.[^.]*$//')
+              PROPS=$(raps derivative properties "$URN" --output json 2>/dev/null | jq '.[0].properties // {}' || echo '{}')
+
+              jq --arg key "$key" --arg name "$SAFE_NAME" --argjson props "$PROPS" \
+                '. += [{key: $key, name: $name, thumbnail: ($name + ".png"), properties: $props}]' \
+                ./catalog/parts.json > ./catalog/parts.tmp.json
+              mv ./catalog/parts.tmp.json ./catalog/parts.json
+            fi
+          done
+
+      - name: Generate HTML
+        run: |
+          # Generate index.html (see CLI section for template)
+          cat > ./catalog/index.html << 'HTMLEOF'
+          <!-- HTML template here -->
+          HTMLEOF
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./catalog
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Розклад/Ручний</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">Щоденно о 2:00</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Генерація</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Перелік усіх деталей</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Генерація мініатюр</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Витяг метаданих</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Побудова HTML</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Розгортання</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">GitHub Pages</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Генерація каталогу
+
+```
+User: "Create a visual catalog of all parts in the CAD library"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">Користувач</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Створити каталог деталей</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_list(bucket="cad-library")</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Перелік об'єктів</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Список об'єктів</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Для кожної деталі</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_thumbnail(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Отримання мініатюри</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">PNG-дані</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_derivative_properties(urn)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Отримання властивостей</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-emerald-400">APS</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Properties JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Генерація HTML-каталогу</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Каталог готовий з посиланням</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Згенеровано каталог деталей з 45 елементами:
+>
+> **Статистика каталогу:**
+> - Всього деталей: 45
+> - З мініатюрами: 43
+> - З метаданими: 45
+>
+> **Категорії:**
+> - Кронштейни: 12
+> - Корпуси: 8
+> - Вали: 10
+> - Шестерні: 15
+>
+> [Переглянути каталог](./catalog/index.html)
+
+### Пошук у каталозі
+
+```
+User: "Find all aluminum parts in the catalog"
+```
+
+**Відповідь AI:**
+> Знайдено 18 алюмінієвих деталей:
+>
+> | Деталь | Матеріал | Вага |
+> |--------|----------|------|
+> | bracket-a | Aluminum 6061 | 0.45 кг |
+> | housing-main | Aluminum 7075 | 2.3 кг |
+> | cover-plate | Aluminum 6061 | 0.12 кг |
+> | ... | ... | ... |
+
+---
+
+## Розширені можливості
+
+### Організація за категоріями
+
+```bash
+# Organize by part type
+cat ./catalog/parts.json | jq '
+  group_by(.properties["Part Type"] // "Uncategorized") |
+  map({
+    category: .[0].properties["Part Type"] // "Uncategorized",
+    count: length,
+    parts: .
+  })'
+```
+
+### Генерація PDF-каталогу
+
+```bash
+# Using wkhtmltopdf
+wkhtmltopdf \
+  --enable-local-file-access \
+  --print-media-type \
+  ./catalog/index.html \
+  ./catalog/parts-catalog.pdf
+```
+
+### Інкрементальні оновлення
+
+```bash
+# Only update changed parts
+LAST_RUN=$(cat .catalog-last-run 2>/dev/null || echo "1970-01-01")
+
+raps object list cad-library --output json | \
+  jq --arg since "$LAST_RUN" '.[] | select(.lastModified > $since)' | \
+  jq -r '.key' | while read key; do
+    echo "Updating: $key"
+    # Generate thumbnail and metadata for this part
+  done
+
+date -Iseconds > .catalog-last-run
+```
+
+---
+
+## Пов'язане
+
+- [Пакетна обробка кількох форматів](/cookbook/cookbook-mfg-batch)
+- [Відстеження ітерацій проєктування](/cookbook/cookbook-mfg-iterations)
+- [Cookbook: Виробництво](/cookbook/cookbook-manufacturing)

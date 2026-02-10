@@ -1,0 +1,468 @@
+---
+title: "Масове адміністрування облікових записів"
+description: "Масові операції з користувачами у проєктах ACC/BIM 360"
+category: "construction"
+order: 40
+icon: "👥"
+---
+
+# Масове адміністрування облікових записів
+
+Керуйте користувачами у кількох проєктах ACC/BIM 360 за допомогою масових операцій, відновлюваного стану та відстеження прогресу.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Операції з користувачами</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Додавання користувачів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Видалення користувачів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Оновлення ролей</div>
+      </div>
+    </div>
+    <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-700/50">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Права на теки</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Project Files</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Plans</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Довільні теки</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Масові функції</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">50 паралельних запитів</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Автоповтор (429)</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Відстеження прогресу</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Управління станом</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Відновлювані операції</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Режим dry-run</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Історія операцій</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Вибір проєктів → Налаштування операції → Виконання → Відстеження прогресу</div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Додавання користувача до кількох проєктів
+
+```bash
+ACCOUNT_ID="your-account-id"
+EMAIL="newuser@company.com"
+
+# Add user to all projects
+raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin
+
+# Add user to specific projects (regex filter)
+raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin \
+  --filter "^Downtown|^Hospital"
+
+# Preview changes with dry-run
+raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin --dry-run
+```
+
+### Видалення користувача з проєктів
+
+```bash
+# Remove user from all projects
+raps admin user remove "$ACCOUNT_ID" "departed@company.com"
+
+# Remove from specific projects
+raps admin user remove "$ACCOUNT_ID" "departed@company.com" \
+  --filter "^2024-.*"
+
+# Dry-run to preview
+raps admin user remove "$ACCOUNT_ID" "departed@company.com" --dry-run
+```
+
+### Оновлення ролей користувачів
+
+```bash
+# Promote user across all projects
+raps admin user update-role "$ACCOUNT_ID" "user@company.com" --role project_admin
+
+# Update role in filtered projects
+raps admin user update-role "$ACCOUNT_ID" "user@company.com" \
+  --role viewer --filter "^Archive-"
+```
+
+### Управління правами на теки
+
+```bash
+# Grant access to Project Files folder
+raps admin folder rights "$ACCOUNT_ID" "contractor@partner.com" \
+  --permission edit --folder project_files
+
+# Grant access to Plans folder
+raps admin folder rights "$ACCOUNT_ID" "reviewer@client.com" \
+  --permission view --folder plans
+
+# Custom folder by ID
+raps admin folder rights "$ACCOUNT_ID" "user@company.com" \
+  --permission control --folder "urn:adsk.wipprod:fs.folder:abc123"
+```
+
+### Перегляд та фільтрація проєктів
+
+```bash
+# List all projects
+raps admin project list "$ACCOUNT_ID"
+
+# Filter by name pattern
+raps admin project list "$ACCOUNT_ID" --filter "Downtown"
+
+# Filter by status and platform
+raps admin project list "$ACCOUNT_ID" --status active --platform acc
+
+# Limit results
+raps admin project list "$ACCOUNT_ID" --limit 10 --output json
+```
+
+---
+
+## Управління операціями
+
+### Відстеження прогресу операцій
+
+```bash
+# View current operation status
+raps admin operation status
+
+# View specific operation
+raps admin operation status --id "550e8400-e29b-41d4-a716-446655440000"
+
+# List all operations
+raps admin operation list
+
+# Filter by status
+raps admin operation list --status in_progress
+```
+
+### Відновлення перерваних операцій
+
+```bash
+# Resume most recent in-progress operation
+raps admin operation resume
+
+# Resume specific operation
+raps admin operation resume --id "550e8400-e29b-41d4-a716-446655440000"
+```
+
+### Скасування операцій
+
+```bash
+# Cancel current operation
+raps admin operation cancel
+
+# Cancel specific operation
+raps admin operation cancel --id "550e8400-e29b-41d4-a716-446655440000"
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/user-onboarding.yml
+name: User Onboarding
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'User email to onboard'
+        required: true
+      role:
+        description: 'Role to assign'
+        required: true
+        default: 'project_admin'
+        type: choice
+        options:
+          - project_admin
+          - project_manager
+          - viewer
+      filter:
+        description: 'Project filter regex (optional)'
+        required: false
+
+env:
+  ACCOUNT_ID: ${{ secrets.ACC_ACCOUNT_ID }}
+
+jobs:
+  onboard-user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Add user to projects
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          FILTER_ARG=""
+          if [ -n "${{ github.event.inputs.filter }}" ]; then
+            FILTER_ARG="--filter ${{ github.event.inputs.filter }}"
+          fi
+
+          raps admin user add "$ACCOUNT_ID" "${{ github.event.inputs.email }}" \
+            --role ${{ github.event.inputs.role }} \
+            $FILTER_ARG \
+            --output json > result.json
+
+      - name: Generate report
+        run: |
+          echo "# User Onboarding Report" > report.md
+          echo "**User:** ${{ github.event.inputs.email }}" >> report.md
+          echo "**Role:** ${{ github.event.inputs.role }}" >> report.md
+          echo "**Date:** $(date)" >> report.md
+          echo "" >> report.md
+
+          TOTAL=$(jq '.total' result.json)
+          SUCCESS=$(jq '.succeeded' result.json)
+          SKIPPED=$(jq '.skipped' result.json)
+          FAILED=$(jq '.failed' result.json)
+
+          echo "## Results" >> report.md
+          echo "- Total projects: $TOTAL" >> report.md
+          echo "- Succeeded: $SUCCESS" >> report.md
+          echo "- Skipped: $SKIPPED" >> report.md
+          echo "- Failed: $FAILED" >> report.md
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-report
+          path: |
+            report.md
+            result.json
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Тригер</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Ручний запуск</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Автентифікація</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Refresh Token</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">3-Leg OAuth</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Масова операція</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Фільтрація проєктів</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Додати користувача (50 паралельно)</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Звіт</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">result.json</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Скрипт відключення доступу
+
+```bash
+#!/bin/bash
+# offboard-user.sh - Complete user removal
+
+set -e
+
+ACCOUNT_ID="$1"
+EMAIL="$2"
+
+if [ -z "$ACCOUNT_ID" ] || [ -z "$EMAIL" ]; then
+  echo "Usage: offboard-user.sh <account_id> <email>"
+  exit 1
+fi
+
+echo "Offboarding user: $EMAIL"
+echo "================================"
+
+# Step 1: Preview changes
+echo "Step 1: Preview removal..."
+raps admin user remove "$ACCOUNT_ID" "$EMAIL" --dry-run
+
+read -p "Proceed with removal? (y/N) " confirm
+if [ "$confirm" != "y" ]; then
+  echo "Cancelled."
+  exit 0
+fi
+
+# Step 2: Remove user from all projects
+echo "Step 2: Removing user from projects..."
+raps admin user remove "$ACCOUNT_ID" "$EMAIL" --output json > removal-result.json
+
+# Step 3: Generate report
+echo "Step 3: Generating report..."
+TOTAL=$(jq '.total' removal-result.json)
+REMOVED=$(jq '.succeeded' removal-result.json)
+SKIPPED=$(jq '.skipped' removal-result.json)
+
+echo ""
+echo "Offboarding Complete"
+echo "===================="
+echo "User: $EMAIL"
+echo "Projects processed: $TOTAL"
+echo "Successfully removed: $REMOVED"
+echo "Skipped (not in project): $SKIPPED"
+echo ""
+echo "Full results saved to: removal-result.json"
+```
+
+---
+
+## Пакетне управління користувачами
+
+### Підключення кількох користувачів
+
+```bash
+#!/bin/bash
+# batch-onboard.sh
+
+ACCOUNT_ID="your-account-id"
+ROLE="project_admin"
+
+# Users to onboard (one per line)
+USERS=(
+  "user1@company.com"
+  "user2@company.com"
+  "user3@company.com"
+)
+
+for email in "${USERS[@]}"; do
+  echo "Onboarding: $email"
+  raps admin user add "$ACCOUNT_ID" "$email" --role "$ROLE" \
+    --output json >> onboarding-results.jsonl
+  echo "---"
+done
+
+echo "Batch onboarding complete. Results in onboarding-results.jsonl"
+```
+
+### Міграція ролей
+
+```bash
+#!/bin/bash
+# migrate-roles.sh - Migrate users from one role to another
+
+ACCOUNT_ID="your-account-id"
+OLD_ROLE="viewer"
+NEW_ROLE="project_admin"
+PROJECT_FILTER="^2024-Active"
+
+# Get users with old role
+raps admin project list "$ACCOUNT_ID" --filter "$PROJECT_FILTER" --output json |
+  jq -r '.[].id' | while read project_id; do
+    raps acc project-user list "$project_id" --output json |
+      jq -r --arg role "$OLD_ROLE" '.[] | select(.role == $role) | .email'
+  done | sort -u > users-to-migrate.txt
+
+echo "Found $(wc -l < users-to-migrate.txt) users to migrate"
+
+# Migrate each user
+while read email; do
+  echo "Migrating: $email"
+  raps admin user update-role "$ACCOUNT_ID" "$email" \
+    --role "$NEW_ROLE" --filter "$PROJECT_FILTER"
+done < users-to-migrate.txt
+```
+
+---
+
+## Рівні дозволів
+
+| Рівень | Дії | Випадок використання |
+|--------|-----|---------------------|
+| `view` | Перегляд файлів | Доступ лише для читання |
+| `view_download` | Перегляд + завантаження | Рецензенти, клієнти |
+| `upload` | Перегляд + завантаження + вивантаження | Учасники |
+| `edit` | Повний доступ на редагування | Члени команди |
+| `control` | Повний контроль + дозволи | Адміністратори |
+
+---
+
+## Коди виходу
+
+| Код | Значення |
+|-----|----------|
+| `0` | Усі операції виконані успішно |
+| `1` | Частковий успіх (деякі не вдалися) |
+| `2` | Операцію не вдалося розпочати |
+| `3` | Скасовано користувачем |
+
+---
+
+## Усунення неполадок
+
+### Обмеження швидкості запитів
+
+Масові операції автоматично обробляють обмеження швидкості з експоненціальною затримкою:
+
+```
+[2/100] Rate limited, waiting 2s before retry...
+[2/100] Retry 1/3 for project-123
+[2/100] Success after retry
+```
+
+### Користувача не знайдено
+
+Якщо користувач не існує в обліковому записі:
+
+```bash
+# The operation will skip projects where user isn't found
+raps admin user remove "$ACCOUNT_ID" "unknown@company.com"
+# Output: Skipped 50 projects (user not in project)
+```
+
+### Відновлення невдалих операцій
+
+```bash
+# Check operation history
+raps admin operation list --status failed
+
+# Resume with specific ID
+raps admin operation resume --id "operation-uuid"
+```
+
+---
+
+## Пов'язане
+
+- [Управління даними](/docs/data-management)
+- [Управління проблемами та RFI](/cookbook/cookbook-acc-issues)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

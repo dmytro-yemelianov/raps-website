@@ -1,0 +1,422 @@
+---
+title: "OBJ з матеріалами"
+description: "Коректна обробка текстурованих моделей OBJ"
+category: "media"
+order: 44
+icon: "🎨"
+---
+
+# OBJ з матеріалами
+
+Коректна обробка файлів OBJ з матеріалами MTL та текстурними файлами.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Пакет OBJ</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">model.obj</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">model.mtl</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">textures/</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Пакування</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення ZIP</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Завантаження</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження пакету</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Трансляція</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Вказівка кореневого файлу</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Розв'язання посилань</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Обробка текстур</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Результат</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 з текстурами</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Варіант 1: ZIP-пакет
+
+Найнадійніший метод для OBJ із зовнішніми файлами.
+
+```bash
+# Package OBJ with materials and textures
+cd ./model-folder
+zip -r model-package.zip model.obj model.mtl textures/
+
+# Upload package
+raps object upload media-assets model-package.zip
+
+# Translate with root file specification
+URN=$(raps object urn media-assets model-package.zip --output plain)
+raps translate start "$URN" --format svf2 --root "model.obj" --wait
+```
+
+### Варіант 2: Завантаження файлів окремо
+
+Для простіших конфігурацій без підкаталогів.
+
+```bash
+# Upload OBJ file
+raps object upload media-assets model.obj
+
+# Upload MTL file (same folder reference)
+raps object upload media-assets model.mtl
+
+# Upload textures
+for tex in ./textures/*.{jpg,png}; do
+  raps object upload media-assets "$tex"
+done
+
+# Translate OBJ
+URN=$(raps object urn media-assets model.obj --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Перевірка завантаження текстур
+
+```bash
+# Check manifest for texture resources
+raps translate manifest "$URN" --output json | jq '.derivatives[].children[] | select(.type == "resource")'
+
+# Get thumbnail to verify materials
+raps derivative thumbnail "$URN" --output ./preview-with-materials.png
+```
+
+---
+
+## Конвеєр CI/CD
+
+```yaml
+# .github/workflows/obj-materials.yml
+name: OBJ with Materials Processing
+
+on:
+  push:
+    paths:
+      - 'models/**/*.obj'
+      - 'models/**/*.mtl'
+
+env:
+  BUCKET: textured-models
+
+jobs:
+  process-obj:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Package and upload OBJ models
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Find directories containing OBJ files
+          find models -name "*.obj" | while read obj; do
+            DIR=$(dirname "$obj")
+            NAME=$(basename "$obj" .obj)
+
+            echo "Processing: $NAME"
+
+            # Create package with all related files
+            cd "$DIR"
+            zip -r "${NAME}-package.zip" "${NAME}.obj" "${NAME}.mtl" textures/ 2>/dev/null || \
+            zip -r "${NAME}-package.zip" "${NAME}.obj" "${NAME}.mtl" 2>/dev/null || \
+            zip -r "${NAME}-package.zip" "${NAME}.obj"
+            cd -
+
+            # Upload
+            raps object upload "$BUCKET" "${DIR}/${NAME}-package.zip"
+
+            # Translate
+            URN=$(raps object urn "$BUCKET" "${NAME}-package.zip" --output plain)
+            raps translate start "$URN" --format svf2 --root "${NAME}.obj" --wait
+
+            echo "Completed: $NAME"
+          done
+
+      - name: Verify translations
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./thumbnails
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+            if [ "$STATUS" = "success" ]; then
+              NAME=$(echo "$key" | sed 's/-package.zip//')
+              raps derivative thumbnail "$URN" --output "./thumbnails/${NAME}.png" 2>/dev/null || true
+            fi
+          done
+
+      - name: Upload thumbnails
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-thumbnails
+          path: ./thumbnails/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Змінено OBJ/MTL</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Пакування</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Пошук OBJ-файлів</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Створення ZIP з MTL + текстурами</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Завантаження та трансляція</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження пакету</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Трансляція з кореневим файлом</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Перевірка</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Перевірка завантаження текстур</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Генерація мініатюр</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція MCP
+
+### Обробка текстурованої моделі
+
+```
+User: "Upload the character model with all its textures"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Завантажити персонажа з текстурами</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Знайти OBJ, MTL та файли текстур</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Створити ZIP-пакет</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, package.zip)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Завантаження пакету</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Завершено</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn, root="character.obj")</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Трансляція з кореневим файлом</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_thumbnail(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Мініатюра з текстурами</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-400 ml-2">Модель готова з текстурами</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Завантажено модель персонажа з текстурами:
+>
+> **Вміст пакету:**
+> - character.obj (2.4 MB)
+> - character.mtl (1.2 KB)
+> - textures/
+>   - diffuse.jpg (4.1 MB)
+>   - normal.png (2.8 MB)
+>   - roughness.jpg (1.5 MB)
+>
+> **Трансляція:** Завершено
+> **Текстури завантажено:** 3/3
+>
+> Попередній перегляд збережено у `thumbnail.png` — завантажте локально для перевірки правильності матеріалів і текстур.
+
+### Усунення проблем з відсутніми текстурами
+
+```
+User: "The model textures aren't showing up"
+```
+
+**Відповідь AI:**
+> Перевірка завантаження текстур для character.obj...
+>
+> **Знайдено проблему:** Шляхи текстур у MTL не відповідають завантаженим файлам
+>
+> **Посилання в MTL:**
+> - map_Kd textures/Diffuse.jpg (невідповідність регістру)
+> - map_Bump normal.png (неправильний шлях)
+>
+> **Завантажені файли:**
+> - textures/diffuse.jpg
+> - textures/normal.png
+>
+> **Виправлення:** Оновіть MTL-файл відповідно до реальних шляхів:
+> ```
+> map_Kd textures/diffuse.jpg
+> map_Bump textures/normal.png
+> ```
+>
+> Бажаєте, щоб я створив виправлений пакет?
+
+---
+
+## Поширені проблеми
+
+### Чутливість до регістру шляхів
+
+```bash
+# Linux/macOS are case-sensitive
+# MTL says: textures/Diffuse.jpg
+# Actual:   textures/diffuse.jpg
+
+# Fix: Rename files or update MTL
+sed -i 's/Diffuse\.jpg/diffuse.jpg/g' model.mtl
+```
+
+### Проблеми з відносними шляхами
+
+```bash
+# MTL with absolute paths won't work
+# map_Kd C:/Users/me/project/textures/diffuse.jpg
+
+# Fix: Convert to relative paths
+sed -i 's|C:/Users/me/project/||g' model.mtl
+```
+
+### Відсутні текстури
+
+```bash
+# Check what textures MTL references
+grep -E "^map_" model.mtl
+
+# Verify files exist
+for tex in $(grep -oE "map_\w+\s+\S+" model.mtl | awk '{print $2}'); do
+  [ -f "$tex" ] && echo "✓ $tex" || echo "✗ $tex MISSING"
+done
+```
+
+### Структура папок
+
+```
+Correct structure:
+model-package.zip
+├── model.obj
+├── model.mtl
+└── textures/
+    ├── diffuse.jpg
+    ├── normal.png
+    └── specular.jpg
+
+MTL content:
+newmtl material_0
+map_Kd textures/diffuse.jpg
+map_Bump textures/normal.png
+map_Ks textures/specular.jpg
+```
+
+---
+
+## Пов'язане
+
+- [Трансляція 3D-ресурсів](/cookbook/cookbook-media-translation)
+- [Генерація каталогу ресурсів](/cookbook/cookbook-media-catalog)
+- [Cookbook: Медіа та розваги](/cookbook/cookbook-media)

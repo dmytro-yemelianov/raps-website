@@ -1,0 +1,392 @@
+---
+title: "Робочі процеси анімації"
+description: "Обробка файлів з анімаційними даними"
+category: "media"
+order: 45
+icon: "🎬"
+---
+
+# Робочі процеси анімації
+
+Обробка 3D-файлів із вбудованими анімаційними даними.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-slate-800/50 rounded-lg border border-blue-500/30 p-4">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">Анімовані ресурси</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">FBX з анімацією</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">glTF з анімацією</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">DAE з анімацією</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Завантаження</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">raps object upload</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Трансляція</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">SVF2 з анімаційними даними</div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-purple-500/30 p-4">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">Анімаційні дані</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Анімаційні кліпи</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Ключові кадри</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Ієрархія кісток</div>
+      </div>
+    </div>
+    <div class="bg-slate-800/50 rounded-lg border border-emerald-500/30 p-4">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">Відтворення</div>
+      <div class="space-y-2">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Forge Viewer</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Власний програвач</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Завантаження анімованої моделі
+
+```bash
+# Upload FBX with animations
+raps object upload media-assets character-animated.fbx
+
+# Translate preserving animation
+URN=$(raps object urn media-assets character-animated.fbx --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Перевірка анімаційних даних
+
+```bash
+# Get metadata including animations
+raps derivative metadata "$URN" --output json > animation-metadata.json
+
+# List animation clips
+jq '.animations' animation-metadata.json
+
+# Get animation details
+jq '.animations[] | {name: .name, duration: .duration, frameCount: .frameCount}' animation-metadata.json
+```
+
+### Витягнення інформації про анімацію
+
+```bash
+# Get bone/skeleton hierarchy
+raps derivative tree "$URN" --output json | jq '
+  .. | objects | select(.type == "bone" or .name | test("bone|skeleton"; "i"))
+' > skeleton.json
+
+# Count bones
+echo "Bones: $(jq 'length' skeleton.json)"
+```
+
+---
+
+## Конвеєр CI/CD
+
+```yaml
+# .github/workflows/animation-processing.yml
+name: Animation Processing
+
+on:
+  push:
+    paths:
+      - 'animations/**/*.fbx'
+      - 'animations/**/*.gltf'
+
+env:
+  BUCKET: animated-assets
+
+jobs:
+  process-animations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Setup bucket
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps bucket create --key "$BUCKET" --policy persistent --region US 2>/dev/null || true
+
+      - name: Upload and translate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          for file in $(git diff --name-only HEAD~1 HEAD -- 'animations/**'); do
+            [ -f "$file" ] || continue
+
+            echo "Processing: $file"
+            raps object upload "$BUCKET" "$file"
+
+            key=$(basename "$file")
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            raps translate start "$URN" --format svf2 --wait
+          done
+
+      - name: Extract animation info
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./animation-data
+
+          raps object list "$BUCKET" --output json | jq -r '.[].key' | while read key; do
+            URN=$(raps object urn "$BUCKET" "$key" --output plain)
+            STATUS=$(raps translate manifest "$URN" 2>/dev/null | jq -r '.status // "pending"')
+
+            if [ "$STATUS" = "success" ]; then
+              NAME=$(echo "$key" | sed 's/\.[^.]*$//')
+              raps derivative metadata "$URN" --output json > "./animation-data/${NAME}-meta.json"
+            fi
+          done
+
+      - name: Generate report
+        run: |
+          echo "# Animation Assets Report" > ./animation-data/report.md
+          echo "" >> ./animation-data/report.md
+
+          for meta in ./animation-data/*-meta.json; do
+            NAME=$(basename "$meta" -meta.json)
+            echo "## $NAME" >> ./animation-data/report.md
+
+            CLIPS=$(jq '.animations | length // 0' "$meta")
+            echo "- Animation clips: $CLIPS" >> ./animation-data/report.md
+
+            if [ "$CLIPS" -gt 0 ]; then
+              echo "- Clips:" >> ./animation-data/report.md
+              jq -r '.animations[] | "  - \(.name): \(.duration)s"' "$meta" >> ./animation-data/report.md
+            fi
+            echo "" >> ./animation-data/report.md
+          done
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: animation-report
+          path: ./animation-data/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-blue-500/30 p-3">
+      <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Git Push</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Змінено файли анімації</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Обробка</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Завантаження FBX/glTF</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Трансляція в SVF2</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-purple-500/30 p-3">
+      <div class="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">Витягнення інформації</div>
+      <div class="space-y-1">
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Отримання анімаційних кліпів</div>
+        <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Отримання ієрархії кісток</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 bg-slate-800/50 rounded-lg border border-emerald-500/30 p-3">
+      <div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Звіт</div>
+      <div class="bg-slate-900/50 rounded px-3 py-2 text-sm text-slate-300">Звіт про анімацію</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція MCP
+
+### Обробка анімованого ресурсу
+
+```
+User: "Upload the character animation and tell me about the clips"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-8 mb-4 text-xs font-semibold uppercase tracking-wider">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-emerald-400">RAPS MCP</div>
+      <div class="text-amber-400">APS Cloud</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-400 ml-2">Завантажити та проаналізувати анімацію</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_object_upload(bucket, file)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Завантаження FBX</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Завершено</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_start(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Трансляція</span>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span class="text-slate-500 text-xs">loop</span>
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_translate_manifest(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2 font-mono text-xs">aps_derivative_metadata(urn)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-400 ml-2">Отримання метаданих</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-amber-400">APS</span>
+        <span class="text-slate-500">←</span>
+        <span class="text-emerald-400">MCP</span>
+        <span class="text-slate-400 ml-2">Анімаційні дані</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">AI</span>
+        <span class="text-slate-500">→</span>
+        <span class="text-blue-400">Користувач</span>
+        <span class="text-slate-400 ml-2">Деталі анімації</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Завантажено та проаналізовано character_hero.fbx:
+>
+> **Анімаційні кліпи (5):**
+>
+> | Назва кліпу | Тривалість | Кадри | Цикл |
+> |-------------|-----------|-------|------|
+> | Idle | 2.0s | 60 | Так |
+> | Walk | 1.0s | 30 | Так |
+> | Run | 0.8s | 24 | Так |
+> | Jump | 1.2s | 36 | Ні |
+> | Attack | 0.6s | 18 | Ні |
+>
+> **Скелет:**
+> - Кістки: 65
+> - Корінь: Hips
+> - IK-ланцюжки: 4 (2 руки, 2 ноги)
+>
+> Готово до перегляду у Forge Viewer.
+
+### Пошук анімаційних ресурсів
+
+```
+User: "List all assets with walk animations"
+```
+
+**Відповідь AI:**
+> Знайдено 8 ресурсів з анімацією "Walk":
+>
+> | Ресурс | Тривалість Walk | Інші кліпи |
+> |--------|----------------|------------|
+> | character_hero.fbx | 1.0s | 5 кліпів |
+> | character_enemy.fbx | 0.9s | 4 кліпи |
+> | npc_villager.fbx | 1.1s | 3 кліпи |
+> | pet_dog.fbx | 0.6s | 6 кліпів |
+> | ... | ... | ... |
+
+---
+
+## Особливості роботи з анімацією
+
+### Налаштування анімації FBX
+
+```bash
+# FBX files can contain multiple takes
+# Check for animation stacks
+raps derivative metadata "$URN" --output json | jq '.animations'
+```
+
+### Анімації glTF
+
+```bash
+# glTF stores animations differently
+# Check for animation samplers
+raps derivative metadata "$URN" --output json | jq '.animations[] | {name, channels: .channels | length}'
+```
+
+### Перевірка кількості кісток
+
+```bash
+# Verify bone count for mobile/web
+BONES=$(raps derivative tree "$URN" --output json | jq '[.. | objects | select(.type == "bone")] | length')
+echo "Bone count: $BONES"
+
+if [ "$BONES" -gt 128 ]; then
+  echo "Warning: Bone count exceeds mobile limit"
+fi
+```
+
+### Продуктивність анімації
+
+```bash
+# Check animation data size
+raps translate manifest "$URN" --output json | jq '
+  .derivatives[] |
+  select(.outputType == "svf2") |
+  .children[] |
+  select(.type == "resource" and (.urn | contains("animation")))
+'
+```
+
+---
+
+## Пов'язане
+
+- [Трансляція 3D-ресурсів](/cookbook/cookbook-media-translation)
+- [OBJ з матеріалами](/cookbook/cookbook-media-materials)
+- [Cookbook: Медіа та розваги](/cookbook/cookbook-media)

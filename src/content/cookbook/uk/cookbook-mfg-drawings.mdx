@@ -1,0 +1,434 @@
+---
+title: "Генерація креслень через DA"
+description: "Генерація 2D-креслень за допомогою Design Automation"
+category: "manufacturing"
+order: 25
+icon: "📐"
+---
+
+# Генерація креслень за допомогою Design Automation
+
+Генерація 2D-креслень з 3D-моделей за допомогою Design Automation API.
+
+## Огляд процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="border-2 border-blue-500/50 rounded-lg p-4 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-sm mb-3">Вхід</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">3D-модель Inventor/Revit</div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Design Automation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">App Bundle Drawing Plugin</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Activity GenerateDrawing</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Work Item Execute</div>
+      </div>
+    </div>
+    <div class="border-2 border-purple-500/50 rounded-lg p-4 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-sm mb-3">Обробка</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження моделі</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Застосування шаблону</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Генерація видів</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Додавання анотацій</div>
+      </div>
+    </div>
+    <div class="border-2 border-emerald-500/50 rounded-lg p-4 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-sm mb-3">Результат</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">2D-креслення .idw/.dwg/.pdf</div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span>Вхід</span>
+      <span class="text-slate-600">→</span>
+      <span>Налаштування DA</span>
+      <span class="text-slate-600">→</span>
+      <span>Обробка</span>
+      <span class="text-slate-600">→</span>
+      <span>Вихід</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Крок 1: Перелік доступних рушіїв
+
+```bash
+# List Inventor engines
+raps da engine list | grep -i inventor
+
+# Output example:
+# Autodesk.Inventor+2024
+# Autodesk.Inventor+2023
+```
+
+### Крок 2: Створення App Bundle
+
+```bash
+# Package your drawing generation plugin
+cd ./drawing-plugin
+zip -r ../DrawingGenerator.zip ./*
+
+# Upload app bundle
+raps da appbundle create \
+  --id "DrawingGenerator" \
+  --engine "Autodesk.Inventor+2024" \
+  --file ../DrawingGenerator.zip
+
+# Create alias
+raps da appbundle alias create DrawingGenerator prod 1
+```
+
+### Крок 3: Створення Activity
+
+```bash
+# Create activity definition
+raps da activity create \
+  --id "GenerateDrawing" \
+  --engine "Autodesk.Inventor+2024" \
+  --appbundle "your-nickname.DrawingGenerator+prod" \
+  --command '$(engine.path)/InventorCoreConsole.exe /i $(args[inputFile].path) /al $(appbundles[DrawingGenerator].path) /s $(settings[script].path)'
+
+# Create alias
+raps da activity alias create GenerateDrawing prod 1
+```
+
+### Крок 4: Відправлення Work Item
+
+```bash
+# Generate signed URL for input
+INPUT_URL=$(raps object signed-url cad-library assembly.iam --minutes 60)
+
+# Create output location
+OUTPUT_BUCKET="drawing-output"
+raps bucket create --key "$OUTPUT_BUCKET" --policy transient --region US
+
+# Submit work item
+WORK_ITEM=$(raps da workitem create \
+  --activity "your-nickname.GenerateDrawing+prod" \
+  --input-name "inputFile" \
+  --input-url "$INPUT_URL" \
+  --output-name "outputDrawing" \
+  --output-url "$(raps object signed-url $OUTPUT_BUCKET output.idw --minutes 60 --write)" \
+  --output json)
+
+WORK_ID=$(echo "$WORK_ITEM" | jq -r '.id')
+echo "Work Item ID: $WORK_ID"
+```
+
+### Крок 5: Моніторинг прогресу
+
+```bash
+# Wait for completion
+raps da workitem status "$WORK_ID" --wait
+
+# Check final status
+raps da workitem status "$WORK_ID" --output json | jq '.status'
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/drawing-generation.yml
+name: Drawing Generation Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model file path in bucket'
+        required: true
+      template:
+        description: 'Drawing template name'
+        default: 'standard'
+
+env:
+  ACTIVITY: ${{ secrets.DA_NICKNAME }}.GenerateDrawing+prod
+
+jobs:
+  generate-drawing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Generate drawing
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          # Get signed URLs
+          INPUT_URL=$(raps object signed-url cad-library "${{ inputs.model }}" --minutes 120)
+          OUTPUT_BUCKET="drawings-$(date +%Y%m%d)"
+          raps bucket create --key "$OUTPUT_BUCKET" --policy transient --region US 2>/dev/null || true
+
+          OUTPUT_NAME=$(basename "${{ inputs.model }}" | sed 's/\.[^.]*$/.idw/')
+          OUTPUT_URL=$(raps object signed-url "$OUTPUT_BUCKET" "$OUTPUT_NAME" --minutes 120 --write)
+
+          # Submit work item
+          WORK_ID=$(raps da workitem create \
+            --activity "$ACTIVITY" \
+            --input-name "inputFile" \
+            --input-url "$INPUT_URL" \
+            --output-name "outputDrawing" \
+            --output-url "$OUTPUT_URL" \
+            --output json | jq -r '.id')
+
+          echo "WORK_ID=$WORK_ID" >> $GITHUB_ENV
+          echo "OUTPUT_BUCKET=$OUTPUT_BUCKET" >> $GITHUB_ENV
+          echo "OUTPUT_NAME=$OUTPUT_NAME" >> $GITHUB_ENV
+
+      - name: Wait for completion
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          raps da workitem status "$WORK_ID" --wait
+
+          STATUS=$(raps da workitem status "$WORK_ID" --output json | jq -r '.status')
+
+          if [ "$STATUS" != "success" ]; then
+            echo "Work item failed with status: $STATUS"
+            raps da workitem report "$WORK_ID"
+            exit 1
+          fi
+
+      - name: Download result
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./drawings
+          raps object download "$OUTPUT_BUCKET" "$OUTPUT_NAME" --output ./drawings/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-drawing
+          path: ./drawings/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 border-2 border-blue-500/50 rounded-lg p-3 bg-blue-500/10">
+      <div class="text-blue-400 font-semibold text-xs mb-2">Ручний запуск</div>
+      <div class="text-xs text-slate-300 bg-slate-800 rounded px-2 py-1">вхід: модель + шаблон</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Налаштування</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Генерація підписаних URL</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Створення вихідного бакета</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-purple-500/50 rounded-lg p-3 bg-purple-500/10">
+      <div class="text-purple-400 font-semibold text-xs mb-2">Design Automation</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Відправлення work item</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Очікування завершення</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 border-2 border-emerald-500/50 rounded-lg p-3 bg-emerald-500/10">
+      <div class="text-emerald-400 font-semibold text-xs mb-2">Результат</div>
+      <div class="space-y-1 text-xs text-slate-300">
+        <div class="bg-slate-800 rounded px-2 py-1">Завантаження креслення</div>
+        <div class="bg-slate-800 rounded px-2 py-1">Вивантаження артефакту</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Генерація одного креслення
+
+```
+User: "Generate a 2D drawing from the gearbox assembly"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="text-blue-400">Користувач</div>
+      <div class="text-purple-400">AI-асистент</div>
+      <div class="text-amber-400">RAPS MCP</div>
+      <div class="text-emerald-400">Design Automation</div>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-blue-400">Користувач</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Згенерувати креслення з gearbox.iam</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_object_signed_url(input)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-purple-500"></div>
+        <div class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Вхідний URL</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_da_workitem_create(activity, input, output)</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Відправлення work item</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-emerald-400">DA</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Work item ID</div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l-2 border-slate-600 ml-2">
+        <div class="text-slate-500 italic">цикл: Очікування завершення</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-amber-500"></div>
+        <div class="bg-amber-500/20 text-amber-300 px-2 py-1 rounded">aps_da_workitem_status(id)</div>
+      </div>
+      <div class="flex items-center gap-2 pl-6">
+        <div class="w-16 text-amber-400">MCP</div>
+        <div class="flex-1 border-t border-dashed border-emerald-500"></div>
+        <div class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">Перевірка статусу</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-16 text-purple-400">AI</div>
+        <div class="flex-1 border-t border-dashed border-blue-500"></div>
+        <div class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">Креслення успішно згенеровано</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Згенеровано 2D-креслення з gearbox.iam:
+> - **Вихідний файл:** gearbox.idw (2.4 МБ)
+> - **Згенеровано видів:** 4 (Front, Top, Right, Isometric)
+> - **Час обробки:** 45 секунд
+> - **Завантажити:** [gearbox.idw](https://...)
+
+### Пакетна генерація креслень
+
+```
+User: "Generate drawings for all assemblies in the release folder"
+```
+
+**Відповідь AI:**
+> Генерація креслень для 8 збірок...
+>
+> | Збірка | Статус | Час | Результат |
+> |--------|--------|-----|-----------|
+> | gearbox.iam | Завершено | 45 с | gearbox.idw |
+> | housing.iam | Завершено | 38 с | housing.idw |
+> | shaft.iam | Завершено | 22 с | shaft.idw |
+> | bracket.iam | В обробці | - | - |
+> | ... | ... | ... | ... |
+>
+> Прогрес: 3/8 завершено, 1 в обробці
+
+---
+
+## Розширене налаштування
+
+### Параметри шаблону
+
+```json
+{
+  "template": "ANSI-B",
+  "views": [
+    {"type": "front", "scale": "1:2"},
+    {"type": "top", "scale": "1:2"},
+    {"type": "right", "scale": "1:2"},
+    {"type": "isometric", "scale": "1:4"}
+  ],
+  "annotations": {
+    "dimensions": true,
+    "centerlines": true,
+    "titleBlock": {
+      "partNumber": "${PART_NUMBER}",
+      "revision": "${REVISION}",
+      "date": "${DATE}"
+    }
+  }
+}
+```
+
+### Вихід у PDF
+
+```bash
+# Generate PDF instead of IDW
+raps da workitem create \
+  --activity "your-nickname.GenerateDrawingPDF+prod" \
+  --input-name "inputFile" \
+  --input-url "$INPUT_URL" \
+  --output-name "outputPDF" \
+  --output-url "$OUTPUT_URL" \
+  --param "outputFormat=pdf"
+```
+
+### Кілька вихідних форматів
+
+```bash
+# Generate both IDW and PDF
+raps da workitem create \
+  --activity "your-nickname.GenerateDrawing+prod" \
+  --input-name "inputFile" \
+  --input-url "$INPUT_URL" \
+  --output-name "outputIdw" \
+  --output-url "$IDW_URL" \
+  --output-name "outputPdf" \
+  --output-url "$PDF_URL"
+```
+
+---
+
+## Усунення неполадок
+
+### Перевірка звіту Work Item
+
+```bash
+# Get detailed report
+raps da workitem report "$WORK_ID"
+
+# View console output
+raps da workitem report "$WORK_ID" --output json | jq -r '.reportUrl'
+```
+
+### Типові проблеми
+
+| Проблема | Причина | Рішення |
+|----------|---------|---------|
+| Відсутні посилання | Деталі не включено | Завантажте всі пов'язані файли |
+| Шаблон не знайдено | Невірний шлях | Перевірте шлях шаблону в activity |
+| Таймаут | Складна модель | Збільште таймаут activity |
+| Помилка автентифікації | Прострочені URL | Використовуйте довший термін дії підписаних URL |
+
+---
+
+## Пов'язане
+
+- [Конвеєр трансляції CAD](/cookbook/cookbook-mfg-translation)
+- [Довідник Design Automation](/docs/design-automation)
+- [Cookbook: Виробництво](/cookbook/cookbook-manufacturing)

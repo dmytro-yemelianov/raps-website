@@ -1,0 +1,402 @@
+---
+title: "Автоматизація щоденного журналу"
+description: "Експорт щоденних журналів для документації об'єкта"
+category: "construction"
+order: 37
+icon: "📓"
+---
+
+# Автоматизація щоденного журналу
+
+Експортуйте та автоматизуйте щоденні будівельні журнали для ведення документації.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-700/50">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Щоденний запис</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Погода</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Робоча сила</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Обладнання</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Роботи</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Нотатки</div>
+      </div>
+    </div>
+    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-700/50">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Експорт</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Дані JSON</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Звіт CSV</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Зведення PDF</div>
+      </div>
+    </div>
+    <div class="p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Архів</div>
+      <div class="space-y-2">
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Тижневий пакет</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Місячний звіт</div>
+        <div class="px-3 py-2 bg-slate-800 rounded text-sm text-slate-300">Історія проєкту</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="text-xs text-slate-500">Запис → Експорт → Архів</div>
+  </div>
+</div>
+
+---
+
+## Підхід через CLI
+
+### Експорт щоденних журналів
+
+```bash
+PROJECT_ID="b.project-id"
+
+# Get logs for date range
+START_DATE="2024-02-01"
+END_DATE="2024-02-29"
+
+raps acc dailylog list "$PROJECT_ID" \
+  --from "$START_DATE" \
+  --to "$END_DATE" \
+  --output json > daily-logs.json
+```
+
+### Форматування для читання
+
+```bash
+cat daily-logs.json | jq -r '.[] |
+  "=== \(.date) ===",
+  "Weather: \(.weather.condition) (\(.weather.tempHigh)°/\(.weather.tempLow)°)",
+  "Manpower: \(.manpower.total) workers",
+  "",
+  "Activities:",
+  (.activities[] | "  - \(.description)"),
+  "",
+  "Notes:",
+  "  \(.notes)",
+  ""
+'
+```
+
+### Експорт у CSV
+
+```bash
+# Daily summary CSV
+cat daily-logs.json | jq -r '
+  ["Date", "Weather", "Temp High", "Temp Low", "Workers", "Notes"],
+  (.[] | [
+    .date,
+    .weather.condition,
+    .weather.tempHigh,
+    .weather.tempLow,
+    .manpower.total,
+    .notes
+  ]) | @csv
+' > daily-log-summary.csv
+
+# Activities detail CSV
+cat daily-logs.json | jq -r '
+  ["Date", "Activity", "Location", "Crew Size"],
+  (.[] | .date as $date | .activities[] | [
+    $date,
+    .description,
+    .location,
+    .crewSize
+  ]) | @csv
+' > activities-detail.csv
+```
+
+### Тижневе зведення
+
+```bash
+# Group by week and summarize
+cat daily-logs.json | jq '
+  group_by(.date[:10] | strptime("%Y-%m-%d") | strftime("%Y-W%V")) |
+  map({
+    week: .[0].date[:10] | strptime("%Y-%m-%d") | strftime("%Y-W%V"),
+    days: length,
+    totalWorkers: [.[].manpower.total] | add,
+    avgWorkers: ([.[].manpower.total] | add / length | floor),
+    activities: [.[].activities[].description] | unique
+  })'
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/dailylog-export.yml
+name: Daily Log Export
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # Daily at 5 AM
+  workflow_dispatch:
+    inputs:
+      date_range:
+        description: 'Date range (e.g., "2024-02-01:2024-02-29")'
+        required: false
+
+env:
+  PROJECT_ID: ${{ secrets.ACC_PROJECT_ID }}
+
+jobs:
+  export-logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Authenticate
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
+        run: raps auth refresh
+
+      - name: Set date range
+        run: |
+          if [ -n "${{ inputs.date_range }}" ]; then
+            START=$(echo "${{ inputs.date_range }}" | cut -d: -f1)
+            END=$(echo "${{ inputs.date_range }}" | cut -d: -f2)
+          else
+            # Default to last 7 days
+            END=$(date +%Y-%m-%d)
+            START=$(date -d '7 days ago' +%Y-%m-%d)
+          fi
+          echo "START_DATE=$START" >> $GITHUB_ENV
+          echo "END_DATE=$END" >> $GITHUB_ENV
+
+      - name: Export daily logs
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ./logs-export
+
+          raps acc dailylog list "$PROJECT_ID" \
+            --from "$START_DATE" \
+            --to "$END_DATE" \
+            --output json > ./logs-export/daily-logs.json
+
+      - name: Generate reports
+        run: |
+          # Summary report
+          echo "# Daily Log Report" > ./logs-export/report.md
+          echo "Period: $START_DATE to $END_DATE" >> ./logs-export/report.md
+          echo "" >> ./logs-export/report.md
+
+          DAYS=$(jq 'length' ./logs-export/daily-logs.json)
+          TOTAL_WORKERS=$(jq '[.[].manpower.total] | add' ./logs-export/daily-logs.json)
+          AVG_WORKERS=$(jq '[.[].manpower.total] | add / length | floor' ./logs-export/daily-logs.json)
+
+          echo "## Summary" >> ./logs-export/report.md
+          echo "- Days logged: $DAYS" >> ./logs-export/report.md
+          echo "- Total worker-days: $TOTAL_WORKERS" >> ./logs-export/report.md
+          echo "- Average daily workforce: $AVG_WORKERS" >> ./logs-export/report.md
+          echo "" >> ./logs-export/report.md
+
+          # Weather summary
+          echo "## Weather" >> ./logs-export/report.md
+          jq -r '
+            group_by(.weather.condition) |
+            map({condition: .[0].weather.condition, days: length}) |
+            .[] | "- \(.condition): \(.days) days"
+          ' ./logs-export/daily-logs.json >> ./logs-export/report.md
+
+          # CSV export
+          jq -r '["Date","Weather","Workers","Notes"], (.[] | [.date, .weather.condition, .manpower.total, .notes]) | @csv' ./logs-export/daily-logs.json > ./logs-export/summary.csv
+
+      - name: Upload exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dailylog-export
+          path: ./logs-export/
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Щодня о 5:00</div>
+      <div class="px-3 py-2 bg-slate-900 rounded text-sm text-white">Розклад</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Експорт</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Визначення діапазону дат</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-slate-300">Отримання щоденних журналів</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-600">→</div>
+    <div class="flex-1 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Звіти</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">report.md</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">summary.csv</div>
+        <div class="px-2 py-1 bg-slate-900 rounded text-xs text-emerald-400 font-mono">daily-logs.json</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Отримання нещодавніх журналів
+
+```
+User: "Show me this week's daily logs"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex justify-around mb-4 text-xs font-semibold text-slate-400">
+      <span class="px-3 py-1 bg-slate-800 rounded">Користувач</span>
+      <span class="px-3 py-1 bg-blue-900/50 rounded text-blue-400">AI-асистент</span>
+      <span class="px-3 py-1 bg-amber-900/50 rounded text-amber-400">RAPS MCP</span>
+      <span class="px-3 py-1 bg-emerald-900/50 rounded text-emerald-400">ACC Cloud</span>
+    </div>
+    <div class="space-y-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-slate-400">Корист.</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Щоденні журнали за цей тиждень</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-blue-400">AI</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Розрахунок діапазону дат (Пн-сьогодні)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="px-2 py-1 bg-blue-900/30 rounded text-blue-300 font-mono">aps_acc_dailylog_list(project_id, from, to)</span>
+        <span class="flex-1 h-px bg-blue-700/50"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-amber-400">MCP</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="px-2 py-1 bg-amber-900/30 rounded text-amber-300">Отримання щоденних журналів</span>
+        <span class="flex-1 h-px bg-amber-700/50"></span>
+        <span class="w-16 text-emerald-400">ACC</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-emerald-400">ACC</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="px-2 py-1 bg-emerald-900/30 rounded text-emerald-300">Дані журналів</span>
+        <span class="flex-1 h-px bg-emerald-700/50 border-dashed"></span>
+        <span class="w-16 text-amber-400">MCP</span>
+      </div>
+      <div class="flex items-center gap-2 pl-16">
+        <span class="px-2 py-1 bg-blue-900/20 rounded text-blue-300 text-xs">AI: Форматування зведення</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-16 text-blue-400">AI</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="px-2 py-1 bg-slate-800 rounded text-slate-300">Тижневе зведення журналу</span>
+        <span class="flex-1 h-px bg-slate-700"></span>
+        <span class="w-16 text-slate-400">Корист.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> **Щоденні журнали: 12-16 лютого 2024**
+>
+> | Дата | Погода | Робітники | Основні роботи |
+> |------|--------|-----------|----------------|
+> | Пн 12 | Сонячно, 18° | 45 | Заливка фундаменту - Зона B |
+> | Вт 13 | Хмарно, 14° | 52 | Монтаж металоконструкцій - Рівень 2 |
+> | Ср 14 | Дощ, 9° | 28 | Лише внутрішні роботи |
+> | Чт 15 | Сонячно, 17° | 55 | Чорнові MEP-роботи - Рівень 1 |
+> | Пт 16 | Сонячно, 20° | 58 | Зовнішній каркас - Північ |
+>
+> **Зведення за тиждень:**
+> - Всього людино-днів: 238
+> - Середня: 48 робітників/день
+> - Затримки через погоду: 1 день
+
+### Пошук у журналах
+
+```
+User: "Find days when we had concrete pours last month"
+```
+
+**Відповідь AI:**
+> **Бетонні заливки у січні 2024:**
+>
+> | Дата | Робота | Розташування | Робітники |
+> |------|--------|-------------|-----------|
+> | 8 січ | Заливка фундаменту | Зона A | 24 |
+> | 15 січ | Заливка плити | Рівень 1 | 32 |
+> | 22 січ | Заливка колон | Осі 3-5 | 18 |
+> | 29 січ | Заливка плити | Рівень 2 | 35 |
+>
+> **Зведення:**
+> - 4 дні бетонних заливок
+> - 109 робітників загалом у дні заливок
+> - Усі завершені успішно
+
+---
+
+## Шаблони звітів
+
+### Місячне зведення
+
+```bash
+# Generate monthly summary
+MONTH="2024-02"
+START="${MONTH}-01"
+END="${MONTH}-28"
+
+raps acc dailylog list "$PROJECT_ID" --from "$START" --to "$END" --output json | jq '
+  {
+    period: "'"$MONTH"'",
+    daysLogged: length,
+    totalMandays: [.[].manpower.total] | add,
+    averageDaily: ([.[].manpower.total] | add / length | floor),
+    weatherBreakdown: (group_by(.weather.condition) | map({condition: .[0].weather.condition, days: length})),
+    activitiesCount: [.[].activities | length] | add
+  }'
+```
+
+### Звіт про вплив погоди
+
+```bash
+cat daily-logs.json | jq '
+  group_by(.weather.condition) |
+  map({
+    weather: .[0].weather.condition,
+    days: length,
+    avgWorkers: ([.[].manpower.total] | add / length | floor),
+    activities: [.[].activities | length] | add
+  }) |
+  sort_by(-.days)'
+```
+
+### Тренд робочої сили
+
+```bash
+cat daily-logs.json | jq '
+  [.[] | {date: .date, workers: .manpower.total}] |
+  sort_by(.date)'
+```
+
+---
+
+## Пов'язане
+
+- [Міжпроєктна звітність](/cookbook/cookbook-acc-reporting)
+- [Процеси контролю якості](/cookbook/cookbook-acc-quality)
+- [Кулінарна книга: Будівництво](/cookbook/cookbook-construction)

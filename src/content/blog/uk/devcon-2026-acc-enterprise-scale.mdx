@@ -1,0 +1,204 @@
+---
+title: "DevCon 2026: ACC на корпоративному масштабі"
+description: "Патерни автоматизації, що перетворюють години ручного адміністрування ACC на секунди скриптових операцій. Масове управління користувачами, задачами, сабміталами та інше."
+pubDate: 2026-01-20
+author: "Dmytro Yemelianov"
+tags: ["devcon", "acc", "enterprise", "automation", "bulk-operations"]
+featured: true
+draft: false
+---
+
+> **DevCon 2026 Сесія 1259** | 30-хвилинний глибокий аналіз | Корпоративний трек
+
+![ACC Enterprise Scale Hero](/blog/devcon/1259-acc-enterprise-scale-hero.png)
+
+## Математика, що не сходиться
+
+Є момент у кожному корпоративному впровадженні ACC, коли хтось усвідомлює, що математика не сходиться.
+
+У вас 200 активних проєктів. В кожному потрібно відстежувати задачі, керувати сабміталами, заповнювати чеклісти, відповідати на RFI. В команді проєктного управління 8 людей. Навіть якщо кожен витрачає лише 15 хвилин на проєкт на тиждень на адміністративні задачі, це **500 годин клікання щотижня**.
+
+Ця сесія про те, як зламати цю математику.
+
+## Корпоративна реальність ACC
+
+**Умови:** Великий генеральний підрядник з 200+ активних будівельних проєктів. ACC -- їхня платформа вибору. Документи проходять через ACC. Задачі відстежуються в ACC. Сабмітали, RFI, чеклісти -- все ACC.
+
+**Проблема:** Масштаб ламає все.
+- BIM-команда завантажує 500 моделей на місяць. Кожна потребує трансляції.
+- Команда якості створює 2 000 чеклістів на місяць з шаблонів.
+- Проєктний контроль відстежує 10 000+ відкритих задач по всіх проєктах.
+- Керівництво хоче щотижневі звіти з агрегацією даних по всьому портфелю.
+
+**Поточний стан:** Невелика армія координаторів клікає через інтерфейс ACC, копіює дані в електронні таблиці, вручну створює задачі по одній. Це неможливо підтримувати.
+
+**Питання:** Що, якби ми могли автоматизувати 80% цього?
+
+## Патерн 1: Управління задачами в масштабі
+
+```bash
+# List all issues in a project
+raps issue list abc123-project-id --status open
+
+# Create an issue programmatically
+raps issue create abc123-project-id \
+  --title "Structural clash at Level 3 - Grid C7" \
+  --description "HVAC duct conflicts with beam B-12."
+
+# Bulk create from CSV (clash detection export)
+while IFS=, read -r title description; do
+  raps issue create "$PROJECT_ID" --title "$title" --description "$description"
+done < clash-report.csv
+```
+
+**Зекономлено часу:** 47 задач × 2 хвилини кожна = 94 хвилини → 10 секунд.
+
+## Патерн 2: Процес роботи з сабміталами
+
+```bash
+# Create a new submittal
+raps acc submittal create abc123-project-id \
+  --title "Curtain Wall Shop Drawings - Revision 2" \
+  --spec-section "08 44 00" \
+  --due-date "2026-05-15"
+
+# Project kickoff: create 120 standard submittals
+while IFS=, read -r title spec_section days; do
+  due_date=$(date -d "+${days} days" +%Y-%m-%d)
+  raps acc submittal create "$PROJECT_ID" \
+    --title "$title" --spec-section "$spec_section" --due-date "$due_date"
+done < master-submittal-list.csv
+```
+
+**Зекономлено часу:** Один тиждень → 30 хвилин.
+
+## Патерн 3: Чеклісти в масштабі
+
+```bash
+# Create checklist from template
+raps acc checklist create abc123-project-id \
+  --title "Level 5 MEP Rough-In Inspection" \
+  --template-id template-789 \
+  --location "Building A, Level 5"
+
+# 50-story tower: create 200 inspection checklists
+for floor in {1..50}; do
+  for zone in "North" "South" "East" "West"; do
+    raps acc checklist create "$PROJECT_ID" \
+      --title "MEP Rough-In - Level $floor $zone" \
+      --template-id "$TEMPLATE_ID"
+  done
+done
+```
+
+**Зекономлено часу:** 2 дні → 5 хвилин.
+
+## Патерн 4: Звітність по RFI
+
+```bash
+# Monday morning portfolio review: overdue RFIs
+echo "Overdue RFIs by Project" > rfi-report.csv
+for project_id in $(cat project-ids.txt); do
+  overdue=$(raps rfi list "$project_id" --output json | \
+    jq '[.[] | select(.status != "answered" and .due_date < now)] | length')
+  echo "$project_id,$overdue" >> rfi-report.csv
+done
+```
+
+Звіт, який раніше займав усе ранок? Запускається автоматично о 6 ранку.
+
+## Патерн 5: Масове управління користувачами (НОВЕ у v4.0)
+
+![Bulk Operations](/blog/devcon/1259-acc-enterprise-scale-bulk-ops.png)
+
+Це з'явилося з реального болю. Клієнт витратив два повних дні, додаючи нового працівника до 180 проєктів. Клік, пошук, призначення, повторити. Їхній IT-шник був готовий звільнитися.
+
+### Проблема
+
+> "Ми щойно найняли нового BIM-менеджера, якому потрібен доступ project admin до всіх 127 активних проєктів."
+
+Через веб-інтерфейс ACC:
+1. Перейти до кожного проєкту
+2. Відкрити панель учасників
+3. Знайти користувача
+4. Призначити роль
+5. **Повторити 127 разів**
+
+Це **6-10 годин** клікання.
+
+### Рішення
+
+```bash
+# Add user to ALL projects as project admin
+raps admin user add "$ACCOUNT_ID" "new.bim.manager@company.com" \
+  --role project_admin
+
+# Preview first (learned this the hard way)
+raps admin user add "$ACCOUNT_ID" "new.bim.manager@company.com" \
+  --role project_admin \
+  --dry-run
+
+# Filter to specific projects
+raps admin user add "$ACCOUNT_ID" "new.bim.manager@company.com" \
+  --role project_admin \
+  --filter "^2026-"
+```
+
+**Результат:** 127 проєктів оновлено менш ніж за 2 хвилини.
+
+### Офбординг користувачів
+
+```bash
+# Remove departing employee from ALL projects
+raps admin user remove "$ACCOUNT_ID" "former.employee@company.com"
+```
+
+Більше ніяких відкриттів через місяці, що звільнений працівник все ще має доступ.
+
+## Розмова про ROI
+
+![Time Savings](/blog/devcon/1259-acc-enterprise-scale-time-savings.png)
+
+Поговоримо про цифри, які важливі для осіб, що приймають рішення.
+
+**До автоматизації:**
+- 8 координаторів витрачають 20 годин/тиждень на адміністрування ACC
+- 160 годин/тиждень × 50 тижнів = 8 000 годин/рік
+- При повній вартості $75/годину = **$600 000/рік**
+
+**Після автоматизації:**
+- Та ж робота виконується за 10% часу
+- 800 годин/рік замість 8 000
+- **Економія: $540 000/рік**
+- Плюс: дані завжди актуальні, звіти завжди свіжі
+
+Інструменти безкоштовні (з відкритим кодом). Впровадження вимірюється днями, а не місяцями.
+
+## Ключові висновки
+
+![ACC Module Coverage](/blog/devcon/1259-acc-enterprise-scale-acc-modules.png)
+
+1. **Ручна робота не масштабується** -- на корпоративних об'ємах клікання -- це не стратегія
+2. **Комплексне покриття ACC API**: задачі, сабмітали, чеклісти, RFI, активи та адміністрування облікового запису
+3. **Масове управління користувачами** перетворює 6-10 годин клікання на 2 хвилини
+4. **Кілька форматів виводу** (JSON, CSV, YAML) забезпечують інтеграцію з будь-якою системою
+5. **Паралельні операції** суттєво скорочують час обробки
+6. **Відновлювані операції** означають, що проблеми з мережею не перезапускають вашу операцію на 200 проєктів
+7. **Патерни можна перевикористовувати** -- що працює на одному проєкті, працює на 200
+
+## Що далі?
+
+Почніть зі швидких перемог:
+- **Швидка перемога:** Експортуйте всі відкриті задачі у CSV для наступного огляду проєкту
+- **Середній зусилля:** Автоматизуйте щотижневу звітність по всьому портфелю
+- **Великий вплив:** Використовуйте масове управління користувачами для онбордингу/офбордингу
+- **Стратегічна інвестиція:** Створіть пайплайни для стандартизованого налаштування проєктів
+
+Почніть з малого. Доведіть цінність. Масштабуйте.
+
+## Ресурси
+
+- [GitHub-репозиторій](https://github.com/dmytro-yemelianov/raps)
+- [Посібник з адміністрування облікового запису](/docs/account-admin)
+- [Кулінарна книга ACC](/docs/cookbook-construction)
+- [Команди для задач](/docs/cookbook-acc-issues)

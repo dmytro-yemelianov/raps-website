@@ -1,0 +1,390 @@
+---
+title: "Експорт приміщень і просторів"
+description: "Експорт розкладів приміщень та просторових даних з BIM-моделей"
+category: "aec"
+order: 14
+icon: "🏠"
+---
+
+# Експорт приміщень і просторів
+
+Витяг розкладів приміщень та просторових даних з моделей Revit.
+
+## Огляд робочого процесу
+
+<div class="not-prose my-8">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-lg border-2 border-blue-500/50 bg-blue-950/30 p-4">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">Вхідні дані</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300 text-center">
+        Модель Revit<br/><span class="text-blue-400 text-xs">з приміщеннями</span>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-purple-500/50 bg-purple-950/30 p-4">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-3">Обробка</div>
+      <div class="space-y-2">
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Трансляція у SVF2</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Витяг властивостей</div>
+        <div class="flex justify-center text-purple-500">&#8595;</div>
+        <div class="bg-purple-900/30 rounded px-3 py-2 text-sm text-slate-300">Фільтрація за категорією<br/><span class="text-purple-400 text-xs">Revit Rooms</span></div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Дані приміщень</div>
+      <div class="space-y-2">
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Назва</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Номер</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Площа</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Поверх</div>
+        <div class="bg-amber-900/30 rounded px-3 py-2 text-sm text-slate-300">Відділ</div>
+      </div>
+    </div>
+    <div class="rounded-lg border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-3">Формати експорту</div>
+      <div class="space-y-2">
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Розклад CSV</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Експорт JSON</div>
+        <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm text-slate-300">Імпорт у базу даних</div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-center mt-4">
+    <div class="flex items-center gap-2 text-slate-500 text-sm">
+      <span>Вхід</span>
+      <span>&#8594;</span>
+      <span>Обробка</span>
+      <span>&#8594;</span>
+      <span>Дані</span>
+      <span>&#8594;</span>
+      <span>Експорт</span>
+    </div>
+  </div>
+</div>
+
+---
+
+## Підхід CLI
+
+### Крок 1: Трансляція моделі
+
+```bash
+URN=$(raps object urn my-bucket building.rvt --output plain)
+raps translate start "$URN" --format svf2 --wait
+```
+
+### Крок 2: Витяг усіх властивостей
+
+```bash
+raps derivative properties "$URN" --output json > all-properties.json
+```
+
+### Крок 3: Фільтрація приміщень
+
+```bash
+cat all-properties.json | jq '[.[] | select(.category == "Revit Rooms")]' > rooms.json
+```
+
+### Крок 4: Експорт у CSV
+
+```bash
+cat rooms.json | jq -r '
+  ["Name", "Number", "Area", "Level", "Department"],
+  (.[] | [
+    .properties["Name"] // "",
+    .properties["Number"] // "",
+    .properties["Area"] // "",
+    .properties["Level"] // "",
+    .properties["Department"] // ""
+  ]) | @csv
+' > rooms.csv
+```
+
+### Крок 5: Генерація зведення
+
+```bash
+echo "Room Summary"
+echo "============"
+echo "Total rooms: $(jq 'length' rooms.json)"
+echo "Total area: $(jq '[.[].properties.Area | select(. != null) | tonumber] | add' rooms.json) sq ft"
+echo ""
+echo "By Level:"
+jq -r 'group_by(.properties.Level) | .[] | "  \(.[0].properties.Level): \(length) rooms"' rooms.json
+echo ""
+echo "By Department:"
+jq -r 'group_by(.properties.Department) | .[] | "  \(.[0].properties.Department // "Unassigned"): \(length) rooms"' rooms.json
+```
+
+---
+
+## CI/CD-конвеєр
+
+```yaml
+# .github/workflows/room-export.yml
+name: Room Schedule Export
+
+on:
+  workflow_dispatch:
+    inputs:
+      bucket:
+        description: 'Bucket name'
+        required: true
+      model:
+        description: 'Model filename'
+        required: true
+
+jobs:
+  export-rooms:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install RAPS
+        run: cargo install raps
+
+      - name: Extract room data
+        env:
+          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+        run: |
+          URN=$(raps object urn "${{ inputs.bucket }}" "${{ inputs.model }}" --output plain)
+
+          # Отримання всіх властивостей
+          raps derivative properties "$URN" --output json > properties.json
+
+          # Фільтрація приміщень
+          jq '[.[] | select(.category == "Revit Rooms")]' properties.json > rooms.json
+
+          # Створення CSV
+          jq -r '
+            ["Name","Number","Area","Level","Department"],
+            (.[] | [
+              .properties["Name"],
+              .properties["Number"],
+              .properties["Area"],
+              .properties["Level"],
+              .properties["Department"]
+            ]) | @csv
+          ' rooms.json > rooms.csv
+
+      - name: Generate summary report
+        run: |
+          echo "# Room Schedule Export" > summary.md
+          echo "Model: ${{ inputs.model }}" >> summary.md
+          echo "Date: $(date)" >> summary.md
+          echo "" >> summary.md
+          echo "## Statistics" >> summary.md
+          echo "- Total Rooms: $(jq 'length' rooms.json)" >> summary.md
+          echo "" >> summary.md
+          echo "## By Level" >> summary.md
+          jq -r 'group_by(.properties.Level) | .[] | "- \(.[0].properties.Level): \(length) rooms"' rooms.json >> summary.md
+          echo "" >> summary.md
+          echo "## By Department" >> summary.md
+          jq -r 'group_by(.properties.Department) | .[] | "- \(.[0].properties.Department // "Unassigned"): \(length) rooms"' rooms.json >> summary.md
+
+      - name: Upload exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: room-schedule
+          path: |
+            rooms.json
+            rooms.csv
+            summary.md
+```
+
+### Потік конвеєра
+
+<div class="not-prose my-6">
+  <div class="flex flex-col sm:flex-row items-stretch gap-3">
+    <div class="flex-1 rounded-lg border border-blue-500/50 bg-blue-950/30 p-3">
+      <div class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">Ручний запуск</div>
+      <div class="bg-blue-900/30 rounded px-3 py-2 text-sm text-slate-300">вхідні параметри bucket + model</div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-purple-500/50 bg-purple-950/30 p-3">
+      <div class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2">Витяг</div>
+      <div class="space-y-1">
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Отримання URN</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Отримання властивостей</div>
+        <div class="bg-purple-900/30 rounded px-3 py-1.5 text-sm text-slate-300">Фільтрація приміщень</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-amber-500/50 bg-amber-950/30 p-3">
+      <div class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">Експорт</div>
+      <div class="space-y-1">
+        <div class="bg-amber-900/30 rounded px-3 py-1.5 text-sm font-mono text-amber-300">rooms.json</div>
+        <div class="bg-amber-900/30 rounded px-3 py-1.5 text-sm font-mono text-amber-300">rooms.csv</div>
+        <div class="bg-amber-900/30 rounded px-3 py-1.5 text-sm font-mono text-amber-300">summary.md</div>
+      </div>
+    </div>
+    <div class="hidden sm:flex items-center text-slate-500">&#8594;</div>
+    <div class="flex-1 rounded-lg border border-emerald-500/50 bg-emerald-950/30 p-3">
+      <div class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Результат</div>
+      <div class="bg-emerald-900/30 rounded px-3 py-2 text-sm font-mono text-emerald-300">room-schedule.zip</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Інтеграція з MCP
+
+### Експорт розкладу приміщень
+
+```
+User: "Get me a room schedule from the office building model with areas by department"
+```
+
+<div class="not-prose my-6">
+  <div class="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div class="flex gap-4 mb-4 text-xs font-semibold">
+      <div class="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">Користувач</div>
+      <div class="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI-асистент</div>
+      <div class="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div class="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">Хмара APS</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-right text-blue-400">Експорт розкладу приміщень за відділами</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_object_urn()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-purple-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-amber-400">URN</div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-purple-400">aps_derivative_properties()</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-right text-amber-400">Отримати всі властивості</div>
+        <div class="text-slate-500">&#8594;</div>
+        <div class="flex-1 text-emerald-400"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1 text-amber-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-emerald-400">Properties JSON</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1"></div>
+        <div class="flex-1 text-center text-purple-400 italic">Фільтрація приміщень, групування за відділами</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 text-blue-400"></div>
+        <div class="text-slate-500">&#8592;</div>
+        <div class="flex-1 text-left text-purple-400">Таблиця розкладу приміщень</div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Відповідь AI:**
+> Розклад приміщень офісної будівлі:
+>
+> | Відділ | Приміщень | Загальна площа (м²) |
+> |--------|-----------|---------------------|
+> | Керівництво | 8 | 390 |
+> | Інженерія | 24 | 1 190 |
+> | Продажі | 16 | 780 |
+> | HR | 6 | 195 |
+> | Загальні | 12 | 604 |
+>
+> **Разом:** 66 приміщень, 3 159 м²
+
+### Пошук конкретних приміщень
+
+```
+User: "Find all conference rooms larger than 500 sq ft"
+```
+
+**Відповідь AI:**
+> Знайдено 8 конференц-залів площею понад 46 м²:
+>
+> | Назва | Номер | Площа | Поверх |
+> |-------|-------|-------|--------|
+> | Board Room | 301 | 111 м² | 3 |
+> | Conference A | 201 | 74 м² | 2 |
+> | Conference B | 202 | 70 м² | 2 |
+> | Training Room | 105 | 60 м² | 1 |
+> | ... | ... | ... | ... |
+
+---
+
+## Розширені запити
+
+### Приміщення за поверхами з площами
+
+```bash
+cat rooms.json | jq '
+  group_by(.properties.Level) |
+  map({
+    level: .[0].properties.Level,
+    count: length,
+    totalArea: ([.[].properties.Area | select(. != null) | tonumber] | add),
+    rooms: [.[] | {name: .properties.Name, number: .properties.Number, area: .properties.Area}]
+  })'
+```
+
+### Пошук неприсвоєних приміщень
+
+```bash
+cat rooms.json | jq '[.[] | select(.properties.Department == null or .properties.Department == "")]'
+```
+
+### Статистика площ
+
+```bash
+cat rooms.json | jq '
+  {
+    total: ([.[].properties.Area | select(. != null) | tonumber] | add),
+    average: ([.[].properties.Area | select(. != null) | tonumber] | add / length),
+    min: ([.[].properties.Area | select(. != null) | tonumber] | min),
+    max: ([.[].properties.Area | select(. != null) | tonumber] | max)
+  }'
+```
+
+### Експорт для системи управління просторами
+
+```bash
+cat rooms.json | jq '[.[] | {
+  id: .objectid,
+  name: .properties.Name,
+  number: .properties.Number,
+  level: .properties.Level,
+  department: .properties.Department,
+  area_sqft: (.properties.Area | tonumber),
+  area_sqm: ((.properties.Area | tonumber) * 0.0929)
+}]' > space-management-import.json
+```
+
+---
+
+## Пов'язане
+
+- [Витяг метаданих](/cookbook/cookbook-aec-metadata)
+- [Конвеєр координації моделей](/cookbook/cookbook-aec-coordination)
+- [Cookbook: AEC та BIM](/cookbook/cookbook-aec)
