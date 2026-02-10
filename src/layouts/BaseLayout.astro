@@ -2,9 +2,13 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import GlobalSearch from '../components/GlobalSearch.astro';
+import FallbackBanner from '../components/FallbackBanner.astro';
 import Analytics from '@vercel/analytics/astro';
+import { getLangFromUrl } from '../i18n/utils';
 import '../styles/globals.css';
 import '../styles/accessibility.css';
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 
 interface Props {
   title: string;
@@ -13,23 +17,37 @@ interface Props {
   article?: boolean;
 }
 
-const { 
-  title, 
+const {
+  title,
   description = '🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI. A comprehensive command-line interface for APS, written in Rust.',
   image = '/og-image.svg',
   article = false,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+
+// Hreflang alternate URLs
+const pathname = Astro.url.pathname;
+const enPath = pathname.startsWith('/uk/') ? pathname.replace(/^\/uk/, '') || '/' : pathname;
+const ukPath = pathname.startsWith('/uk/') ? pathname : `/uk${pathname === '/' ? '' : pathname}`;
+const enURL = new URL(enPath, Astro.site).href;
+const ukURL = new URL(ukPath, Astro.site).href;
+
+// OG locale
+const ogLocale = lang === 'uk' ? 'uk_UA' : 'en_US';
+const ogLocaleAlternate = lang === 'uk' ? 'en_US' : 'uk_UA';
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalURL} />
+    <link rel="alternate" hreflang="en" href={enURL} />
+    <link rel="alternate" hreflang="uk" href={ukURL} />
+    <link rel="alternate" hreflang="x-default" href={enURL} />
     <link rel="manifest" href="/manifest.json" />
     <link rel="author" href="/humans.txt" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
@@ -47,7 +65,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(image, Astro.site)} />
     <meta property="og:site_name" content="RAPS CLI" />
-    
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlternate} />
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalURL} />
@@ -247,6 +267,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     
     <Header />
     <GlobalSearch />
+    {lang === 'uk' && <FallbackBanner />}
     <main id="main-content" tabindex="-1">
       <slot />
     </main>

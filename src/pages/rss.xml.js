@@ -3,7 +3,9 @@ import { getCollection } from 'astro:content';
 import { releases } from '../data/releases.js';
 
 export async function GET(context) {
-  const posts = await getCollection('blog');
+  const posts = (await getCollection('blog')).filter(d => d.id.startsWith('en/'));
+
+  const stripLocalePrefix = (id) => id.replace(/^(en|uk)\//, '');
 
   // Combine blog posts and releases into a single feed
   const blogItems = posts
@@ -13,7 +15,7 @@ export async function GET(context) {
       pubDate: post.data.pubDate,
       description: post.data.description,
       author: post.data.author || 'Dmytro Yemelianov',
-      link: `/blog/${post.id.replace(/\.mdx?$/, '')}/`,
+      link: `/blog/${stripLocalePrefix(post.id.replace(/\.mdx?$/, ''))}/`,
       categories: post.data.tags || [],
     }));
 

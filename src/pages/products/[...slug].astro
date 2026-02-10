@@ -1,12 +1,12 @@
 ---
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import { getCollection, render } from 'astro:content';
+import { stripLocalePrefix } from '../../i18n/utils';
 
 export async function getStaticPaths() {
-  const products = await getCollection('products');
+  const products = (await getCollection('products')).filter(d => d.id.startsWith('en/'));
   return products.map(product => {
-    // Extract slug from id (remove .mdx extension if present)
-    const slug = (product.id || product.slug || '').replace(/\.mdx?$/, '');
+    const slug = stripLocalePrefix((product.id || product.slug || '').replace(/\.mdx?$/, ''));
     return {
       params: { slug },
       props: { product },
@@ -16,8 +16,7 @@ export async function getStaticPaths() {
 
 const { product } = Astro.props;
 const { Content } = await render(product);
-// Extract slug from id (remove .mdx extension if present)
-const slug = (product.id || product.slug || '').replace(/\.mdx?$/, '');
+const slug = stripLocalePrefix((product.id || product.slug || '').replace(/\.mdx?$/, ''));
 ---
 
 <ProductLayout

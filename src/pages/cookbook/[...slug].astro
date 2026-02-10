@@ -1,16 +1,17 @@
 ---
 import CookbookLayout from '../../layouts/CookbookLayout.astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { stripLocalePrefix } from '../../i18n/utils';
 
 const getDocSlug = (doc: any) => {
   const raw = doc.slug || doc.id || '';
-  return raw.replace(/\.mdx?$/, '');
+  return stripLocalePrefix(raw.replace(/\.mdx?$/, ''));
 };
 
 export async function getStaticPaths() {
-  const cookbook = await getCollection('cookbook');
+  const cookbook = (await getCollection('cookbook')).filter(d => d.id.startsWith('en/'));
   return cookbook.map(doc => {
-    const slug = (doc.slug || doc.id || '').replace(/\.mdx?$/, '');
+    const slug = stripLocalePrefix((doc.slug || doc.id || '').replace(/\.mdx?$/, ''));
     return {
       params: { slug },
       props: { doc, slug },
@@ -26,8 +27,8 @@ interface Props {
 const { doc, slug } = Astro.props;
 const { Content } = await render(doc);
 
-// Get all cookbook for prev/next navigation
-const allCookbook = await getCollection('cookbook');
+// Get all English cookbook for prev/next navigation
+const allCookbook = (await getCollection('cookbook')).filter(d => d.id.startsWith('en/'));
 
 // Find prev/next in same category
 const categoryDocs = allCookbook

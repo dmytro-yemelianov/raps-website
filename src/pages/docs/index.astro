@@ -1,8 +1,12 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { getCollection } from 'astro:content';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../../i18n/utils';
 
-const allDocs = await getCollection('docs');
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
+
+const allDocs = (await getCollection('docs')).filter(d => d.id.startsWith('en/'));
 
 // Organize docs by section
 const sections = {
@@ -55,7 +59,7 @@ const sections = {
                     <span class="w-1.5 h-1.5 rounded-full bg-rapeseed-400 transition-colors"></span>
                   </div>
                   <a 
-                    href={`/docs/${(doc.id || doc.slug || '').replace(/\.mdx?$/, '')}`}
+                    href={getLocalizedUrl(lang, `/docs/${stripLocalePrefix((doc.id || doc.slug || '').replace(/\.mdx?$/, ''))}`)}
                     class="text-slate-300 hover:text-white transition-colors hover:underline underline-offset-2"
                   >
                     {doc.data.title}
@@ -74,7 +78,7 @@ const sections = {
             <h2 class="text-xl font-bold text-white mb-1">Cookbook</h2>
             <p class="text-sm text-slate-500">Real-world recipes and industry workflows</p>
           </div>
-          <a href="/cookbook" class="text-sm font-medium text-rapeseed-400 hover:text-rapeseed-300 transition-colors whitespace-nowrap">
+          <a href={getLocalizedUrl(lang, '/cookbook')} class="text-sm font-medium text-rapeseed-400 hover:text-rapeseed-300 transition-colors whitespace-nowrap">
             Browse Cookbook &rarr;
           </a>
         </div>
@@ -88,7 +92,7 @@ const sections = {
         <p class="text-slate-400 text-sm">Check the troubleshooting guide or join our community.</p>
       </div>
       <div class="flex gap-4">
-        <a href="/docs/troubleshooting" class="text-sm font-medium text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
+        <a href={getLocalizedUrl(lang, '/docs/troubleshooting')} class="text-sm font-medium text-rapeseed-400 hover:text-rapeseed-300 transition-colors">
           Troubleshooting →
         </a>
         <a href="https://github.com/dmytro-yemelianov/raps/issues" target="_blank" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">

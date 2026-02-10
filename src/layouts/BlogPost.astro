@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
 import GlossaryText from '../components/GlossaryText.astro';
 
 interface Props {
@@ -21,6 +22,9 @@ interface Props {
 
 const { frontmatter } = Astro.props;
 
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
+
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -30,7 +34,7 @@ const formatDate = (date: Date) => {
 };
 
 // Get related posts with improved algorithm
-const allPosts = await getCollection('blog');
+const allPosts = (await getCollection('blog')).filter(d => d.id.startsWith('en/'));
 
 // Calculate relevance score for related posts
 const relatedPosts = allPosts
@@ -126,8 +130,8 @@ const relatedPosts = allPosts
             loading="lazy"
           />
           <div>
-            <div class="font-medium text-white">{frontmatter.author || 'Dmytro Yemelianov'}</div>
-            <div class="text-sm text-slate-400">Autodesk Expert Elite • APS Developer</div>
+            <div class="font-medium text-white">{frontmatter.author || t('blog.author_default')}</div>
+            <div class="text-sm text-slate-400">{t('blog.author_title')}</div>
           </div>
         </div>
       </header>
@@ -190,13 +194,13 @@ const relatedPosts = allPosts
               <svg class="w-5 h-5 text-rapeseed-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
               </svg>
-              <h3 class="text-xl font-semibold text-white">Related Articles</h3>
+              <h3 class="text-xl font-semibold text-white">{t('blog.related')}</h3>
             </div>
             <div class="grid gap-6">
               {relatedPosts.map((post) => (
                 <article class="group">
                   <a
-                    href={`/blog/${post.id.replace(/\.mdx?$/, '')}`}
+                    href={getLocalizedUrl(lang, `/blog/${stripLocalePrefix(post.id.replace(/\.mdx?$/, ''))}`)}
                     class="block p-6 bg-gradient-to-r from-slate-900/50 to-slate-800/50 border border-slate-800 rounded-xl hover:border-rapeseed-400/30 transition-all hover:shadow-lg hover:shadow-rapeseed-500/5"
                   >
                     <div class="flex items-start justify-between mb-3">
@@ -205,12 +209,12 @@ const relatedPosts = allPosts
                           {formatDate(new Date(post.data.pubDate))}
                         </time>
                         <span>•</span>
-                        <span>5 min read</span>
+                        <span>5 {t('blog.min_read')}</span>
                         {post.data.featured && (
                           <>
                             <span>•</span>
                             <span class="px-2 py-0.5 bg-rapeseed-500/20 text-rapeseed-400 text-xs font-medium rounded-full">
-                              Featured
+                              {t('blog.featured')}
                             </span>
                           </>
                         )}
@@ -240,7 +244,7 @@ const relatedPosts = allPosts
                       </div>
                       
                       <div class="flex items-center gap-1 text-sm text-rapeseed-400 group-hover:text-rapeseed-300">
-                        <span>Read article</span>
+                        <span>{t('blog.read_article')}</span>
                         <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
@@ -253,16 +257,16 @@ const relatedPosts = allPosts
             
             <!-- More Articles CTA -->
             <div class="mt-8 p-6 bg-gradient-to-r from-rapeseed-950/50 to-amber-950/50 border border-rapeseed-900/50 rounded-xl text-center">
-              <h4 class="text-lg font-semibold text-white mb-2">Looking for more insights?</h4>
+              <h4 class="text-lg font-semibold text-white mb-2">{t('blog.looking_more')}</h4>
               <p class="text-slate-400 mb-4">Explore our complete collection of APS development tutorials and DevOps guides.</p>
               <a
-                href="/blog"
+                href={getLocalizedUrl(lang, '/blog')}
                 class="inline-flex items-center gap-2 px-6 py-3 bg-rapeseed-500/20 hover:bg-rapeseed-500/30 text-rapeseed-400 hover:text-rapeseed-300 rounded-lg transition-colors border border-rapeseed-500/30"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0l-4-4m4 4l-4 4"/>
                 </svg>
-                Browse All Articles
+                {t('blog.browse_all')}
               </a>
             </div>
           </div>
@@ -271,13 +275,13 @@ const relatedPosts = allPosts
         <!-- Back to blog -->
         <div class="mt-12 text-center">
           <a
-            href="/blog"
+            href={getLocalizedUrl(lang, '/blog')}
             class="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            Back to all articles
+            {t('blog.back')}
           </a>
         </div>
       </footer>

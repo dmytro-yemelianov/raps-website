@@ -3,8 +3,10 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import GlossaryText from '../components/GlossaryText.astro';
 import GlobalSearch from '../components/GlobalSearch.astro';
+import FallbackBanner from '../components/FallbackBanner.astro';
 import Analytics from '@vercel/analytics/astro';
 import { getCollection } from 'astro:content';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
 import '../styles/globals.css';
 import '../styles/accessibility.css';
 
@@ -21,14 +23,29 @@ const {
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
 
 // Get all docs
-const allDocs = await getCollection('docs');
+const allDocs = (await getCollection('docs')).filter(d => d.id.startsWith('en/'));
+
+// Get Ukrainian docs for title overrides when browsing in Ukrainian
+const ukDocs = lang === 'uk' ? (await getCollection('docs')).filter(d => d.id.startsWith('uk/')) : [];
+const ukTitleMap = new Map(ukDocs.map(d => {
+  const slug = stripLocalePrefix((d.slug || d.id || '').replace(/\.mdx?$/, ''));
+  return [slug, d.data.title];
+}));
 
 // Helper to get slug from doc (Astro 5 uses id, Astro 4 uses slug)
 const getDocSlug = (doc: any) => {
   const raw = doc.slug || doc.id || '';
-  return raw.replace(/\.mdx?$/, '');
+  return stripLocalePrefix(raw.replace(/\.mdx?$/, ''));
+};
+
+// Get translated title if available
+const getDocTitle = (doc: any) => {
+  const slug = getDocSlug(doc);
+  return ukTitleMap.get(slug) || doc.data.title;
 };
 
 // Helper to check current section
@@ -44,45 +61,46 @@ const currentSection = getCurrentSection();
 const navSections = [
   {
     id: 'getting-started',
-    title: 'Getting Started',
+    title: t('docs.sidebar.getting_started'),
     items: allDocs
       .filter(doc => doc.data.section === 'getting-started')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
     id: 'modes',
-    title: 'Usage Modes',
+    title: t('docs.sidebar.usage_modes'),
     items: allDocs
       .filter(doc => doc.data.section === 'modes')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
     id: 'commands',
-    title: 'Commands',
+    title: t('docs.sidebar.commands'),
     items: allDocs
       .filter(doc => doc.data.section === 'commands')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
     id: 'guides',
-    title: 'Guides',
+    title: t('docs.sidebar.guides'),
     items: allDocs
       .filter(doc => doc.data.section === 'guides')
       .sort((a, b) => a.data.order - b.data.order)
   },
   {
     id: 'reference',
-    title: 'Reference',
+    title: t('docs.sidebar.reference'),
     items: allDocs
       .filter(doc => doc.data.section === 'reference')
       .sort((a, b) => a.data.order - b.data.order)
   },
 ];
 
-// Add slug property to all docs in navSections for template use
+// Add slug property and translated title to all docs in navSections
 const addSlugToItems = (items: any[]) => items.map(doc => ({
   ...doc,
-  slug: getDocSlug(doc)
+  slug: getDocSlug(doc),
+  data: { ...doc.data, title: getDocTitle(doc) }
 }));
 
 navSections.forEach(section => {
@@ -104,7 +122,7 @@ const sectionContainsCurrent = (sectionId: string) => {
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -135,6 +153,7 @@ const sectionContainsCurrent = (sectionId: string) => {
   <body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
     <Header />
     <GlobalSearch />
+    {lang === 'uk' && <FallbackBanner />}
     
     <div class="flex">
       <!-- Sidebar -->
@@ -144,7 +163,7 @@ const sectionContainsCurrent = (sectionId: string) => {
           <div class="relative">
             <input
               type="text"
-              placeholder="Search docs..."
+              placeholder={t('docs.sidebar.search')}
               id="docs-search"
               class="w-full px-3 py-2 pl-10 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 focus:bg-slate-800"
             />
@@ -194,7 +213,7 @@ const sectionContainsCurrent = (sectionId: string) => {
                     {section.items.map(doc => (
                       <li>
                         <a
-                          href={`/docs/${doc.slug}`}
+                          href={getLocalizedUrl(lang, `/docs/${doc.slug}`)}
                           class:list={[
                             "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
                             currentSlug === doc.slug
@@ -232,7 +251,7 @@ const sectionContainsCurrent = (sectionId: string) => {
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="docs-sidebar-backdrop"></div>
         <aside class="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 border-r border-slate-800 overflow-y-auto">
           <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-            <span class="font-semibold text-white">Documentation</span>
+            <span class="font-semibold text-white">{t('docs.sidebar.title')}</span>
             <button id="docs-menu-close" class="p-2 text-slate-400 hover:text-white">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -244,7 +263,7 @@ const sectionContainsCurrent = (sectionId: string) => {
             <div class="relative">
               <input
                 type="text"
-                placeholder="Search docs..."
+                placeholder={t('docs.sidebar.search')}
                 id="docs-search-mobile"
                 class="w-full px-3 py-2 pl-10 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rapeseed-400 focus:bg-slate-700"
               />
@@ -294,7 +313,7 @@ const sectionContainsCurrent = (sectionId: string) => {
                       {section.items.map(doc => (
                         <li>
                           <a
-                            href={`/docs/${doc.slug}`}
+                            href={getLocalizedUrl(lang, `/docs/${doc.slug}`)}
                             class:list={[
                               "block pl-4 pr-3 py-1.5 text-sm transition-colors border-l -ml-px",
                               currentSlug === doc.slug
@@ -331,7 +350,7 @@ const sectionContainsCurrent = (sectionId: string) => {
       </main>
     </div>
     
-    <script define:vars={{ navSections }}>
+    <script define:vars={{ navSections, localePrefix: lang === 'en' ? '' : `/${lang}` }}>
       // Mobile sidebar
       const toggle = document.getElementById('docs-menu-toggle');
       const sidebar = document.getElementById('docs-mobile-sidebar');
@@ -573,7 +592,7 @@ const sectionContainsCurrent = (sectionId: string) => {
                 slug: item.slug,
                 description: item.data.description || '',
                 section: section.title,
-                url: `/docs/${item.slug}`
+                url: `${localePrefix}/docs/${item.slug}`
               });
             });
           }

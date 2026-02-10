@@ -1,5 +1,9 @@
 ---
 // User onboarding flow component
+import { getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
 ---
 
 <div class="user-onboarding-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden" id="onboarding-overlay">
@@ -20,22 +24,22 @@
       <div class="onboarding-step active" data-step="1">
         <div class="text-center mb-8">
           <div class="text-6xl mb-4">🌼</div>
-          <h2 class="text-3xl font-display font-bold text-white mb-4">Welcome to RAPS!</h2>
+          <h2 class="text-3xl font-display font-bold text-white mb-4">{t('onboarding.welcome')}</h2>
           <p class="text-lg text-slate-300">
-            Let's get you started with the most powerful CLI for Autodesk Platform Services
+            {t('onboarding.subtitle')}
           </p>
         </div>
         
         <!-- User Type Selection -->
         <div class="space-y-4 mb-8">
-          <h3 class="text-xl font-semibold text-white mb-4">What describes you best?</h3>
+          <h3 class="text-xl font-semibold text-white mb-4">{t('onboarding.question')}</h3>
           <div class="grid gap-4">
             <button class="user-type-btn p-4 border border-slate-700 rounded-lg hover:border-rapeseed-500 hover:bg-rapeseed-500/10 transition-all text-left" data-type="devops">
               <div class="flex items-center gap-4">
                 <div class="text-3xl">⚙️</div>
                 <div>
-                  <div class="font-semibold text-white">DevOps Engineer</div>
-                  <div class="text-sm text-slate-400">Building CI/CD pipelines and automation</div>
+                  <div class="font-semibold text-white">{t('onboarding.devops')}</div>
+                  <div class="text-sm text-slate-400">{t('onboarding.devops_desc')}</div>
                 </div>
               </div>
             </button>
@@ -43,8 +47,8 @@
               <div class="flex items-center gap-4">
                 <div class="text-3xl">🏗️</div>
                 <div>
-                  <div class="font-semibold text-white">AEC Professional</div>
-                  <div class="text-sm text-slate-400">Working with CAD/BIM files and workflows</div>
+                  <div class="font-semibold text-white">{t('onboarding.aec')}</div>
+                  <div class="text-sm text-slate-400">{t('onboarding.aec_desc')}</div>
                 </div>
               </div>
             </button>
@@ -52,8 +56,8 @@
               <div class="flex items-center gap-4">
                 <div class="text-3xl">👩‍💻</div>
                 <div>
-                  <div class="font-semibold text-white">Software Developer</div>
-                  <div class="text-sm text-slate-400">Building applications with APS APIs</div>
+                  <div class="font-semibold text-white">{t('onboarding.developer')}</div>
+                  <div class="text-sm text-slate-400">{t('onboarding.developer_desc')}</div>
                 </div>
               </div>
             </button>
@@ -150,7 +154,7 @@
       <div class="onboarding-step hidden" data-step="3">
         <div class="text-center mb-8">
           <div class="text-4xl mb-4">🎉</div>
-          <h2 class="text-2xl font-display font-bold text-white mb-4">You're all set!</h2>
+          <h2 class="text-2xl font-display font-bold text-white mb-4">{t('onboarding.done')}</h2>
           <p class="text-slate-300">
             Ready to start your RAPS journey? Here are your next steps:
           </p>
@@ -172,7 +176,7 @@
         
         <div class="text-center">
           <button id="onboarding-finish" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">
-            Skip and explore on my own
+            {t('onboarding.skip')}
           </button>
         </div>
       </div>
@@ -203,8 +207,7 @@
   >
     <div class="text-2xl">🌼</div>
     <div>
-      <div class="text-sm font-bold">New to RAPS?</div>
-      <div class="text-xs opacity-90">Take the quick tour</div>
+      <div class="text-sm font-bold">{t('onboarding.tour')}</div>
     </div>
   </button>
 </div>

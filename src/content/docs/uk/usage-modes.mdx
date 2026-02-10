@@ -1,0 +1,260 @@
+---
+title: "Режими використання"
+description: "Різні способи використання RAPS: CLI, інтерактивна оболонка, Python, GitHub Actions, Docker та MCP Server"
+section: "modes"
+order: 1
+icon: "🎯"
+---
+
+# Режими використання
+
+RAPS пропонує шість різних способів взаємодії з Autodesk Platform Services. Оберіть режим, що найкраще відповідає вашому робочому процесу.
+
+## Загальний огляд
+
+| Режим | Найкраще для | Ключові можливості |
+|-------|--------------|---------------------|
+| [**CLI**](/docs/mode-cli) | Скрипти, автоматизація | Повний набір команд, конвеєри, коди завершення |
+| [**Інтерактивна оболонка**](/docs/interactive-shell) | Навчання, дослідження | Автодоповнення TAB, підказки, історія |
+| [**Python Bindings**](/docs/python-bindings) | Інтеграція з Python | Нативна бібліотека, анотації типів, винятки |
+| [**GitHub Actions**](/docs/mode-github-actions) | GitHub CI/CD | Готова дія, матричні збірки |
+| [**Docker**](/docs/mode-docker) | Контейнеризовані процеси | Без встановлення, ізольований, мультиархітектурний |
+| [**MCP Server**](/docs/mcp-server) | ШІ-помічники | Природна мова, Claude/Cursor |
+
+---
+
+## Режим CLI
+
+Стандартний інтерфейс командного рядка для скриптів та автоматизації.
+
+```bash
+# Однорядкові операції
+raps bucket list --output json | jq '.[] | .bucketKey'
+
+# Скрипти з кодами завершення
+if raps auth test; then
+    raps object upload my-bucket model.rvt
+fi
+```
+
+**Ключові можливості:**
+- Повний набір команд (100+ команд)
+- Кілька форматів виведення (JSON, YAML, CSV, table)
+- Стандартизовані коди завершення для скриптів
+- Автодоповнення оболонки (bash, zsh, fish, PowerShell)
+
+📖 [**Документація режиму CLI →**](/docs/mode-cli)
+
+---
+
+## Інтерактивна оболонка
+
+REPL-середовище з автодоповненням TAB та підказками параметрів.
+
+```
+$ raps shell
+
+Welcome to the RAPS interactive shell!
+raps> bucket [TAB]
+create    delete    get       list
+
+raps> bucket create <BUCKET_KEY>
+raps> bucket create my-test --retention transient
+✓ Bucket created: my-test
+```
+
+**Ключові можливості:**
+- Автодоповнення TAB для команд та прапорців
+- Сірі підказки параметрів з обов'язковими/необов'язковими аргументами
+- Історія команд з навігацією клавішами вгору/вниз
+- Вбудована команда довідки
+
+📖 [**Документація інтерактивної оболонки →**](/docs/interactive-shell)
+
+---
+
+## Python Bindings
+
+Нативна бібліотека Python для програмного доступу.
+
+```python
+from raps import Client
+
+client = Client.from_env()
+
+# Перегляд бакетів
+for bucket in client.buckets.list():
+    print(f"{bucket.key}: {bucket.policy}")
+
+# Завантаження та трансляція
+obj = client.objects("my-bucket").upload("model.rvt")
+job = client.translate(obj.urn)
+result = job.wait()
+```
+
+**Ключові можливості:**
+- Нативна бібліотека Python через PyO3
+- Повні анотації типів для підтримки IDE
+- Структуровані винятки (AuthenticationError, NotFoundError тощо)
+- Підтримка контекстних менеджерів
+
+📖 [**Документація Python Bindings →**](/docs/python-bindings)
+
+---
+
+## GitHub Actions
+
+Готова дія для робочих процесів CI/CD.
+
+```yaml
+# .github/workflows/aps.yml
+- name: Setup RAPS
+  uses: dmytro-yemelianov/raps-action@v1
+
+- name: Upload Models
+  run: raps object upload my-bucket models/*.rvt --batch
+  env:
+    APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+    APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+**Ключові можливості:**
+- Просте налаштування однією дією
+- Фіксація версій для відтворюваності
+- Кросплатформність (ubuntu, windows, macos)
+- Матричні збірки для паралельної обробки
+
+📖 [**Документація GitHub Actions →**](/docs/mode-github-actions)
+
+---
+
+## Docker
+
+Запуск RAPS в ізольованих контейнерах.
+
+```bash
+# Одна команда
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  bucket list
+
+# З завантаженням файлів
+docker run --rm \
+  -e APS_CLIENT_ID="$APS_CLIENT_ID" \
+  -e APS_CLIENT_SECRET="$APS_CLIENT_SECRET" \
+  -v $(pwd)/models:/data \
+  ghcr.io/dmytro-yemelianov/raps:latest \
+  object upload my-bucket /data/model.rvt
+```
+
+**Ключові можливості:**
+- Не потрібна установка Rust
+- Мультиархітектурність (amd64, arm64)
+- Працює в будь-якій системі CI/CD
+- Готовий до Kubernetes
+
+📖 [**Документація Docker →**](/docs/mode-docker)
+
+---
+
+## MCP Server
+
+Інтеграція з ШІ-помічниками через Model Context Protocol.
+
+```json
+// claude_desktop_config.json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["serve"],
+      "env": {
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      }
+    }
+  }
+}
+```
+
+Потім попросіть Claude: *"Покажи всі мої OSS-бакети"*
+
+**Ключові можливості:**
+- 14 MCP-інструментів для операцій APS
+- Команди природною мовою
+- Працює з Claude, Cursor та іншими MCP-клієнтами
+- Не потрібен синтаксис команд
+
+📖 [**Документація MCP Server →**](/docs/mcp-server)
+
+---
+
+## Матриця порівняння
+
+| Можливість | CLI | Shell | Python | Actions | Docker | MCP |
+|------------|:---:|:-----:|:------:|:-------:|:------:|:---:|
+| Автодоповнення TAB | — | ✓ | IDE | — | — | — |
+| Анотації типів | — | — | ✓ | — | — | — |
+| Історія команд | — | ✓ | — | — | — | — |
+| Скриптинг | ✓ | — | ✓ | ✓ | ✓ | — |
+| Нативний CI/CD | ✓ | — | ✓ | ✓ | ✓ | — |
+| Природна мова | — | — | — | — | — | ✓ |
+| Без встановлення | — | — | — | ✓ | ✓ | — |
+| Ізольоване середовище | — | — | — | ✓ | ✓ | — |
+| Обробка помилок | коди | коди | ✓ | коди | коди | — |
+
+---
+
+## Як обрати правильний режим
+
+```
+                    Як ви будете використовувати RAPS?
+                            │
+    ┌───────────────┬───────┼───────┬───────────────┐
+    ▼               ▼       ▼       ▼               ▼
+┌────────┐    ┌─────────┐ ┌──────┐ ┌─────────┐ ┌────────┐
+│Навчання│    │ Python  │ │Скрипт│ │Контейнер│ │   ШІ   │
+│Дослідж.│    │  Код    │ │CI/CD │ │  K8s    │ │ Поміч. │
+└───┬────┘    └────┬────┘ └──┬───┘ └────┬────┘ └───┬────┘
+    │              │         │          │          │
+    ▼              ▼         ▼          ▼          ▼
+┌────────┐    ┌─────────┐ ┌──────┐ ┌─────────┐ ┌────────┐
+│  Shell │    │ Python  │ │ CLI  │ │ Docker  │ │  MCP   │
+│        │    │Bindings │ │Action│ │         │ │ Server │
+└────────┘    └─────────┘ └──────┘ └─────────┘ └────────┘
+```
+
+### Рекомендації
+
+**Використовуйте інтерактивну оболонку, якщо ви:**
+- Тільки починаєте знайомство з RAPS та вивчаєте команди
+- Досліджуєте доступні можливості
+- Налагоджуєте синтаксис команд
+
+**Використовуйте Python Bindings, якщо ви:**
+- Розробляєте застосунки на Python
+- Потребуєте безпеку типів та підтримку IDE
+- Інтегруєте з конвеєрами даних
+- Хочете структуровану обробку винятків
+
+**Використовуйте CLI, якщо ви:**
+- Пишете shell-скрипти
+- Передаєте вивід іншим інструментам через конвеєр
+- Виконуєте разові команди
+
+**Використовуйте GitHub Actions, якщо ви:**
+- Автоматизуєте на GitHub
+- Потребуєте просту інтеграцію CI/CD
+- Запускаєте паралельні матричні збірки
+
+**Використовуйте Docker, якщо ви:**
+- Працюєте з контейнерами/Kubernetes
+- Потребуєте ізольовані середовища
+- Не хочете встановлювати Rust
+
+**Використовуйте MCP Server, якщо ви:**
+- Використовуєте Claude Desktop або Cursor
+- Надаєте перевагу природній мові
+- Швидко створюєте прототипи

@@ -2,20 +2,22 @@ import { getCollection } from 'astro:content';
 import { releases } from '../data/releases.js';
 
 export async function GET(context) {
-  const posts = await getCollection('blog');
+  const posts = (await getCollection('blog')).filter(d => d.id.startsWith('en/'));
   const site = context.site?.href || 'https://rapscli.xyz';
+
+  const stripLocalePrefix = (id) => id.replace(/^(en|uk)\//, '');
 
   // Combine blog posts and releases
   const blogItems = posts
     .filter((post) => !post.data.draft)
     .map((post) => ({
-      id: `${site}/blog/${post.id.replace(/\.mdx?$/, '')}/`,
+      id: `${site}/blog/${stripLocalePrefix(post.id.replace(/\.mdx?$/, ''))}/`,
       title: post.data.title,
       updated: post.data.updatedDate || post.data.pubDate,
       published: post.data.pubDate,
       summary: post.data.description,
       author: post.data.author || 'Dmytro Yemelianov',
-      link: `${site}/blog/${post.id.replace(/\.mdx?$/, '')}/`,
+      link: `${site}/blog/${stripLocalePrefix(post.id.replace(/\.mdx?$/, ''))}/`,
       categories: post.data.tags || [],
     }));
 

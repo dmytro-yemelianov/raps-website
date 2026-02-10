@@ -1,57 +1,67 @@
 ---
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import { getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
+
 // Main navigation items with submenus
 const navItems = [
-  { href: '/', label: 'Home' },
+  { href: getLocalizedUrl(lang, '/'), label: t('header.nav.home') },
   {
-    href: '/quickstart',
-    label: 'Quick Start',
+    href: getLocalizedUrl(lang, '/quickstart'),
+    label: t('header.nav.quickstart'),
     color: 'rapeseed'
   },
-  { href: '/blog', label: 'Blog' },
+  { href: getLocalizedUrl(lang, '/blog'), label: t('header.nav.blog') },
   {
-    label: 'Products',
+    label: t('header.nav.products'),
     submenu: [
-      { href: '/products/raps-mock', label: 'raps-mock', icon: '🧪', description: 'APS API mock server for testing' },
-      { href: '/products/raps-twin', label: 'raps-twin', icon: '🏭', description: 'Engineering Department Digital Twin' },
-      { href: '/products/yr', label: 'yr', icon: '🎬', description: 'Terminal recording toolkit for Windows' },
+      { href: getLocalizedUrl(lang, '/products/raps-mock'), label: 'raps-mock', icon: '🧪', description: t('header.products.raps_mock') },
+      { href: getLocalizedUrl(lang, '/products/raps-twin'), label: 'raps-twin', icon: '🏭', description: t('header.products.raps_twin') },
+      { href: getLocalizedUrl(lang, '/products/yr'), label: 'yr', icon: '🎬', description: t('header.products.yr') },
     ]
   },
   {
-    label: 'Developer',
+    label: t('header.nav.developer'),
     submenu: [
-      { href: '/cookbook', label: 'Cookbook', icon: '🍳', description: 'Industry recipes & workflows' },
-      { href: '/docs', label: 'Documentation', icon: '📚', description: 'Complete CLI reference' },
-      { href: '/tools', label: 'Interactive Tools', icon: '🛠️', description: 'OAuth, URN, token helpers' },
-      { href: '/resources', label: 'Developer Resources', icon: '📖', description: 'Cheat sheets, guides, examples' },
-      { href: '/glossary', label: 'Glossary', icon: '📗', description: 'APS, CAD & DevOps terminology' },
-      { href: '/api-coverage', label: 'API Coverage', icon: '🔌', description: 'Supported APS endpoints' },
+      { href: getLocalizedUrl(lang, '/cookbook'), label: t('header.developer.cookbook'), icon: '🍳', description: t('header.developer.cookbook_desc') },
+      { href: getLocalizedUrl(lang, '/docs'), label: t('header.developer.docs'), icon: '📚', description: t('header.developer.docs_desc') },
+      { href: getLocalizedUrl(lang, '/tools'), label: t('header.developer.tools'), icon: '🛠️', description: t('header.developer.tools_desc') },
+      { href: getLocalizedUrl(lang, '/resources'), label: t('header.developer.resources'), icon: '📖', description: t('header.developer.resources_desc') },
+      { href: getLocalizedUrl(lang, '/glossary'), label: t('header.developer.glossary'), icon: '📗', description: t('header.developer.glossary_desc') },
+      { href: getLocalizedUrl(lang, '/api-coverage'), label: t('header.developer.api_coverage'), icon: '🔌', description: t('header.developer.api_coverage_desc') },
     ]
   },
   {
-    label: 'Project',
+    label: t('header.nav.project'),
     submenu: [
-      { href: '/roadmap', label: 'Roadmap', icon: '🗺️', description: 'Upcoming features' },
-      { href: '/changelog', label: 'Changelog', icon: '📋', description: 'Release history' },
-      { href: '/distributions', label: 'Distributions', icon: '📦', description: 'Download & install options' },
-      { href: '/status', label: 'Status', icon: '🟢', description: 'Release & build status' },
-      { href: '/about', label: 'About', icon: 'ℹ️', description: 'Project background' },
+      { href: getLocalizedUrl(lang, '/roadmap'), label: t('header.project.roadmap'), icon: '🗺️', description: t('header.project.roadmap_desc') },
+      { href: getLocalizedUrl(lang, '/changelog'), label: t('header.project.changelog'), icon: '📋', description: t('header.project.changelog_desc') },
+      { href: getLocalizedUrl(lang, '/distributions'), label: t('header.project.distributions'), icon: '📦', description: t('header.project.distributions_desc') },
+      { href: getLocalizedUrl(lang, '/status'), label: t('header.project.status'), icon: '🟢', description: t('header.project.status_desc') },
+      { href: getLocalizedUrl(lang, '/about'), label: t('header.project.about'), icon: 'ℹ️', description: t('header.project.about_desc') },
     ]
   },
 ];
 
 const currentPath = Astro.url.pathname;
 
-// Helper to check if current path matches nav item
+// Helper to check if current path matches nav item (locale-aware)
 const isActive = (href: string) => {
-  if (href === '/') return currentPath === '/';
-  if (href === '/cookbook') return currentPath.startsWith('/cookbook');
-  if (href === '/docs') return currentPath.startsWith('/docs');
-  if (href === '/tools') return currentPath.startsWith('/tools');
-  if (href === '/resources') return currentPath.startsWith('/resources');
-  if (href === '/glossary') return currentPath.startsWith('/glossary');
-  if (href === '/blog') return currentPath.startsWith('/blog');
-  if (href === '/products') return currentPath.startsWith('/products');
-  return currentPath === href || currentPath === href + '/';
+  // Strip locale prefix from current path for comparison
+  const normPath = currentPath.replace(/^\/uk(?=\/|$)/, '') || '/';
+  // Strip locale prefix from href for comparison
+  const normHref = href.replace(/^\/uk(?=\/|$)/, '') || '/';
+  if (normHref === '/') return normPath === '/';
+  if (normHref === '/cookbook') return normPath.startsWith('/cookbook');
+  if (normHref === '/docs') return normPath.startsWith('/docs');
+  if (normHref === '/tools') return normPath.startsWith('/tools');
+  if (normHref === '/resources') return normPath.startsWith('/resources');
+  if (normHref === '/glossary') return normPath.startsWith('/glossary');
+  if (normHref === '/blog') return normPath.startsWith('/blog');
+  if (normHref === '/products') return normPath.startsWith('/products');
+  return normPath === normHref || normPath === normHref + '/';
 };
 
 // Helper to check if submenu contains active item
@@ -64,7 +74,7 @@ const isSubmenuActive = (submenu: any[]) => {
   <div class="max-w-6xl mx-auto px-4 sm:px-6">
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-3 group">
+      <a href={getLocalizedUrl(lang, '/')} class="flex items-center gap-3 group">
         <span class="text-2xl group-hover:scale-110 transition-transform">🌼</span>
         <span class="font-display font-bold text-lg text-white group-hover:text-rapeseed-400 transition-colors">
           RAPS
@@ -141,7 +151,12 @@ const isSubmenuActive = (submenu: any[]) => {
       <div class="flex items-center gap-3">
         <!-- Global Search - Hidden on mobile, shows in mobile menu -->
         <div class="hidden md:block" id="header-search"></div>
-        
+
+        <!-- Language Switcher - Desktop -->
+        <div class="hidden md:block">
+          <LanguageSwitcher />
+        </div>
+
         <a
           href="https://github.com/dmytro-yemelianov/raps"
           target="_blank"
@@ -151,13 +166,13 @@ const isSubmenuActive = (submenu: any[]) => {
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
           </svg>
-          <span>GitHub</span>
+          <span>{t('header.github')}</span>
         </a>
         <a
           href="https://github.com/dmytro-yemelianov/raps/releases"
           class="px-4 py-2 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 text-sm font-semibold rounded-lg transition-colors"
         >
-          Download
+          {t('header.download')}
         </a>
       </div>
 
@@ -185,7 +200,7 @@ const isSubmenuActive = (submenu: any[]) => {
     <nav class="fixed top-0 left-0 right-0 bottom-0 h-screen h-dvh sm:left-auto sm:right-0 sm:w-80 bg-slate-900 sm:border-l border-slate-800 p-4 space-y-3 overflow-y-auto">
       <!-- Header -->
       <div class="flex items-center justify-between pb-2">
-        <h2 class="font-bold text-base text-white">Menu</h2>
+        <h2 class="font-bold text-base text-white">{t('header.menu')}</h2>
         <button type="button" id="mobile-menu-close-button" class="p-1.5 text-slate-400 hover:text-white">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -273,6 +288,12 @@ const isSubmenuActive = (submenu: any[]) => {
         })}
       </div>
       
+      <!-- Language Switcher - Mobile -->
+      <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+        <span class="text-xs text-slate-500">Language</span>
+        <LanguageSwitcher />
+      </div>
+
       <!-- Footer Links -->
       <div class="pt-3 border-t border-slate-800">
         <div class="flex items-center gap-4 text-sm">

@@ -1,19 +1,25 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TerminalGif from '../components/TerminalGif.astro';
+import { getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
+
+const copyTitle = t('quickstart.copy_commands');
 
 const steps = [
   {
     number: '01',
-    title: 'Install RAPS',
-    description: 'Choose your preferred installation method',
+    title: t('quickstart.step1.title'),
+    description: t('quickstart.step1.description'),
     tabs: [
       {
         id: 'cargo',
         label: 'Cargo',
         icon: '🦀',
         commands: ['cargo install raps'],
-        note: 'Requires Rust 1.88+ (rustup.rs)',
+        note: t('quickstart.step1.note_cargo'),
       },
       {
         id: 'homebrew',
@@ -23,7 +29,7 @@ const steps = [
           '# macOS & Linux',
           'brew install dmytro-yemelianov/tap/raps',
         ],
-        note: 'Recommended for macOS users',
+        note: t('quickstart.step1.note_homebrew'),
       },
       {
         id: 'scoop',
@@ -34,7 +40,7 @@ const steps = [
           'scoop bucket add raps https://github.com/dmytro-yemelianov/scoop-bucket',
           'scoop install raps',
         ],
-        note: 'Recommended for Windows users',
+        note: t('quickstart.step1.note_scoop'),
       },
       {
         id: 'docker',
@@ -47,7 +53,7 @@ const steps = [
           '# GitHub Container Registry',
           'docker pull ghcr.io/dmytro-yemelianov/raps',
         ],
-        note: 'Best for containerized environments',
+        note: t('quickstart.step1.note_docker'),
       },
       {
         id: 'action',
@@ -61,7 +67,7 @@ const steps = [
           '    client-id: ${{ secrets.APS_CLIENT_ID }}',
           '    client-secret: ${{ secrets.APS_CLIENT_SECRET }}',
         ],
-        note: 'Best for GitHub Actions CI/CD',
+        note: t('quickstart.step1.note_action'),
       },
       {
         id: 'windows',
@@ -100,19 +106,19 @@ const steps = [
   },
   {
     number: '02',
-    title: 'Configure Credentials',
-    description: 'Set up your APS application credentials',
+    title: t('quickstart.step2.title'),
+    description: t('quickstart.step2.description'),
     content: `
-      <p class="text-slate-400 mb-4">Get your credentials from the <a href="https://aps.autodesk.com/myapps" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300 underline">APS Developer Portal</a>.</p>
+      <p class="text-slate-400 mb-4">${t('quickstart.step2.get_credentials')} <a href="https://aps.autodesk.com/myapps" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300 underline">${t('quickstart.step2.aps_portal')}</a>.</p>
       <div class="space-y-4">
         <div class="relative">
-          <h4 class="text-sm font-semibold text-white mb-2">Option 1: Environment Variables</h4>
+          <h4 class="text-sm font-semibold text-white mb-2">${t('quickstart.step2.option1')}</h4>
           <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
             <div class="text-slate-500"># PowerShell</div>
             <div><span class="text-green-400">$env:</span>APS_CLIENT_ID = <span class="text-amber-400">"your_client_id"</span></div>
             <div><span class="text-green-400">$env:</span>APS_CLIENT_SECRET = <span class="text-amber-400">"your_client_secret"</span></div>
           </div>
-          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option1" title="Copy commands">
+          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option1" title="${copyTitle}">
             <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
@@ -122,13 +128,13 @@ const steps = [
           </button>
         </div>
         <div class="relative">
-          <h4 class="text-sm font-semibold text-white mb-2">Option 2: .env File</h4>
+          <h4 class="text-sm font-semibold text-white mb-2">${t('quickstart.step2.option2')}</h4>
           <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
-            <div class="text-slate-500"># Create .env in your project directory</div>
+            <div class="text-slate-500"># ${t('quickstart.step2.option2_comment')}</div>
             <div>APS_CLIENT_ID=your_client_id</div>
             <div>APS_CLIENT_SECRET=your_client_secret</div>
           </div>
-          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option2" title="Copy commands">
+          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option2" title="${copyTitle}">
             <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
@@ -138,13 +144,13 @@ const steps = [
           </button>
         </div>
         <div class="relative">
-          <h4 class="text-sm font-semibold text-white mb-2">Option 3: RAPS Profile</h4>
+          <h4 class="text-sm font-semibold text-white mb-2">${t('quickstart.step2.option3')}</h4>
           <div class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm">
             <div class="text-green-400">$ <span class="text-white">raps config profile create production</span></div>
             <div class="text-green-400">$ <span class="text-white">raps config set client_id "your_client_id"</span></div>
             <div class="text-green-400">$ <span class="text-white">raps config set client_secret "your_client_secret"</span></div>
           </div>
-          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option3" title="Copy commands">
+          <button class="absolute top-8 right-2 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-content-btn" data-copy-target="option3" title="${copyTitle}">
             <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
@@ -158,18 +164,18 @@ const steps = [
   },
   {
     number: '03',
-    title: 'Verify Authentication',
-    description: 'Test your connection to APS',
+    title: t('quickstart.step3.title'),
+    description: t('quickstart.step3.description'),
     code: [
       { prompt: '$', cmd: 'raps auth test', output: '✓ 2-legged authentication successful' },
-      { prompt: '$', cmd: 'raps auth login', output: '✓ Logged in as john.doe@company.com', note: 'Opens browser for 3-legged OAuth' },
+      { prompt: '$', cmd: 'raps auth login', output: '✓ Logged in as john.doe@company.com', note: t('quickstart.step3.note_oauth') },
       { prompt: '$', cmd: 'raps auth whoami', output: 'Name: John Doe\nEmail: john.doe@company.com' },
     ],
   },
   {
     number: '04',
-    title: 'Your First Workflow',
-    description: 'Upload a model and translate it',
+    title: t('quickstart.step4.title'),
+    description: t('quickstart.step4.description'),
     code: [
       { prompt: '$', cmd: 'raps bucket create', output: 'Created bucket: my-bucket-abc123' },
       { prompt: '$', cmd: 'raps object upload my-bucket model.rvt', output: 'Uploading model.rvt... ████████████████ 100%\nURN: dXJuOmFkc2sub2...' },
@@ -179,13 +185,13 @@ const steps = [
   },
   {
     number: '05',
-    title: 'MCP Server (Optional)',
-    description: 'Enable AI assistants like Claude and Cursor to interact with APS',
+    title: t('quickstart.step5.title'),
+    description: t('quickstart.step5.description'),
     content: `
-      <p class="text-slate-400 mb-4">RAPS v3.0.0+ includes an MCP server for natural language APS operations.</p>
+      <p class="text-slate-400 mb-4">${t('quickstart.step5.intro')}</p>
       <div class="space-y-4">
         <div>
-          <h4 class="text-sm font-semibold text-white mb-2">Claude Desktop</h4>
+          <h4 class="text-sm font-semibold text-white mb-2">${t('quickstart.step5.claude_desktop')}</h4>
           <pre class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm overflow-x-auto"><code><span class="text-slate-500">// claude_desktop_config.json</span>
 {
   <span class="text-amber-400">"mcpServers"</span>: {
@@ -197,7 +203,7 @@ const steps = [
 }</code></pre>
         </div>
         <div>
-          <h4 class="text-sm font-semibold text-white mb-2">Cursor IDE</h4>
+          <h4 class="text-sm font-semibold text-white mb-2">${t('quickstart.step5.cursor_ide')}</h4>
           <pre class="bg-slate-900 rounded-lg border border-slate-800 p-4 font-mono text-sm overflow-x-auto"><code><span class="text-slate-500">// .cursor/mcp.json</span>
 {
   <span class="text-amber-400">"mcpServers"</span>: {
@@ -208,23 +214,23 @@ const steps = [
   }
 }</code></pre>
         </div>
-        <p class="text-sm text-slate-500 mt-4">After configuration, ask your AI assistant: "Show me all my APS buckets" <span class="emoji">🤖</span></p>
+        <p class="text-sm text-slate-500 mt-4">${t('quickstart.step5.after_config')} <span class="emoji">🤖</span></p>
       </div>
     `,
   },
 ];
 
 const nextSteps = [
-  { href: '/docs/usage-modes', label: 'Usage Modes', icon: '📖' },
-  { href: '/docs/mode-github-actions', label: 'CI/CD Integration', icon: '🔄' },
-  { href: '/docs/pipelines', label: 'Pipeline Automation', icon: '⚡' },
-  { href: '/docs/examples', label: 'Examples & Guides', icon: '📝' },
+  { href: getLocalizedUrl(lang, '/docs/usage-modes'), label: t('quickstart.next_steps.usage_modes'), icon: '📖' },
+  { href: getLocalizedUrl(lang, '/docs/mode-github-actions'), label: t('quickstart.next_steps.cicd'), icon: '🔄' },
+  { href: getLocalizedUrl(lang, '/docs/pipelines'), label: t('quickstart.next_steps.pipelines'), icon: '⚡' },
+  { href: getLocalizedUrl(lang, '/docs/examples'), label: t('quickstart.next_steps.examples'), icon: '📝' },
 ];
 ---
 
-<BaseLayout 
-  title="Quick Start" 
-  description="Get started with RAPS in 5 minutes. Install, configure, and run your first APS automation."
+<BaseLayout
+  title={t('quickstart.title')}
+  description={t('quickstart.meta_description')}
 >
   <section class="py-16 sm:py-24">
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
@@ -234,16 +240,16 @@ const nextSteps = [
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          5 minute setup
+          {t('quickstart.badge')}
         </div>
         <h1 class="text-4xl sm:text-5xl font-display font-black text-white mb-6">
-          Quick Start
+          {t('quickstart.heading')}
         </h1>
         <p class="text-xl text-slate-400 max-w-2xl mx-auto">
-          From zero to automating APS in 5 minutes. Let's get you up and running.
+          {t('quickstart.subtitle')}
         </p>
       </div>
-      
+
       <!-- Steps -->
       <div class="space-y-16">
         {steps.map((step, index) => (
@@ -252,21 +258,21 @@ const nextSteps = [
             {index < steps.length - 1 && (
               <div class="absolute left-8 top-20 bottom-0 w-0.5 bg-gradient-to-b from-slate-700 to-transparent hidden md:block"></div>
             )}
-            
+
             <div class="flex gap-6">
               {/* Step number */}
               <div class="hidden md:flex flex-shrink-0 w-16 h-16 bg-gradient-to-br from-rapeseed-500/20 to-primary-500/20 border border-slate-700 rounded-2xl items-center justify-center">
                 <span class="text-2xl font-display font-black text-white">{step.number}</span>
               </div>
-              
+
               {/* Content */}
               <div class="flex-1">
                 <div class="mb-4">
-                  <span class="inline-block md:hidden text-sm text-rapeseed-400 font-mono mb-2">Step {step.number}</span>
+                  <span class="inline-block md:hidden text-sm text-rapeseed-400 font-mono mb-2">{t('quickstart.step_prefix')} {step.number}</span>
                   <h2 class="text-2xl font-display font-bold text-white mb-2">{step.title}</h2>
                   <p class="text-slate-400">{step.description}</p>
                 </div>
-                
+
                 {/* Installation tabs */}
                 {step.tabs && (
                   <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden" data-step-tabs>
@@ -285,7 +291,7 @@ const nextSteps = [
                       ))}
                     </div>
                     {step.tabs.map((tab, tabIndex) => (
-                      <div 
+                      <div
                         class:list={["p-6", tabIndex !== 0 && "hidden"]}
                         data-tab-content={tab.id}
                       >
@@ -293,7 +299,7 @@ const nextSteps = [
                           <button
                             class="absolute top-0 right-0 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-tab-btn"
                             data-tab-id={tab.id}
-                            title="Copy commands"
+                            title={copyTitle}
                           >
                             <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -318,18 +324,18 @@ const nextSteps = [
                     ))}
                   </div>
                 )}
-                
+
                 {/* HTML content */}
                 {step.content && (
                   <div set:html={step.content} />
                 )}
-                
+
                 {/* Code examples */}
                 {step.code && (
                   <div class="bg-slate-900 rounded-xl border border-slate-800 p-6 font-mono text-sm space-y-4 relative">
                     <button
                       class="absolute top-4 right-4 p-1.5 text-slate-500 hover:text-slate-300 transition-colors rounded hover:bg-slate-800/50 copy-code-btn"
-                      title="Copy commands"
+                      title={copyTitle}
                     >
                       <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -353,8 +359,8 @@ const nextSteps = [
                   <div class="mt-6">
                     <TerminalGif
                       src="/terminal/raps-auth.gif"
-                      title="Terminal — raps auth"
-                      alt="RAPS authentication test and whoami commands"
+                      title={t('quickstart.terminal.auth_title')}
+                      alt={t('quickstart.terminal.auth_alt')}
                     />
                   </div>
                 )}
@@ -362,8 +368,8 @@ const nextSteps = [
                   <div class="mt-6">
                     <TerminalGif
                       src="/terminal/raps-buckets.gif"
-                      title="Terminal — raps bucket"
-                      alt="RAPS bucket list and create operations"
+                      title={t('quickstart.terminal.bucket_title')}
+                      alt={t('quickstart.terminal.bucket_alt')}
                     />
                   </div>
                 )}
@@ -372,15 +378,15 @@ const nextSteps = [
           </div>
         ))}
       </div>
-      
+
       <!-- Success message -->
       <div class="mt-16 p-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl text-center">
         <div class="text-4xl mb-4">🎉</div>
-        <h3 class="text-xl font-display font-bold text-white mb-2">You're all set!</h3>
+        <h3 class="text-xl font-display font-bold text-white mb-2">{t('quickstart.success.title')}</h3>
         <p class="text-slate-400 mb-6">
-          You've successfully set up RAPS and translated your first model.
+          {t('quickstart.success.description')}
         </p>
-        <a 
+        <a
           href="https://github.com/dmytro-yemelianov/raps"
           target="_blank"
           rel="noopener noreferrer"
@@ -389,16 +395,16 @@ const nextSteps = [
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
           </svg>
-          Star RAPS on GitHub
+          {t('quickstart.success.star_github')}
         </a>
       </div>
-      
+
       <!-- Next steps -->
       <div class="mt-16">
-        <h3 class="text-xl font-display font-bold text-white mb-6">Next Steps</h3>
+        <h3 class="text-xl font-display font-bold text-white mb-6">{t('quickstart.next_steps.title')}</h3>
         <div class="grid sm:grid-cols-2 gap-4">
           {nextSteps.map(item => (
-            <a 
+            <a
               href={item.href}
               class="flex items-center gap-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 hover:bg-slate-900 transition-all group"
             >
@@ -436,11 +442,11 @@ const nextSteps = [
   document.querySelectorAll('[data-step-tabs]').forEach(tabContainer => {
     const buttons = tabContainer.querySelectorAll('[data-tab]');
     const contents = tabContainer.querySelectorAll('[data-tab-content]');
-    
+
     buttons.forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.getAttribute('data-tab');
-        
+
         // Update button styles
         buttons.forEach(btn => {
           btn.classList.remove('bg-slate-800', 'text-white');
@@ -448,7 +454,7 @@ const nextSteps = [
         });
         button.classList.add('bg-slate-800', 'text-white');
         button.classList.remove('text-slate-400');
-        
+
         // Show/hide content
         contents.forEach(content => {
           if (content.getAttribute('data-tab-content') === tabId) {
@@ -467,7 +473,7 @@ const nextSteps = [
       const tabId = this.getAttribute('data-tab-id');
       const tabContent = document.querySelector(`[data-tab-content="${tabId}"]`);
       if (!tabContent) return;
-      
+
       // Extract all command text, skipping comments
       const commands = Array.from(tabContent.querySelectorAll('.font-mono > div'))
         .map(div => {
@@ -478,16 +484,16 @@ const nextSteps = [
         })
         .filter(cmd => cmd.trim())
         .join('\n');
-      
+
       const cleaned = stripPrompts(commands);
       await navigator.clipboard.writeText(cleaned);
-      
+
       const copyIcon = this.querySelector('.copy-icon');
       const checkIcon = this.querySelector('.check-icon');
-      
+
       copyIcon?.classList.add('hidden');
       checkIcon?.classList.remove('hidden');
-      
+
       setTimeout(() => {
         copyIcon?.classList.remove('hidden');
         checkIcon?.classList.add('hidden');
@@ -500,7 +506,7 @@ const nextSteps = [
     btn.addEventListener('click', async function() {
       const codeBlock = this.closest('.bg-slate-900');
       if (!codeBlock) return;
-      
+
       // Extract all command lines (lines with prompts)
       const commands = Array.from(codeBlock.querySelectorAll('.text-green-400'))
         .map(el => {
@@ -512,16 +518,16 @@ const nextSteps = [
         })
         .filter(cmd => cmd.trim())
         .join('\n');
-      
+
       const cleaned = stripPrompts(commands);
       await navigator.clipboard.writeText(cleaned);
-      
+
       const copyIcon = this.querySelector('.copy-icon');
       const checkIcon = this.querySelector('.check-icon');
-      
+
       copyIcon?.classList.add('hidden');
       checkIcon?.classList.remove('hidden');
-      
+
       setTimeout(() => {
         copyIcon?.classList.remove('hidden');
         checkIcon?.classList.add('hidden');
@@ -535,10 +541,10 @@ const nextSteps = [
       const target = this.getAttribute('data-copy-target');
       const container = this.closest('.relative');
       if (!container) return;
-      
+
       const codeBlock = container.querySelector('.bg-slate-900');
       if (!codeBlock) return;
-      
+
       // Extract text content, skipping comments
       const lines = Array.from(codeBlock.querySelectorAll('div'))
         .map(div => {
@@ -553,17 +559,17 @@ const nextSteps = [
           const trimmed = line.trim();
           return trimmed && !trimmed.startsWith('#');
         });
-      
+
       const commands = lines.join('\n');
       const cleaned = stripPrompts(commands);
       await navigator.clipboard.writeText(cleaned);
-      
+
       const copyIcon = this.querySelector('.copy-icon');
       const checkIcon = this.querySelector('.check-icon');
-      
+
       copyIcon?.classList.add('hidden');
       checkIcon?.classList.remove('hidden');
-      
+
       setTimeout(() => {
         copyIcon?.classList.remove('hidden');
         checkIcon?.classList.add('hidden');
@@ -571,4 +577,3 @@ const nextSteps = [
     });
   });
 </script>
-

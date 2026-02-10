@@ -1,0 +1,25 @@
+---
+import { getLangFromUrl, getLocalizedUrl } from '../i18n/utils';
+import { languages } from '../i18n/ui';
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+
+// Get current path without locale prefix for building the alternate URL
+const pathname = Astro.url.pathname;
+const pathWithoutLocale = pathname.replace(/^\/uk(?=\/|$)/, '') || '/';
+
+const otherLang = lang === 'en' ? 'uk' : 'en';
+const otherUrl = getLocalizedUrl(otherLang, pathWithoutLocale);
+---
+
+<a
+  href={otherUrl}
+  class="flex items-center gap-1.5 px-2 py-1 text-sm font-medium text-slate-400 hover:text-white rounded-md hover:bg-slate-800/50 transition-colors"
+  aria-label={`Switch to ${languages[otherLang]}`}
+  title={`Switch to ${languages[otherLang]}`}
+>
+  <span class="text-xs">{lang === 'en' ? 'UA' : 'EN'}</span>
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+  </svg>
+</a>

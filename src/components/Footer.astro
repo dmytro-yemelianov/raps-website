@@ -1,23 +1,26 @@
 ---
 import GitHubIcon from './icons/GitHubIcon.astro';
 import DiscordIcon from './icons/DiscordIcon.astro';
+import { getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
 
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
 const currentYear = new Date().getFullYear();
 
 const footerLinks = {
   product: [
-    { href: '/quickstart', label: 'Quick Start' },
-    { href: 'https://github.com/dmytro-yemelianov/raps/releases', label: 'Download', external: true },
-    { href: '/changelog', label: 'Changelog' },
-    { href: 'https://github.com/dmytro-yemelianov/raps/issues', label: 'Report Issue', external: true },
+    { href: getLocalizedUrl(lang, '/quickstart'), label: t('footer.quickstart') },
+    { href: 'https://github.com/dmytro-yemelianov/raps/releases', label: t('footer.download'), external: true },
+    { href: getLocalizedUrl(lang, '/changelog'), label: t('footer.changelog') },
+    { href: 'https://github.com/dmytro-yemelianov/raps/issues', label: t('footer.report_issue'), external: true },
   ],
   resources: [
-    { href: '/blog', label: 'Blog' },
-    { href: '/tools/manual-tax-calculator', label: 'Tax Calculator' },
-    { href: '/rss.xml', label: 'RSS Feed' },
-    { href: '/atom.xml', label: 'Atom Feed' },
-    { href: 'https://aps.autodesk.com', label: 'APS Portal', external: true },
-    { href: 'https://aps.autodesk.com/developer/documentation', label: 'APS Docs', external: true },
+    { href: getLocalizedUrl(lang, '/blog'), label: t('footer.blog') },
+    { href: getLocalizedUrl(lang, '/tools/manual-tax-calculator'), label: t('footer.tax_calculator') },
+    { href: '/rss.xml', label: t('footer.rss_feed') },
+    { href: '/atom.xml', label: t('footer.atom_feed') },
+    { href: 'https://aps.autodesk.com', label: t('footer.aps_portal'), external: true },
+    { href: 'https://aps.autodesk.com/developer/documentation', label: t('footer.aps_docs'), external: true },
   ],
   connect: [
     { href: 'https://github.com/dmytro-yemelianov', label: 'GitHub', external: true },
@@ -33,13 +36,12 @@ const footerLinks = {
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
       <!-- Brand -->
       <div class="col-span-2 md:col-span-1">
-        <a href="/" class="flex items-center gap-3 mb-4 group">
+        <a href={getLocalizedUrl(lang, '/')} class="flex items-center gap-3 mb-4 group">
           <span class="text-2xl group-hover:scale-110 transition-transform">🌼</span>
           <span class="font-display font-bold text-lg text-white group-hover:text-rapeseed-400 transition-colors">RAPS</span>
         </a>
         <p class="text-sm text-slate-400 mb-4">
-          🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI.
-          Bringing CI/CD to APS with speed and reliability.
+          🌼 {t('footer.brand')}
         </p>
         <div class="flex items-center gap-4">
           <a
@@ -94,7 +96,7 @@ const footerLinks = {
       
       <!-- Product Links -->
       <div>
-        <h3 class="text-sm font-display font-semibold text-white mb-3">Product</h3>
+        <h3 class="text-sm font-display font-semibold text-white mb-3">{t('footer.section.product')}</h3>
         <ul class="space-y-2">
           {footerLinks.product.map((link) => (
             <li>
@@ -113,7 +115,7 @@ const footerLinks = {
       
       <!-- Resources Links -->
       <div>
-        <h3 class="text-sm font-display font-semibold text-white mb-3">Resources</h3>
+        <h3 class="text-sm font-display font-semibold text-white mb-3">{t('footer.section.resources')}</h3>
         <ul class="space-y-2">
           {footerLinks.resources.map((link) => (
             <li>
@@ -132,7 +134,7 @@ const footerLinks = {
       
       <!-- Connect Links -->
       <div>
-        <h3 class="text-sm font-display font-semibold text-white mb-3">Connect</h3>
+        <h3 class="text-sm font-display font-semibold text-white mb-3">{t('footer.section.connect')}</h3>
         <ul class="space-y-2">
           {footerLinks.connect.map((link) => (
             <li>
@@ -153,12 +155,12 @@ const footerLinks = {
     <!-- Bottom bar -->
     <div class="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
       <p class="text-sm text-slate-400">
-        © {currentYear} Dmytro Yemelianov. Licensed under Apache-2.0.
+        {t('footer.copyright').replace('{year}', String(currentYear))}
       </p>
       <p class="text-sm text-slate-500">
-        Built with 
+        {t('footer.built_with')}{' '}
         <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer" class="text-rust-500 hover:text-rust-600">Rust</a>
-        . Not affiliated with Autodesk, Inc.
+        . {t('footer.not_affiliated')}
       </p>
     </div>
   </div>

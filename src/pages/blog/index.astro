@@ -2,9 +2,17 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
-// Get all blog posts, sorted by date
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
+
+const newsletterInvalid = t('blog.index.newsletter_invalid');
+const newsletterSuccess = t('blog.index.newsletter_success');
+
+// Get all English blog posts, sorted by date
 const allPosts = (await getCollection('blog'))
-  .filter(post => !post.data.draft)
+  .filter(post => post.id.startsWith('en/') && !post.data.draft)
   .sort((a, b) => new Date(b.data.pubDate).valueOf() - new Date(a.data.pubDate).valueOf());
 
 // Get featured posts
@@ -38,8 +46,8 @@ const getReadingTime = (content: string) => {
 };
 ---
 
-<BaseLayout 
-  title="Blog" 
+<BaseLayout
+  title={t('blog.title')}
   description="Articles about CI/CD for Autodesk Platform Services, APS automation, and RAPS CLI tutorials."
 >
   <section class="py-16 sm:py-24">
@@ -47,10 +55,10 @@ const getReadingTime = (content: string) => {
       <!-- Header -->
       <div class="mb-16 text-center">
         <h1 class="text-4xl sm:text-6xl font-display font-black text-white mb-6">
-          DevOps for <span class="text-transparent bg-clip-text bg-gradient-to-r from-rapeseed-400 to-amber-400">Design</span>
+          {t('blog.index.hero_title')} <span class="text-transparent bg-clip-text bg-gradient-to-r from-rapeseed-400 to-amber-400">{t('blog.index.hero_highlight')}</span>
         </h1>
         <p class="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
-          Bringing CI/CD to AEC technology. Real-world tutorials, automation guides, and hard-earned insights from the trenches of APS development.
+          {t('blog.index.hero_subtitle')}
         </p>
         
         <!-- Blog Stats -->
@@ -59,19 +67,19 @@ const getReadingTime = (content: string) => {
             <svg class="w-4 h-4 text-rapeseed-400" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span>{allPosts.length} Articles</span>
+            <span>{allPosts.length} {t('blog.index.articles')}</span>
           </div>
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
               <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
             </svg>
-            <span>{allTags.length} Topics</span>
+            <span>{allTags.length} {t('blog.index.topics')}</span>
           </div>
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
             </svg>
-            <span>Weekly Updates</span>
+            <span>{t('blog.index.weekly')}</span>
           </div>
         </div>
       </div>
@@ -82,7 +90,7 @@ const getReadingTime = (content: string) => {
           id="toggle-topics"
           class="flex items-center gap-2 text-lg font-semibold text-white mb-4 hover:text-rapeseed-400 transition-colors"
         >
-          <span>Browse by Topic</span>
+          <span>{t('blog.index.browse_topic')}</span>
           <svg class="w-4 h-4 transition-transform" id="topics-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
@@ -93,7 +101,7 @@ const getReadingTime = (content: string) => {
               class="category-filter active px-4 py-2 bg-rapeseed-500 text-slate-900 rounded-full text-sm font-medium transition-all hover:bg-rapeseed-400" 
               data-category="all"
             >
-              All Posts ({allPosts.length})
+              {t('blog.index.all_posts')} ({allPosts.length})
             </button>
             {tagGroups.map(tag => (
               <button 
@@ -110,22 +118,22 @@ const getReadingTime = (content: string) => {
       {allPosts.length === 0 ? (
         <div class="text-center py-16 bg-slate-900/50 rounded-xl border border-slate-800">
           <div class="text-6xl mb-4">📝</div>
-          <h3 class="text-xl font-semibold text-white mb-2">Coming Soon</h3>
-          <p class="text-slate-400 mb-6">We're working on amazing content about APS development and DevOps for design teams.</p>
+          <h3 class="text-xl font-semibold text-white mb-2">{t('blog.index.coming_soon')}</h3>
+          <p class="text-slate-400 mb-6">{t('blog.index.coming_soon_desc')}</p>
           <div class="flex items-center justify-center gap-4">
             <a
               href="https://github.com/dmytro-yemelianov/raps"
               target="_blank"
               class="px-6 py-3 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors"
             >
-              Follow on GitHub
+              {t('blog.index.follow_github')}
             </a>
             <a
               href="https://discord.gg/PXRabMhWTY"
               target="_blank"
               class="px-6 py-3 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white rounded-lg transition-colors"
             >
-              Join Discord
+              {t('blog.index.join_discord')}
             </a>
           </div>
         </div>
@@ -133,7 +141,7 @@ const getReadingTime = (content: string) => {
         <div class="flex flex-col gap-4" id="blog-posts-list">
           {allPosts.map((post, index) => (
             <article class="group blog-post" data-tags={JSON.stringify(post.data.tags || [])} style="transition: opacity 0.2s ease;">
-              <a href={`/blog/${post.id.replace(/\.mdx?$/, '')}`} class="block">
+              <a href={getLocalizedUrl(lang, `/blog/${stripLocalePrefix(post.id.replace(/\.mdx?$/, ''))}`)} class="block">
                 <div class="p-6 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-primary-500/50 transition-all hover:bg-slate-900">
                   <div class="flex flex-wrap items-center gap-3 mb-3">
                     <time class="text-sm text-slate-500" datetime={new Date(post.data.pubDate).toISOString()}>
@@ -152,7 +160,7 @@ const getReadingTime = (content: string) => {
                     {post.data.description}
                   </p>
                   <div class="mt-4 text-sm text-primary-400 group-hover:text-primary-300">
-                    Read article &rarr;
+                    {t('blog.read_article')} &rarr;
                   </div>
                 </div>
               </a>
@@ -166,10 +174,10 @@ const getReadingTime = (content: string) => {
         <div class="text-center">
           <div class="text-4xl mb-4">📬</div>
           <h3 class="text-2xl font-bold text-white mb-4">
-            Never Miss a DevOps Insight
+            {t('blog.index.newsletter_title')}
           </h3>
           <p class="text-slate-300 mb-6 max-w-2xl mx-auto">
-            Get the latest tutorials, automation guides, and APS development insights delivered weekly. Stay ahead of the curve with expert-level content.
+            {t('blog.index.newsletter_desc')}
           </p>
           <form id="newsletter-form" class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6" novalidate>
             <div class="flex gap-2 w-full max-w-sm">
@@ -186,7 +194,7 @@ const getReadingTime = (content: string) => {
                 type="submit"
                 class="px-6 py-3 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors whitespace-nowrap"
               >
-                Subscribe
+                {t('blog.index.subscribe')}
               </button>
             </div>
             <p id="newsletter-feedback" class="text-sm hidden w-full text-center"></p>
@@ -200,7 +208,7 @@ const getReadingTime = (content: string) => {
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1Z"/>
                 </svg>
-                RSS Feed
+                {t('footer.rss_feed')}
               </a>
               <a
                 href="https://github.com/dmytro-yemelianov/raps"
@@ -211,10 +219,10 @@ const getReadingTime = (content: string) => {
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
                 </svg>
-                Star on GitHub
+                {t('blog.index.star_github')}
               </a>
             </div>
-            <span>No spam • Unsubscribe anytime</span>
+            <span>{t('blog.index.no_spam')}</span>
           </div>
         </div>
       </div>
@@ -222,7 +230,7 @@ const getReadingTime = (content: string) => {
   </section>
 </BaseLayout>
 
-<script>
+<script define:vars={{ newsletterInvalid, newsletterSuccess }}>
   document.addEventListener('DOMContentLoaded', function() {
     // Toggle topics section
     const toggleBtn = document.getElementById('toggle-topics');
@@ -283,7 +291,7 @@ const getReadingTime = (content: string) => {
 
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         if (feedback) {
-          feedback.textContent = 'Please enter a valid email address.';
+          feedback.textContent = newsletterInvalid;
           feedback.className = 'text-sm w-full text-center text-red-400';
         }
         return;
@@ -291,7 +299,7 @@ const getReadingTime = (content: string) => {
 
       // Show success state (replace with real endpoint when available)
       if (feedback) {
-        feedback.textContent = 'Thanks for subscribing! We\'ll be in touch.';
+        feedback.textContent = newsletterSuccess;
         feedback.className = 'text-sm w-full text-center text-emerald-400';
       }
       if (emailInput) emailInput.value = '';
