@@ -1,12 +1,12 @@
 ---
 import CookbookLayout from '../../layouts/CookbookLayout.astro';
 import { getCollection } from 'astro:content';
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 
-const allCookbook = (await getCollection('cookbook')).filter(d => d.id.startsWith('en/'));
+const allCookbook = filterByLocale(await getCollection('cookbook'), lang);
 
 const getDocSlug = (doc: any) => {
   const raw = doc.slug || doc.id || '';

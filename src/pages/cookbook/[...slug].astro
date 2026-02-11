@@ -1,7 +1,7 @@
 ---
 import CookbookLayout from '../../layouts/CookbookLayout.astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
-import { stripLocalePrefix } from '../../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, getLocalizedUrl, filterByLocale, localizeEntry } from '../../i18n/utils';
 
 const getDocSlug = (doc: any) => {
   const raw = doc.slug || doc.id || '';
@@ -24,11 +24,14 @@ interface Props {
   slug: string;
 }
 
-const { doc, slug } = Astro.props;
+const { doc: enDoc, slug } = Astro.props;
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const allCookbookRaw = await getCollection('cookbook');
+const doc = localizeEntry(enDoc, allCookbookRaw, lang);
 const { Content } = await render(doc);
 
-// Get all English cookbook for prev/next navigation
-const allCookbook = (await getCollection('cookbook')).filter(d => d.id.startsWith('en/'));
+// Get localized cookbook for prev/next navigation
+const allCookbook = filterByLocale(allCookbookRaw, lang);
 
 // Find prev/next in same category
 const categoryDocs = allCookbook
@@ -54,7 +57,7 @@ const nextDoc = sectionIndex < categoryDocs.length - 1 ? categoryDocs[sectionInd
       <div class="flex justify-between gap-4">
         {prevDoc ? (
           <a
-            href={`/cookbook/${getDocSlug(prevDoc)}`}
+            href={getLocalizedUrl(lang, `/cookbook/${getDocSlug(prevDoc)}`)}
             class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
           >
             <div class="text-sm text-slate-500 mb-1">&larr; Previous</div>
@@ -67,7 +70,7 @@ const nextDoc = sectionIndex < categoryDocs.length - 1 ? categoryDocs[sectionInd
 
         {nextDoc ? (
           <a
-            href={`/cookbook/${getDocSlug(nextDoc)}`}
+            href={getLocalizedUrl(lang, `/cookbook/${getDocSlug(nextDoc)}`)}
             class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
           >
             <div class="text-sm text-slate-500 mb-1">Next &rarr;</div>

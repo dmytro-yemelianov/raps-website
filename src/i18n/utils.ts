@@ -51,3 +51,34 @@ export function getLocaleFromId(id: string): Lang {
   if (id.startsWith('uk/')) return 'uk';
   return 'en';
 }
+
+/**
+ * Filter collection entries by locale with fallback to English.
+ * Returns localized versions where available, falls back to English.
+ */
+export function filterByLocale<T extends { id: string }>(entries: T[], lang: Lang): T[] {
+  const enEntries = entries.filter(e => e.id.startsWith('en/'));
+  if (lang === 'en') return enEntries;
+
+  const localizedEntries = entries.filter(e => e.id.startsWith(`${lang}/`));
+  return enEntries.map(en => {
+    const slug = stripLocalePrefix(en.id.replace(/\.mdx?$/, ''));
+    return localizedEntries.find(l =>
+      stripLocalePrefix(l.id.replace(/\.mdx?$/, '')) === slug
+    ) || en;
+  });
+}
+
+/**
+ * Find the localized version of a specific entry.
+ * Falls back to the original entry if no translation exists.
+ */
+export function localizeEntry<T extends { id: string }>(entry: T, allEntries: T[], lang: Lang): T {
+  if (lang === 'en') return entry;
+  const slug = stripLocalePrefix(entry.id.replace(/\.mdx?$/, ''));
+  const localized = allEntries.find(e =>
+    e.id.startsWith(`${lang}/`) &&
+    stripLocalePrefix(e.id.replace(/\.mdx?$/, '')) === slug
+  ) as T | undefined;
+  return localized || entry;
+}

@@ -1,12 +1,12 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { getCollection } from 'astro:content';
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 
-const allDocs = (await getCollection('docs')).filter(d => d.id.startsWith('en/'));
+const allDocs = filterByLocale(await getCollection('docs'), lang);
 
 // Organize docs by section
 const sections = {

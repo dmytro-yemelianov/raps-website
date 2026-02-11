@@ -3,7 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FallbackBanner from '../components/FallbackBanner.astro';
 import { getCollection } from 'astro:content';
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../i18n/utils';
 import '../styles/globals.css';
 
 interface Props {
@@ -30,8 +30,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 
-// Get all products for Related Products section
-const allProducts = (await getCollection('products')).filter(d => d.id.startsWith('en/'));
+// Get products for current locale (with fallback to English)
+const allProducts = filterByLocale(await getCollection('products'), lang);
 const getProductSlug = (p: any) => stripLocalePrefix((p.slug || p.id || '').replace(/\.mdx?$/, ''));
 const otherProducts = allProducts.filter(p => getProductSlug(p) !== currentSlug);
 ---

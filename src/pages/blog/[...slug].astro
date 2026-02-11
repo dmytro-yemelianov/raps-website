@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
-import { stripLocalePrefix } from '../../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, localizeEntry } from '../../i18n/utils';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('blog')).filter(d => d.id.startsWith('en/'));
@@ -11,7 +11,10 @@ export async function getStaticPaths() {
   }));
 }
 
-const { post } = Astro.props;
+const { post: enPost } = Astro.props;
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const allPosts = await getCollection('blog');
+const post = localizeEntry(enPost, allPosts, lang);
 const { Content } = await render(post);
 ---
 

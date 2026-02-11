@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
@@ -10,9 +10,9 @@ const t = useTranslations(lang);
 const newsletterInvalid = t('blog.index.newsletter_invalid');
 const newsletterSuccess = t('blog.index.newsletter_success');
 
-// Get all English blog posts, sorted by date
-const allPosts = (await getCollection('blog'))
-  .filter(post => post.id.startsWith('en/') && !post.data.draft)
+// Get blog posts for current locale, sorted by date
+const allPosts = filterByLocale(await getCollection('blog'), lang)
+  .filter(post => !post.data.draft)
   .sort((a, b) => new Date(b.data.pubDate).valueOf() - new Date(a.data.pubDate).valueOf());
 
 // Get featured posts

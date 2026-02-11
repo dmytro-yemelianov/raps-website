@@ -6,7 +6,7 @@ import GlobalSearch from '../components/GlobalSearch.astro';
 import FallbackBanner from '../components/FallbackBanner.astro';
 import Analytics from '@vercel/analytics/astro';
 import { getCollection } from 'astro:content';
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../i18n/utils';
 import '../styles/globals.css';
 import '../styles/accessibility.css';
 
@@ -26,8 +26,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 
-// Get all cookbook entries
-const allCookbook = (await getCollection('cookbook')).filter(d => d.id.startsWith('en/'));
+// Get cookbook entries for current locale (with fallback to English)
+const allCookbook = filterByLocale(await getCollection('cookbook'), lang);
 
 // Helper to get slug from doc
 const getDocSlug = (doc: any) => {

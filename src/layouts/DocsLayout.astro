@@ -6,7 +6,7 @@ import GlobalSearch from '../components/GlobalSearch.astro';
 import FallbackBanner from '../components/FallbackBanner.astro';
 import Analytics from '@vercel/analytics/astro';
 import { getCollection } from 'astro:content';
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../i18n/utils';
 import '../styles/globals.css';
 import '../styles/accessibility.css';
 
@@ -26,15 +26,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 
-// Get all docs
-const allDocs = (await getCollection('docs')).filter(d => d.id.startsWith('en/'));
-
-// Get Ukrainian docs for title overrides when browsing in Ukrainian
-const ukDocs = lang === 'uk' ? (await getCollection('docs')).filter(d => d.id.startsWith('uk/')) : [];
-const ukTitleMap = new Map(ukDocs.map(d => {
-  const slug = stripLocalePrefix((d.slug || d.id || '').replace(/\.mdx?$/, ''));
-  return [slug, d.data.title];
-}));
+// Get docs for current locale (with fallback to English)
+const allDocs = filterByLocale(await getCollection('docs'), lang);
 
 // Helper to get slug from doc (Astro 5 uses id, Astro 4 uses slug)
 const getDocSlug = (doc: any) => {
@@ -42,11 +35,8 @@ const getDocSlug = (doc: any) => {
   return stripLocalePrefix(raw.replace(/\.mdx?$/, ''));
 };
 
-// Get translated title if available
-const getDocTitle = (doc: any) => {
-  const slug = getDocSlug(doc);
-  return ukTitleMap.get(slug) || doc.data.title;
-};
+// Get title (already localized via filterByLocale)
+const getDocTitle = (doc: any) => doc.data.title;
 
 // Helper to check current section
 const getCurrentSection = () => {

@@ -1,7 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, useTranslations, getLocalizedUrl, filterByLocale } from '../i18n/utils';
 import GlossaryText from '../components/GlossaryText.astro';
 
 interface Props {
@@ -34,7 +34,7 @@ const formatDate = (date: Date) => {
 };
 
 // Get related posts with improved algorithm
-const allPosts = (await getCollection('blog')).filter(d => d.id.startsWith('en/'));
+const allPosts = filterByLocale(await getCollection('blog'), lang);
 
 // Calculate relevance score for related posts
 const relatedPosts = allPosts

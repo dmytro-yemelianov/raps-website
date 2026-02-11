@@ -1,7 +1,7 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
-import { stripLocalePrefix } from '../../i18n/utils';
+import { stripLocalePrefix, getLangFromUrl, getLocalizedUrl, filterByLocale, localizeEntry } from '../../i18n/utils';
 
 // Helper to get slug from doc, stripping locale prefix
 const getDocSlug = (doc: any) => {
@@ -25,11 +25,14 @@ interface Props {
   slug: string;
 }
 
-const { doc, slug } = Astro.props;
+const { doc: enDoc, slug } = Astro.props;
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const allDocsRaw = await getCollection('docs');
+const doc = localizeEntry(enDoc, allDocsRaw, lang);
 const { Content } = await render(doc);
 
-// Get all English docs for navigation
-const allDocs = (await getCollection('docs')).filter(d => d.id.startsWith('en/'));
+// Get localized docs for navigation
+const allDocs = filterByLocale(allDocsRaw, lang);
 
 // Find prev/next in same section
 const sectionDocs = allDocs
@@ -54,7 +57,7 @@ const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex
     <div class="flex justify-between gap-4">
       {prevDoc ? (
         <a
-          href={`/docs/${getDocSlug(prevDoc)}`}
+          href={getLocalizedUrl(lang, `/docs/${getDocSlug(prevDoc)}`)}
           class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
         >
           <div class="text-sm text-slate-500 mb-1">&larr; Previous</div>
@@ -67,7 +70,7 @@ const nextDoc = sectionIndex < sectionDocs.length - 1 ? sectionDocs[sectionIndex
 
       {nextDoc ? (
         <a
-          href={`/docs/${getDocSlug(nextDoc)}`}
+          href={getLocalizedUrl(lang, `/docs/${getDocSlug(nextDoc)}`)}
           class="flex-1 group p-4 bg-slate-900/50 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors text-right"
         >
           <div class="text-sm text-slate-500 mb-1">Next &rarr;</div>
