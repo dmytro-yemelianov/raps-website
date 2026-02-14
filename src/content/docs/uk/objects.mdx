@@ -23,6 +23,9 @@ icon: "📄"
 | `raps object delete` | Видалити об'єкт |
 | `raps object signed-url` | Згенерувати підписаний URL для скачування |
 | `raps object urn` | Отримати URN об'єкта для трансляції |
+| `raps object info` | Отримати детальні метадані об'єкта |
+| `raps object copy` | Скопіювати об'єкт у межах/між бакетами |
+| `raps object rename` | Перейменувати об'єкт |
 
 ## raps object upload
 
@@ -37,6 +40,7 @@ raps object upload <bucket-key> <file-path> [options]
 - `--batch`: Завантаження кількох файлів
 - `--parallel`: Увімкнути паралельне завантаження
 - `--concurrency`: Кількість одночасних завантажень (за замовчуванням: 5)
+- `--resume`: Відновити перерване завантаження
 
 **Завантаження одного файлу:**
 
@@ -60,6 +64,12 @@ Uploading 5 files with 5 concurrent uploads...
   [4/5] section-b.dwg ████████████████████ 100%
   [5/5] details.dwg ████████████████████ 100%
 ✓ All files uploaded successfully!
+```
+
+**Відновлення перерваного завантаження:**
+
+```bash
+raps object upload my-bucket large-model.rvt --resume
 ```
 
 **Власний ключ об'єкта:**
@@ -171,6 +181,65 @@ $ raps object delete my-bucket model.rvt
 ⚠ Warning: This will permanently delete 'model.rvt'
   Are you sure? (y/N): y
 ✓ Object deleted successfully
+```
+
+## raps object info
+
+Отримання детальних метаданих об'єкта.
+
+```bash
+raps object info <BUCKET_KEY> <OBJECT_KEY>
+```
+
+**Приклад:**
+
+```bash
+$ raps object info my-bucket model.rvt
+Object Details:
+  Bucket:    my-bucket
+  Key:       model.rvt
+  Size:      45.2 MB
+  SHA1:      abc123def456...
+  URN:       dXJuOmFkc2sub2...
+  Created:   2024-01-15 10:30:00
+```
+
+## raps object copy
+
+Копіювання об'єкта до іншого бакета або ключа.
+
+```bash
+raps object copy --source-bucket <BUCKET> --source-object <KEY> --dest-bucket <BUCKET> [--dest-object <KEY>]
+```
+
+**Опції:**
+- `--source-bucket` - Ключ бакета-джерела
+- `--source-object` - Ключ об'єкта-джерела
+- `--dest-bucket` - Ключ бакета призначення
+- `--dest-object` - Ключ об'єкта призначення (за замовчуванням: ключ джерела)
+
+**Приклад:**
+
+```bash
+$ raps object copy --source-bucket dev-bucket --source-object model.rvt \
+    --dest-bucket prod-bucket --dest-object v2/model.rvt
+```
+
+## raps object rename
+
+Перейменування об'єкта в бакеті.
+
+```bash
+raps object rename <BUCKET_KEY> <OBJECT_KEY> --new-key <NEW_KEY>
+```
+
+**Опції:**
+- `--new-key` - Новий ключ об'єкта
+
+**Приклад:**
+
+```bash
+$ raps object rename my-bucket old-name.rvt --new-key new-name.rvt
 ```
 
 ## Завантаження великих файлів

@@ -24,6 +24,10 @@ icon: "🏗️"
 | `raps folder create` | Створити нову папку |
 | `raps item list` | Показати елементи в папці |
 | `raps item versions` | Показати версії елемента |
+| `raps item delete` | Видалити елемент |
+| `raps item rename` | Перейменувати елемент |
+| `raps folder rename` | Перейменувати папку |
+| `raps folder delete` | Видалити папку |
 
 ## raps hub list
 
@@ -103,6 +107,71 @@ Versions of 'Building Model.rvt':
 │ 2       │ 2024-01-10 09:15:00     │ urn:adsk.wipprod:fs.file:version2      │
 │ 1       │ 2024-01-05 11:00:00     │ urn:adsk.wipprod:fs.file:version1      │
 └─────────┴─────────────────────────┴────────────────────────────────────────┘
+```
+
+## raps folder rename
+
+Перейменування папки.
+
+```bash
+raps folder rename <PROJECT_ID> <FOLDER_ID> --name <NEW_NAME>
+```
+
+**Приклад:**
+
+```bash
+$ raps folder rename b.proj-123 urn:adsk...folder:abc123 --name "Revised Drawings"
+✓ Folder renamed successfully!
+```
+
+## raps folder delete
+
+Видалення папки.
+
+```bash
+raps folder delete <PROJECT_ID> <FOLDER_ID>
+```
+
+> **Попередження:** Папка повинна бути порожньою. Спочатку перемістіть або видаліть вміст.
+
+**Приклад:**
+
+```bash
+$ raps folder delete b.proj-123 urn:adsk...folder:abc123
+✓ Folder deleted successfully!
+```
+
+## raps item delete
+
+Видалення елемента з проєкту.
+
+```bash
+raps item delete <PROJECT_ID> <ITEM_ID>
+```
+
+**Приклад:**
+
+```bash
+$ raps item delete b.proj-123 urn:adsk.wipprod:dm.lineage:abc123
+✓ Item deleted successfully
+```
+
+## raps item rename
+
+Перейменування елемента (оновлення відображуваної назви).
+
+```bash
+raps item rename <PROJECT_ID> <ITEM_ID> --name <NEW_NAME>
+```
+
+**Опції:**
+- `--name, -n` - Нова відображувана назва
+
+**Приклад:**
+
+```bash
+$ raps item rename b.proj-123 urn:adsk.wipprod:dm.lineage:abc123 --name "Updated Model v2.rvt"
+✓ Item renamed to: Updated Model v2.rvt
 ```
 
 ## Типові робочі процеси

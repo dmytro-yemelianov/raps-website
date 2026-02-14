@@ -334,6 +334,29 @@ raps --profile staging bucket list
 export APS_CLIENT_ID="..."  # Схильне до помилок!
 ```
 
+## Покращення UX (v4.5)
+
+### Покращені повідомлення про помилки
+
+Помилки API тепер включають контекстну інформацію з рекомендованими діями:
+
+```bash
+$ raps bucket list
+Error: Authentication failed (401)
+  → Your token has expired. Run 'raps auth login' to refresh.
+
+$ raps folder list b.proj-123 invalid-folder-id
+Error: Not found (404)
+  → Folder ID format should be 'urn:adsk.wipprod:fs.folder:...'
+  → Use 'raps folder list <PROJECT_ID> --top' to find valid folder IDs.
+```
+
+### Покращене табличне виведення
+
+- Результати масивів відображаються як таблиці з вирівняними стовпцями та заголовками
+- Окремі об'єкти відображаються як пари ключ-значення для кращої читабельності
+- Символи Unicode для малювання рамок для чистішого візуального виведення
+
 ## Пов'язана документація
 
 - [Конфігурація](/docs/configuration) — Детальні параметри конфігурації

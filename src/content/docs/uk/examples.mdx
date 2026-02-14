@@ -246,6 +246,51 @@ raps rc photoscene status photoscene-id --wait
 raps rc photoscene download photoscene-id --output ./output/
 ```
 
+## Спеціальні API-запити (v4.5)
+
+Виклик будь-якого ендпоінту APS безпосередньо за допомогою команди `api`.
+
+```bash
+# Отримати профіль поточного користувача
+raps api get /userprofile/v1/users/@me
+
+# Створити ресурс з JSON у командному рядку
+raps api post /oss/v2/buckets -d '{"bucketKey":"test","policyKey":"transient"}'
+
+# Виклик ендпоінту з власними заголовками
+raps api get /custom/endpoint -H "X-Custom:value" --verbose
+```
+
+## Портфельна звітність (v4.5)
+
+Генерація агрегованих звітів по всіх проєктах облікового запису.
+
+```bash
+# Підсумок RFI по всіх активних проєктах
+raps report rfi-summary --account "acc-123" --filter "status:active"
+
+# Issues за останній місяць
+raps report issues-summary --account "acc-123" --since 2026-01-01
+
+# Інвентаризація Assets
+raps report assets-summary --account "acc-123"
+```
+
+## Управління шаблонами (v4.5)
+
+Програмне управління шаблонами проєктів ACC.
+
+```bash
+# Показати шаблони
+raps template list --account "acc-123"
+
+# Створити новий шаблон
+raps template create --account "acc-123" --name "Standard Hospital Project"
+
+# Архівувати старий шаблон
+raps template archive --account "acc-123" TEMPLATE_ID
+```
+
 ## Наступні кроки
 
 - [Конвеєри](/docs/pipelines) — Автоматизація складних робочих процесів

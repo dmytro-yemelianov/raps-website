@@ -95,6 +95,41 @@ raps config profile import ./prod-profile.json --name backup
 - **macOS**: `~/Library/Application Support/raps/profiles.json`
 - **Linux**: `~/.config/raps/profiles.json`
 
+### Фіксований контекст (нове у v4.5)
+
+Встановлення значень контексту за замовчуванням, щоб не повторювати прапорці `--account`, `--hub` або `--project` у кожній команді.
+
+```bash
+# Встановити обліковий запис та проєкт за замовчуванням
+raps config context set account_id abc-123
+raps config context set project_id proj-456
+
+# Показати поточний контекст
+raps config context show
+
+# Очистити весь контекст
+raps config context clear
+```
+
+**Доступні ключі:**
+- `hub_id` — Ідентифікатор хаба за замовчуванням
+- `project_id` — Ідентифікатор проєкту за замовчуванням
+- `account_id` — Ідентифікатор облікового запису за замовчуванням
+
+**Пріоритет:** явний прапорець > змінна середовища > контекст профілю > немає
+
+**Приклад робочого процесу:**
+
+```bash
+# Встановити контекст одного разу
+raps config context set account_id "b.acc-123"
+
+# Тепер ці команди автоматично визначають обліковий запис
+raps admin user list
+raps report issues-summary
+raps admin company-list
+```
+
 ### Безпечне зберігання токенів (v3.7.0+)
 
 RAPS тепер за замовчуванням використовує безпечне сховище ключів ОС для токенів автентифікації замість текстових файлів.
