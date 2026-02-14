@@ -1,0 +1,156 @@
+---
+title: "Custom API Calls"
+description: "Execute arbitrary HTTP requests to any APS endpoint"
+section: "commands"
+order: 9
+icon: "🔌"
+---
+
+# Custom API Calls
+
+Execute arbitrary HTTP requests to any APS endpoint. Useful for accessing APIs not yet wrapped by RAPS commands, testing endpoints, or automating custom workflows.
+
+> **New in v4.5.0**
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps api get` | Send a GET request |
+| `raps api post` | Send a POST request |
+| `raps api put` | Send a PUT request |
+| `raps api patch` | Send a PATCH request |
+| `raps api delete` | Send a DELETE request |
+
+---
+
+## raps api get
+
+Send a GET request to an APS endpoint.
+
+```bash
+raps api get <ENDPOINT> [OPTIONS]
+```
+
+**Arguments:**
+- `ENDPOINT` - API endpoint path (e.g., `/oss/v2/buckets`) or full URL
+
+**Options:**
+- `--query KEY=VALUE` - Add query parameters (repeatable)
+- `-H, --header KEY:VALUE` - Add custom headers (repeatable)
+- `-o, --output FILE` - Save response body to a file
+- `-v, --verbose` - Show response headers and status
+
+**Examples:**
+
+```bash
+# Get current user profile
+raps api get /userprofile/v1/users/@me
+
+# List hubs with verbose output
+raps api get /project/v1/hubs --verbose
+
+# Save response to file
+raps api get /oss/v2/buckets --output buckets.json
+```
+
+---
+
+## raps api post
+
+Send a POST request with an optional JSON body.
+
+```bash
+raps api post <ENDPOINT> [OPTIONS]
+```
+
+**Arguments:**
+- `ENDPOINT` - API endpoint path or full URL
+
+**Options:**
+- `-d, --data JSON` - Inline JSON request body
+- `-f, --data-file FILE` - Read request body from a file
+- `--query KEY=VALUE` - Add query parameters (repeatable)
+- `-H, --header KEY:VALUE` - Add custom headers (repeatable)
+- `-o, --output FILE` - Save response body to a file
+- `-v, --verbose` - Show response headers and status
+
+> **Note:** `--data` and `--data-file` are mutually exclusive.
+
+**Examples:**
+
+```bash
+# Create a bucket with inline JSON
+raps api post /oss/v2/buckets \
+  -d '{"bucketKey":"my-bucket","policyKey":"transient"}'
+
+# Send body from file
+raps api post /issues/v1/containers/PROJECT_ID/quality-issues \
+  --data-file issue.json
+```
+
+---
+
+## raps api put
+
+Send a PUT request to replace a resource.
+
+```bash
+raps api put <ENDPOINT> [OPTIONS]
+```
+
+Same options as `raps api post`.
+
+---
+
+## raps api patch
+
+Send a PATCH request to partially update a resource.
+
+```bash
+raps api patch <ENDPOINT> [OPTIONS]
+```
+
+Same options as `raps api post`.
+
+**Example:**
+
+```bash
+# Update a webhook status
+raps api patch /webhooks/v1/systems/data/events/dm.version.added/hooks/HOOK_ID \
+  -d '{"status":"inactive"}'
+```
+
+---
+
+## raps api delete
+
+Send a DELETE request to remove a resource.
+
+```bash
+raps api delete <ENDPOINT> [OPTIONS]
+```
+
+**Options:**
+- `--query KEY=VALUE` - Add query parameters (repeatable)
+- `-H, --header KEY:VALUE` - Add custom headers (repeatable)
+- `-v, --verbose` - Show response headers and status
+
+> **Note:** DELETE requests do not support a request body.
+
+**Example:**
+
+```bash
+raps api delete /oss/v2/buckets/my-bucket
+```
+
+---
+
+## MCP Tool
+
+The `api_request` MCP tool enables AI assistants to make arbitrary API calls:
+
+```
+You: "Call the APS user profile API to get my account details"
+AI: Uses api_request tool with GET /userprofile/v1/users/@me
+```

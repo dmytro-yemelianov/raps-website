@@ -1,0 +1,148 @@
+---
+title: "Portfolio Reports"
+description: "Aggregate reports across multiple ACC/BIM 360 projects"
+section: "commands"
+order: 10
+icon: "📊"
+---
+
+# Portfolio Reports
+
+Generate aggregate reports across your entire ACC/BIM 360 portfolio. These commands summarize RFIs, issues, submittals, checklists, and assets across multiple projects, giving you a bird's-eye view of your construction program.
+
+> **Note:** Report commands require 3-legged OAuth with account admin privileges. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps report rfi-summary` | Aggregate RFI report across projects |
+| `raps report issues-summary` | Aggregate issues report across projects |
+| `raps report submittals-summary` | Aggregate submittals report across projects |
+| `raps report checklists-summary` | Aggregate checklists report across projects |
+| `raps report assets-summary` | Aggregate assets report across projects |
+
+---
+
+## raps report rfi-summary
+
+Generate an aggregate RFI summary across multiple projects.
+
+```bash
+raps report rfi-summary [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `-f, --filter EXPRESSION` - Project filter expression (e.g., `status:active,name:*Hospital*`)
+- `--status STATUS` - Filter RFIs by status
+- `--since YYYY-MM-DD` - Only include RFIs created after this date
+
+**Example:**
+
+```bash
+# Summarize RFIs across all active projects since January 2025
+$ raps report rfi-summary --filter "status:active" --since 2025-01-01
+```
+
+---
+
+## raps report issues-summary
+
+Generate an aggregate issues summary across multiple projects.
+
+```bash
+raps report issues-summary [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `-f, --filter EXPRESSION` - Project filter expression (e.g., `status:active,name:*Hospital*`)
+- `--status STATUS` - Filter issues by status
+- `--since YYYY-MM-DD` - Only include issues created after this date
+
+**Example:**
+
+```bash
+# Summarize open issues across projects matching "Tower"
+$ raps report issues-summary --filter "name:*Tower*" --status open
+```
+
+---
+
+## raps report submittals-summary
+
+Generate an aggregate submittals summary across multiple projects.
+
+```bash
+raps report submittals-summary [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `-f, --filter EXPRESSION` - Project filter expression
+- `--status STATUS` - Filter submittals by status
+
+**Example:**
+
+```bash
+# Summarize submittals pending review
+$ raps report submittals-summary --status pending_review
+```
+
+---
+
+## raps report checklists-summary
+
+Generate an aggregate checklists summary across multiple projects.
+
+```bash
+raps report checklists-summary [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `-f, --filter EXPRESSION` - Project filter expression
+- `--status STATUS` - Filter checklists by status
+
+**Example:**
+
+```bash
+# Summarize checklists across active projects
+$ raps report checklists-summary --filter "status:active"
+```
+
+---
+
+## raps report assets-summary
+
+Generate an aggregate assets summary across multiple projects.
+
+```bash
+raps report assets-summary [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `-f, --filter EXPRESSION` - Project filter expression
+
+**Example:**
+
+```bash
+# Summarize assets across all projects
+$ raps report assets-summary
+```
+
+---
+
+## MCP Tools
+
+The following MCP tools enable AI assistants to generate portfolio reports:
+
+- `report_rfi_summary` - Generate RFI summary across projects
+- `report_issues_summary` - Generate issues summary across projects
+
+```
+You: "Summarize all open RFIs across my active projects"
+AI: Uses report_rfi_summary tool with filter "status:active"
+```

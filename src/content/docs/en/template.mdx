@@ -1,0 +1,147 @@
+---
+title: "Template Commands"
+description: "Manage ACC project templates"
+section: "commands"
+order: 11
+icon: "📋"
+---
+
+# Template Commands
+
+Manage project templates in Autodesk Construction Cloud. Templates define standard project configurations that can be reused when creating new projects, ensuring consistency across your portfolio.
+
+> **Note:** Template commands require 3-legged OAuth with account admin privileges. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps template list` | List available project templates |
+| `raps template info` | View template details |
+| `raps template create` | Create a new template |
+| `raps template update` | Update an existing template |
+| `raps template archive` | Archive a template |
+
+---
+
+## raps template list
+
+List available project templates in the account.
+
+```bash
+raps template list [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `--limit N` - Maximum number of templates to return
+
+**Example:**
+
+```bash
+$ raps template list --limit 10
+```
+
+---
+
+## raps template info
+
+View detailed information about a specific template.
+
+```bash
+raps template info <TEMPLATE_ID> [OPTIONS]
+```
+
+**Arguments:**
+- `TEMPLATE_ID` - The template identifier
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+
+**Example:**
+
+```bash
+$ raps template info "tmpl-abc123"
+```
+
+---
+
+## raps template create
+
+Create a new project template.
+
+```bash
+raps template create [OPTIONS]
+```
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `--name NAME` - Template name (required)
+
+**Example:**
+
+```bash
+$ raps template create --name "Standard Commercial Project"
+```
+
+---
+
+## raps template update
+
+Update an existing project template.
+
+```bash
+raps template update <TEMPLATE_ID> [OPTIONS]
+```
+
+**Arguments:**
+- `TEMPLATE_ID` - The template identifier
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `--name NAME` - New template name
+
+**Example:**
+
+```bash
+$ raps template update "tmpl-abc123" --name "Updated Commercial Template"
+```
+
+---
+
+## raps template archive
+
+Archive a project template. Archived templates cannot be used for new projects but are preserved for reference.
+
+```bash
+raps template archive <TEMPLATE_ID> [OPTIONS]
+```
+
+**Arguments:**
+- `TEMPLATE_ID` - The template identifier
+
+**Options:**
+- `-a, --account ACCOUNT_ID` - ACC account ID (defaults to `APS_ACCOUNT_ID` env var)
+
+**Example:**
+
+```bash
+$ raps template archive "tmpl-abc123"
+```
+
+---
+
+## MCP Tools
+
+All template operations are available as MCP tools for AI assistant integration:
+
+- `template_list` - List project templates
+- `template_info` - Get template details
+- `template_create` - Create a new template
+- `template_update` - Update a template
+- `template_archive` - Archive a template
+
+```
+You: "List all project templates in my account"
+AI: Uses template_list tool to retrieve available templates
+```
