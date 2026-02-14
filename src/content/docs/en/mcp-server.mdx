@@ -16,6 +16,7 @@ The `raps serve` command starts a Model Context Protocol (MCP) server, enabling 
 > **Expanded in v4.1.0** — Now with admin bulk operations, issues, RFIs, and ACC extended features.
 > **Improved in v4.1.1** — Server starts without credentials and provides interactive setup guidance.
 > **Enhanced in v4.4.0** — Now with 51 tools including folder permissions, operation lifecycle, and full CRUD for ACC modules.
+> **Expanded in v4.5.0** — Now with 72 tools: custom API calls, portfolio reports, templates, webhooks, Design Automation, Reality Capture, and more.
 
 ## From "Chat with PDF" to "Chat with Tools"
 
@@ -116,7 +117,7 @@ Add to `.cursor/mcp.json` in your project:
 
 ## Available Tools
 
-The RAPS MCP server exposes **51 tools** organized by functionality:
+The RAPS MCP server exposes **72 tools** organized by functionality:
 
 ### Authentication
 
@@ -141,7 +142,13 @@ The RAPS MCP server exposes **51 tools** organized by functionality:
 | Tool | Description |
 |------|-------------|
 | `object_list` | List objects in a bucket |
+| `object_upload` | Upload a file to a bucket |
+| `object_upload_batch` | Upload multiple files in parallel |
+| `object_download` | Download an object from a bucket |
+| `object_info` | Get object metadata and details |
+| `object_copy` | Copy an object to another bucket or key |
 | `object_delete` | Delete an object |
+| `object_delete_batch` | Delete multiple objects in a batch |
 | `object_signed_url` | Generate pre-signed download URL |
 | `object_urn` | Get Base64-encoded URN |
 
@@ -157,10 +164,17 @@ The RAPS MCP server exposes **51 tools** organized by functionality:
 | Tool | Description |
 |------|-------------|
 | `hub_list` | List BIM 360/ACC hubs |
+| `hub_info` | Get hub details |
 | `project_list` | List projects in a hub |
+| `project_info` | Get project details |
+| `project_users_list` | List users in a project |
 | `folder_list` | List contents of a folder |
+| `folder_contents` | Get full folder contents with metadata |
 | `folder_create` | Create a new folder |
 | `item_info` | Get item details |
+| `item_create` | Create a new item in a folder |
+| `item_delete` | Delete an item |
+| `item_rename` | Rename an existing item |
 | `item_versions` | List item versions |
 
 ### Admin Bulk Operations
@@ -168,10 +182,14 @@ The RAPS MCP server exposes **51 tools** organized by functionality:
 | Tool | Description |
 |------|-------------|
 | `admin_project_list` | List projects in an account with filtering |
+| `admin_user_list` | List users in an account |
 | `admin_user_add` | Bulk add users to multiple projects |
 | `admin_user_remove` | Bulk remove users from projects |
 | `admin_user_update_role` | Bulk update user roles across projects |
 | `admin_folder_rights` | Bulk update folder permissions across projects |
+| `project_create` | Create a new project in an account |
+| `project_user_add` | Add a user to a specific project |
+| `project_users_import` | Import users to a project from CSV |
 | `admin_operation_list` | List all bulk operations with status |
 | `admin_operation_status` | Get detailed status of a bulk operation |
 | `admin_operation_resume` | Resume a paused bulk operation |
@@ -200,6 +218,7 @@ The RAPS MCP server exposes **51 tools** organized by functionality:
 | Tool | Description |
 |------|-------------|
 | `acc_assets_list` | List assets in a project |
+| `asset_get` | Get details of a specific asset |
 | `asset_create` | Create a new asset |
 | `asset_update` | Update an existing asset |
 | `asset_delete` | Delete an asset |
@@ -209,6 +228,77 @@ The RAPS MCP server exposes **51 tools** organized by functionality:
 | `acc_checklists_list` | List checklists in a project |
 | `checklist_create` | Create a new checklist |
 | `checklist_update` | Update an existing checklist |
+
+### Issue Comments
+
+| Tool | Description |
+|------|-------------|
+| `issue_comments_list` | List comments on an issue |
+| `issue_comment_add` | Add a comment to an issue |
+| `issue_comment_delete` | Delete a comment from an issue |
+
+### Checklist Templates
+
+| Tool | Description |
+|------|-------------|
+| `checklist_templates_list` | List available checklist templates |
+
+### Custom API
+
+| Tool | Description |
+|------|-------------|
+| `api_request` | Execute arbitrary HTTP requests to any APS endpoint |
+
+### Portfolio Reports
+
+| Tool | Description |
+|------|-------------|
+| `report_rfi_summary` | Aggregate RFI summary across portfolio projects |
+| `report_issues_summary` | Aggregate issues summary across portfolio projects |
+
+### Template Management
+
+| Tool | Description |
+|------|-------------|
+| `template_list` | List templates in an account |
+| `template_info` | Get template details |
+| `template_create` | Create a new project template |
+| `template_update` | Update an existing template |
+| `template_archive` | Archive a template |
+
+### Webhooks
+
+| Tool | Description |
+|------|-------------|
+| `webhook_list` | List webhook subscriptions |
+| `webhook_create` | Create a new webhook |
+| `webhook_get` | Get webhook details |
+| `webhook_update` | Update an existing webhook |
+| `webhook_delete` | Delete a webhook |
+| `webhook_events` | List available webhook event types |
+
+### Design Automation
+
+| Tool | Description |
+|------|-------------|
+| `da_engines_list` | List available DA engines |
+| `da_appbundles_list` | List registered app bundles |
+| `da_activities_list` | List registered activities |
+| `da_workitem_create` | Create a new work item |
+| `da_workitem_status` | Check work item status |
+| `da_workitems_list` | List work items |
+
+### Reality Capture
+
+| Tool | Description |
+|------|-------------|
+| `reality_list` | List photoscenes |
+| `reality_create` | Create a new photoscene |
+| `reality_process` | Start photoscene processing |
+| `reality_status` | Check photoscene status |
+| `reality_result` | Get photoscene results |
+| `reality_delete` | Delete a photoscene |
+| `reality_formats` | List supported output formats |
 
 ## How It Works: Live Tool Execution
 
