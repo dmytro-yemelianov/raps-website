@@ -95,6 +95,41 @@ raps config profile import ./prod-profile.json --name backup
 - **macOS**: `~/Library/Application Support/raps/profiles.json`
 - **Linux**: `~/.config/raps/profiles.json`
 
+### Sticky Context (New in v4.5)
+
+Set default context values to avoid repeating `--account`, `--hub`, or `--project` flags on every command.
+
+```bash
+# Set default account and project
+raps config context set account_id abc-123
+raps config context set project_id proj-456
+
+# Show current context
+raps config context show
+
+# Clear all context
+raps config context clear
+```
+
+**Available keys:**
+- `hub_id` — Default hub ID
+- `project_id` — Default project ID
+- `account_id` — Default account ID
+
+**Precedence:** explicit flag > environment variable > profile context > none
+
+**Example workflow:**
+
+```bash
+# Set context once
+raps config context set account_id "b.acc-123"
+
+# Now these commands auto-resolve the account
+raps admin user list
+raps report issues-summary
+raps admin company-list
+```
+
 ### Secure Token Storage (v3.7.0+)
 
 RAPS now defaults to secure OS keychain storage for authentication tokens instead of plaintext files.

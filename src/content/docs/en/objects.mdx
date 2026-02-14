@@ -23,6 +23,9 @@ Upload, download, and manage objects in OSS buckets.
 | `raps object delete` | Delete an object |
 | `raps object signed-url` | Generate signed download URL |
 | `raps object urn` | Get object URN for translation |
+| `raps object info` | Get detailed object metadata |
+| `raps object copy` | Copy an object within/between buckets |
+| `raps object rename` | Rename an object |
 
 ## raps object upload
 
@@ -37,6 +40,7 @@ raps object upload <bucket-key> <file-path> [options]
 - `--batch`: Upload multiple files
 - `--parallel`: Enable parallel uploads
 - `--concurrency`: Number of concurrent uploads (default: 5)
+- `--resume`: Resume an interrupted upload
 
 **Single file upload:**
 
@@ -60,6 +64,12 @@ Uploading 5 files with 5 concurrent uploads...
   [4/5] section-b.dwg ████████████████████ 100%
   [5/5] details.dwg ████████████████████ 100%
 ✓ All files uploaded successfully!
+```
+
+**Resume interrupted upload:**
+
+```bash
+raps object upload my-bucket large-model.rvt --resume
 ```
 
 **Custom object key:**
@@ -171,6 +181,65 @@ $ raps object delete my-bucket model.rvt
 ⚠ Warning: This will permanently delete 'model.rvt'
   Are you sure? (y/N): y
 ✓ Object deleted successfully
+```
+
+## raps object info
+
+Get detailed metadata about an object.
+
+```bash
+raps object info <BUCKET_KEY> <OBJECT_KEY>
+```
+
+**Example:**
+
+```bash
+$ raps object info my-bucket model.rvt
+Object Details:
+  Bucket:    my-bucket
+  Key:       model.rvt
+  Size:      45.2 MB
+  SHA1:      abc123def456...
+  URN:       dXJuOmFkc2sub2...
+  Created:   2024-01-15 10:30:00
+```
+
+## raps object copy
+
+Copy an object to another bucket or key.
+
+```bash
+raps object copy --source-bucket <BUCKET> --source-object <KEY> --dest-bucket <BUCKET> [--dest-object <KEY>]
+```
+
+**Options:**
+- `--source-bucket` - Source bucket key
+- `--source-object` - Source object key
+- `--dest-bucket` - Destination bucket key
+- `--dest-object` - Destination object key (defaults to source key)
+
+**Example:**
+
+```bash
+$ raps object copy --source-bucket dev-bucket --source-object model.rvt \
+    --dest-bucket prod-bucket --dest-object v2/model.rvt
+```
+
+## raps object rename
+
+Rename an object within a bucket.
+
+```bash
+raps object rename <BUCKET_KEY> <OBJECT_KEY> --new-key <NEW_KEY>
+```
+
+**Options:**
+- `--new-key` - New object key
+
+**Example:**
+
+```bash
+$ raps object rename my-bucket old-name.rvt --new-key new-name.rvt
 ```
 
 ## Large File Uploads

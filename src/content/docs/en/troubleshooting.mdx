@@ -40,6 +40,13 @@ Common fixes for installation, authentication, and runtime problems when working
 - **Translation stuck in pending** — use `raps translate status $URN --wait --interval 10` to poll and surface errors. If status stays pending, re-run with the correct input format flag (e.g., `--format svf2`).
 - **CI/CD flakiness** — enable verbose logs with `RAPS_LOG=debug` in your workflow and check for retryable HTTP codes. Standardized exit codes (`raps --help exit-codes`) help fail fast in pipelines.
 
+## Batch upload resume (v4.5)
+
+- **State file location** — batch upload state is saved in `~/.config/raps/batch-state.json` (Linux/macOS) or `%APPDATA%\raps\batch-state.json` (Windows).
+- **Stale state** — if `--resume` fails with "no matching state", delete the state file manually and start fresh.
+- **Partial failures** — when some files fail in a batch, state is saved automatically. Re-run with `--resume` to retry only failed files.
+- **Different bucket** — resume only works for the same bucket and file set. Changing the target bucket requires a fresh upload.
+
 ## Getting help
 
 If issues persist, open a GitHub issue with your OS, RAPS version, and a minimal command that reproduces the problem. Sanitizing secrets before sharing logs keeps credentials safe.

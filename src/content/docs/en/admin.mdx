@@ -25,6 +25,12 @@ Perform bulk user management operations across ACC/BIM 360 accounts. These comma
 | `raps admin operation resume` | Resume interrupted operation |
 | `raps admin operation cancel` | Cancel in-progress operation |
 | `raps admin operation list` | List all operations |
+| `raps admin user list` | List users in account or project |
+| `raps admin user import` | Import users to a project from CSV |
+| `raps admin project create` | Create a new project |
+| `raps admin project update` | Update project settings |
+| `raps admin project archive` | Archive a project |
+| `raps admin company-list` | List companies in an account |
 
 ---
 
@@ -133,6 +139,45 @@ Results:
 └──────────────┴───────┘
 ```
 
+### raps admin user list
+
+List users in an account or specific project.
+
+```bash
+raps admin user list [OPTIONS]
+```
+
+**Options:**
+- `--account, -a` - Account ID (defaults to APS_ACCOUNT_ID)
+- `--project, -p` - List users for a specific project only
+- `--role` - Filter by role name
+- `--status` - Filter by status (active, inactive, not_invited)
+- `--search` - Search by email or name
+
+**Example:**
+
+```bash
+$ raps admin user list --account "acc-123" --status active
+```
+
+### raps admin user import
+
+Import users to a project from a CSV file.
+
+```bash
+raps admin user import --project <PROJECT_ID> --from-csv <FILE>
+```
+
+**Options:**
+- `--project, -p` - Project ID to import users into (required)
+- `--from-csv` - Path to CSV file with columns: email, role_id
+
+**Example:**
+
+```bash
+$ raps admin user import --project "proj-123" --from-csv users.csv
+```
+
 ---
 
 ## Folder Commands
@@ -177,6 +222,27 @@ Results:
 
 ---
 
+## Company Commands (New in v4.5)
+
+### raps admin company-list
+
+List companies registered in an account.
+
+```bash
+raps admin company-list [OPTIONS]
+```
+
+**Options:**
+- `--account, -a` - Account ID (defaults to APS_ACCOUNT_ID)
+
+**Example:**
+
+```bash
+$ raps admin company-list --account "acc-123"
+```
+
+---
+
 ## Project Commands
 
 ### raps admin project list
@@ -211,6 +277,65 @@ Projects:
 │ b.proj-004                             │ Retail Plaza            │ active  │ BIM360   │
 │ b.proj-005                             │ Office Complex          │ active  │ ACC      │
 └────────────────────────────────────────┴─────────────────────────┴─────────┴──────────┘
+```
+
+### raps admin project create
+
+Create a new project in an account.
+
+```bash
+raps admin project create [OPTIONS]
+```
+
+**Options:**
+- `--account, -a` - Account ID
+- `--name, -n` - Project name (required)
+- `--type, -t` - Project type
+- `--classification` - Project classification (production, template, component, sample)
+- `--start-date` - Start date (ISO 8601)
+- `--end-date` - End date (ISO 8601)
+- `--timezone` - Time zone (e.g., "America/New_York")
+
+**Example:**
+
+```bash
+$ raps admin project create --account "acc-123" --name "New Hospital Wing" --classification production
+```
+
+### raps admin project update
+
+Update project settings.
+
+```bash
+raps admin project update [OPTIONS]
+```
+
+**Options:**
+- `--account, -a` - Account ID
+- `--project, -p` - Project ID (required)
+- `--name, -n` - New project name
+- `--status` - New status (active, archived, suspended)
+- `--start-date` - New start date
+- `--end-date` - New end date
+
+**Example:**
+
+```bash
+$ raps admin project update --account "acc-123" --project "proj-123" --status archived
+```
+
+### raps admin project archive
+
+Archive a project (shortcut for setting status to archived).
+
+```bash
+raps admin project archive --account <ACCOUNT_ID> --project <PROJECT_ID>
+```
+
+**Example:**
+
+```bash
+$ raps admin project archive --account "acc-123" --project "proj-123"
 ```
 
 ---

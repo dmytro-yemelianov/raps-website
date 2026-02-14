@@ -24,6 +24,10 @@ Browse hubs, projects, folders, and items in BIM 360 and Autodesk Construction C
 | `raps folder create` | Create a new folder |
 | `raps item list` | List items in a folder |
 | `raps item versions` | List item versions |
+| `raps item delete` | Delete an item |
+| `raps item rename` | Rename an item |
+| `raps folder rename` | Rename a folder |
+| `raps folder delete` | Delete a folder |
 
 ## raps hub list
 
@@ -89,6 +93,38 @@ $ raps folder create b.proj-123 urn:adsk...folder:parent --name "New Folder"
   ID: urn:adsk.wipprod:fs.folder:xyz789
 ```
 
+## raps folder rename
+
+Rename a folder.
+
+```bash
+raps folder rename <PROJECT_ID> <FOLDER_ID> --name <NEW_NAME>
+```
+
+**Example:**
+
+```bash
+$ raps folder rename b.proj-123 urn:adsk...folder:abc123 --name "Revised Drawings"
+✓ Folder renamed successfully!
+```
+
+## raps folder delete
+
+Delete a folder.
+
+```bash
+raps folder delete <PROJECT_ID> <FOLDER_ID>
+```
+
+> **Warning:** Folder must be empty. Move or delete contents first.
+
+**Example:**
+
+```bash
+$ raps folder delete b.proj-123 urn:adsk...folder:abc123
+✓ Folder deleted successfully!
+```
+
 ## raps item versions
 
 List all versions of an item.
@@ -103,6 +139,39 @@ Versions of 'Building Model.rvt':
 │ 2       │ 2024-01-10 09:15:00     │ urn:adsk.wipprod:fs.file:version2      │
 │ 1       │ 2024-01-05 11:00:00     │ urn:adsk.wipprod:fs.file:version1      │
 └─────────┴─────────────────────────┴────────────────────────────────────────┘
+```
+
+## raps item delete
+
+Delete an item from a project.
+
+```bash
+raps item delete <PROJECT_ID> <ITEM_ID>
+```
+
+**Example:**
+
+```bash
+$ raps item delete b.proj-123 urn:adsk.wipprod:dm.lineage:abc123
+✓ Item deleted successfully
+```
+
+## raps item rename
+
+Rename an item (update display name).
+
+```bash
+raps item rename <PROJECT_ID> <ITEM_ID> --name <NEW_NAME>
+```
+
+**Options:**
+- `--name, -n` - New display name
+
+**Example:**
+
+```bash
+$ raps item rename b.proj-123 urn:adsk.wipprod:dm.lineage:abc123 --name "Updated Model v2.rvt"
+✓ Item renamed to: Updated Model v2.rvt
 ```
 
 ## Common Workflows

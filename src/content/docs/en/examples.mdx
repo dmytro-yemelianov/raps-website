@@ -246,6 +246,51 @@ raps rc photoscene status photoscene-id --wait
 raps rc photoscene download photoscene-id --output ./output/
 ```
 
+## Custom API Calls (v4.5)
+
+Call any APS endpoint directly using the `api` command.
+
+```bash
+# Get current user profile
+raps api get /userprofile/v1/users/@me
+
+# Create a resource with inline JSON
+raps api post /oss/v2/buckets -d '{"bucketKey":"test","policyKey":"transient"}'
+
+# Call an undocumented endpoint with custom headers
+raps api get /custom/endpoint -H "X-Custom:value" --verbose
+```
+
+## Portfolio Reports (v4.5)
+
+Generate aggregate reports across all projects in an account.
+
+```bash
+# RFI summary across all active projects
+raps report rfi-summary --account "acc-123" --filter "status:active"
+
+# Issues since last month
+raps report issues-summary --account "acc-123" --since 2026-01-01
+
+# Asset inventory
+raps report assets-summary --account "acc-123"
+```
+
+## Template Management (v4.5)
+
+Manage ACC project templates programmatically.
+
+```bash
+# List templates
+raps template list --account "acc-123"
+
+# Create a new template
+raps template create --account "acc-123" --name "Standard Hospital Project"
+
+# Archive old template
+raps template archive --account "acc-123" TEMPLATE_ID
+```
+
 ## Next Steps
 
 - [Pipelines](/docs/pipelines) — Automate complex workflows
