@@ -1,6 +1,10 @@
 {
   "name": "raps-website",
   "compatibility_date": "2026-02-17",
+  "routes": [
+    { "pattern": "rapscli.xyz", "custom_domain": true },
+    { "pattern": "www.rapscli.xyz", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist"
   }
