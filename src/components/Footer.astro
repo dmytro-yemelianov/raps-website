@@ -2,10 +2,13 @@
 import GitHubIcon from './icons/GitHubIcon.astro';
 import DiscordIcon from './icons/DiscordIcon.astro';
 import { getLangFromUrl, useTranslations, getLocalizedUrl } from '../i18n/utils';
+import { getLatestRelease } from '../data/releases.js';
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 const currentYear = new Date().getFullYear();
+const latestRelease = getLatestRelease();
+const buildDate = new Date().toISOString().split('T')[0];
 
 const footerLinks = {
   product: [
@@ -156,6 +159,11 @@ const footerLinks = {
     <div class="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
       <p class="text-sm text-slate-400">
         {t('footer.copyright').replace('{year}', String(currentYear))}
+      </p>
+      <p class="text-sm text-slate-500 font-mono">
+        <a href={getLocalizedUrl(lang, '/changelog')} class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">v{latestRelease.version}</a>
+        <span class="mx-1 text-slate-600">·</span>
+        <span class="text-slate-600">{buildDate}</span>
       </p>
       <p class="text-sm text-slate-500">
         {t('footer.built_with')}{' '}

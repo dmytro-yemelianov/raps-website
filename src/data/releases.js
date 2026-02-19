@@ -9,6 +9,49 @@
 
 export const releases = [
   {
+    version: '4.6.0',
+    date: '2026-02-19',
+    highlights: ['Auth Presets', 'DA Auto-Qualification', '9 New Doc Pages', 'Full CLI Docs'],
+    description: 'Auth preset scopes, DA auto-qualification and auto-alias, 9 new documentation pages covering all 27 CLI commands',
+    type: 'minor',
+    changes: {
+      added: [
+        'Auth `--preset all` flag for non-interactive scope selection',
+        'DA auto-qualification of bare bundle/activity names with owner nickname',
+        'DA auto-creation of "default" alias after bundle/activity creation',
+        '9 new docs pages: webhooks, design-automation, issues, acc-modules, rfis, reality-capture, plugins, generate, completions',
+      ],
+      fixed: [
+        'DA `appbundle-create` deserialization error (Optional `endpointUrl`)',
+        'DA `activity-create` and `run` "Cannot parse id" for bare names',
+        'Pipeline sample template bucket create syntax',
+        'DA `workitems` startAfterTime format',
+      ],
+    },
+  },
+  {
+    version: '4.5.0',
+    date: '2026-02-10',
+    highlights: ['HTTP Retry', 'Faster Buckets', 'Flag Conflict Fix', 'Company List'],
+    description: 'HTTP retry with exponential backoff, faster bucket listing, clap flag conflict resolution',
+    type: 'minor',
+    changes: {
+      added: [
+        'Automatic HTTP retry on 429/5xx with exponential backoff',
+        'New `admin company-list` command',
+        'New docs pages for api, report, and template commands',
+      ],
+      changed: [
+        'Reduced bucket list per-region timeout from 30s to 10s',
+        'Simplified report.rs and admin.rs modules',
+      ],
+      fixed: [
+        'Clap `-o`/`--output` flag conflict causing panics',
+        'Status counting bug in admin operations',
+      ],
+    },
+  },
+  {
     version: '4.4.0',
     date: '2026-01-20',
     highlights: ['51 MCP Tools', 'Folder Permissions', 'Operation Lifecycle', 'Full ACC CRUD'],
