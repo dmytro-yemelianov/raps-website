@@ -46,10 +46,21 @@ raps auth login [--default] [--preset PRESET] [--device] [--token <token>]
 ```
 
 **Опції:**
-- `--default`: Використати типові області доступу без запиту
-- `--preset <PRESET>`: Використати набір областей доступу (наприклад, `all` для всіх) **(Нове в v4.6)**
+- `-d, --default`: Використати типові області доступу без запиту
+- `-p, --preset <PRESET>`: Використати набір областей доступу **(Нове в v4.6)**
 - `--device`: Використати потік device code (для серверних/безголових середовищ)
 - `--token <token>`: Надати токен доступу безпосередньо (для CI/CD)
+
+**Доступні набори (presets):**
+
+| Набір | Області доступу | Застосування |
+|-------|----------------|--------------|
+| `all` | Усі 16 областей | Повний доступ для розробки |
+| `viewer` | data:read, data:search, bucket:read, account:read, user:read, viewables:read | Дашборди та звіти (тільки читання) |
+| `editor` | data:read/write/create/search, bucket:read/create/update, account:read, user:read, viewables:read | Щоденна робота з проєктами |
+| `storage` | data:read/write/create, bucket:create/read/update/delete | Завантаження файлів та управління OSS |
+| `automation` | code:all, data:read/write/create, bucket:read/create | Робочі процеси Design Automation |
+| `admin` | account:read/write, user:read/write, data:read | Адміністрування облікових записів |
 
 **Вхід через браузер (за замовчуванням):**
 

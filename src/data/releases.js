@@ -9,6 +9,19 @@
 
 export const releases = [
   {
+    version: '4.7.0',
+    date: '2026-02-19',
+    highlights: ['6 Auth Presets', '-p Short Flag', 'Viewer/Editor/Admin', 'Storage/Automation'],
+    description: '6 scope presets for auth login: all, viewer, editor, storage, automation, admin with -p short flag',
+    type: 'minor',
+    changes: {
+      added: [
+        '5 new auth login presets: viewer, editor, storage, automation, admin',
+        '`-p` short flag for `--preset`',
+      ],
+    },
+  },
+  {
     version: '4.6.0',
     date: '2026-02-19',
     highlights: ['Auth Presets', 'DA Auto-Qualification', '9 New Doc Pages', 'Full CLI Docs'],

@@ -46,10 +46,21 @@ raps auth login [--default] [--preset PRESET] [--device] [--token <token>]
 ```
 
 **Options:**
-- `--default`: Use default scopes without prompting
-- `--preset <PRESET>`: Use a preset scope collection (e.g., `all` for every scope) **(New in v4.6)**
+- `-d, --default`: Use default scopes without prompting
+- `-p, --preset <PRESET>`: Use a preset scope collection **(New in v4.6)**
 - `--device`: Use device code flow (for headless/server environments)
 - `--token <token>`: Provide access token directly (for CI/CD)
+
+**Available presets:**
+
+| Preset | Scopes | Use case |
+|--------|--------|----------|
+| `all` | All 16 scopes | Full access for development |
+| `viewer` | data:read, data:search, bucket:read, account:read, user:read, viewables:read | Read-only dashboards, reporting |
+| `editor` | data:read/write/create/search, bucket:read/create/update, account:read, user:read, viewables:read | Day-to-day project work |
+| `storage` | data:read/write/create, bucket:create/read/update/delete | File uploads and OSS management |
+| `automation` | code:all, data:read/write/create, bucket:read/create | Design Automation workflows |
+| `admin` | account:read/write, user:read/write, data:read | Account and user administration |
 
 **Browser-based login (default):**
 
@@ -85,10 +96,14 @@ Waiting for authorization...
 **Preset scopes (v4.6+):**
 
 ```bash
-$ raps auth login --preset all
-Opening browser for authentication...
-Using preset: all (all available scopes)
-✓ Login successful!
+# Full access
+$ raps auth login -p all
+
+# Read-only access for dashboards
+$ raps auth login -p viewer
+
+# Design Automation workflows
+$ raps auth login --preset automation
 ```
 
 **Token-based login (CI/CD):**
