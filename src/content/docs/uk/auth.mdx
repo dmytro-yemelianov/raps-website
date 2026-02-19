@@ -42,11 +42,12 @@ $ raps auth test
 Вхід через 3-legged OAuth. Підтримує кілька методів.
 
 ```bash
-raps auth login [--default] [--device] [--token <token>]
+raps auth login [--default] [--preset PRESET] [--device] [--token <token>]
 ```
 
 **Опції:**
 - `--default`: Використати типові області доступу без запиту
+- `--preset <PRESET>`: Використати набір областей доступу (наприклад, `all` для всіх) **(Нове в v4.6)**
 - `--device`: Використати потік device code (для серверних/безголових середовищ)
 - `--token <token>`: Надати токен доступу безпосередньо (для CI/CD)
 

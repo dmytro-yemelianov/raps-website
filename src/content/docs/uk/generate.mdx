@@ -1,0 +1,91 @@
+---
+title: "Generate & Demo"
+description: "Generate test files and run interactive demo scenarios"
+section: "commands"
+order: 17
+icon: "🧪"
+---
+
+# Generate & Demo Commands
+
+Generate synthetic engineering files for testing and run interactive demo scenarios to explore RAPS capabilities.
+
+---
+
+## Generate Commands
+
+### raps generate files
+
+Generate synthetic engineering files (IFC, STEP, RVT, DWG) for testing uploads, translations, and pipelines.
+
+```bash
+raps generate files [OPTIONS]
+```
+
+**Options:**
+- `-c, --count <COUNT>` — Number of each file type to generate (default: 3)
+- `-o, --out-dir <DIR>` — Output directory (default: `./generated-files`)
+- `--complexity <LEVEL>` — Complexity level: `simple`, `medium`, `complex` (default: medium)
+
+**Example:**
+
+```bash
+$ raps generate files
+$ raps generate files -c 5 -o ./test-data --complexity simple
+$ raps generate files -c 10 --complexity complex
+```
+
+---
+
+## Demo Commands
+
+Run pre-built demo scenarios that showcase end-to-end workflows.
+
+| Command | Description |
+|---------|-------------|
+| `raps demo bucket-lifecycle` | Complete bucket CRUD lifecycle |
+| `raps demo model-pipeline` | Upload, translate, and inspect a model |
+| `raps demo data-management` | Explore BIM 360/ACC hubs, projects, and folders |
+| `raps demo batch-processing` | Batch translate multiple model files |
+
+### raps demo bucket-lifecycle
+
+Demonstrates creating a bucket, uploading files, listing objects, and deleting.
+
+```bash
+$ raps demo bucket-lifecycle
+```
+
+### raps demo model-pipeline
+
+End-to-end model processing: upload a file, start translation, check status, inspect manifest.
+
+```bash
+$ raps demo model-pipeline
+```
+
+### raps demo data-management
+
+Explore BIM 360/ACC hubs, projects, and folders interactively.
+
+```bash
+$ raps demo data-management
+```
+
+> **Note:** Requires 3-legged OAuth. Run `raps auth login` first.
+
+### raps demo batch-processing
+
+Batch translate multiple model files in parallel.
+
+```bash
+$ raps demo batch-processing
+```
+
+---
+
+## Next Steps
+
+- [Bucket Commands](/docs/buckets) — Manual bucket operations
+- [Translation](/docs/translation) — Model translation details
+- [Pipelines](/docs/pipelines) — Automate workflows with YAML

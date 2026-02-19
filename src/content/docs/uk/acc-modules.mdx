@@ -1,0 +1,123 @@
+---
+title: "ACC Modules"
+description: "Manage ACC Assets, Submittals, and Checklists"
+section: "commands"
+order: 13
+icon: "🏗️"
+---
+
+# ACC Module Commands
+
+Manage extended Autodesk Construction Cloud modules: Assets, Submittals, and Checklists.
+
+> **Note:** ACC module commands require 3-legged OAuth with project access. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps acc asset` | Manage project assets |
+| `raps acc submittal` | Manage project submittals |
+| `raps acc checklist` | Manage project checklists |
+
+---
+
+## Asset Commands
+
+Manage physical and digital assets tracked within a project.
+
+| Command | Description |
+|---------|-------------|
+| `raps acc asset list` | List assets in a project |
+| `raps acc asset get` | Get a specific asset |
+| `raps acc asset create` | Create a new asset |
+| `raps acc asset update` | Update an existing asset |
+| `raps acc asset delete` | Delete an asset |
+
+### raps acc asset list
+
+```bash
+raps acc asset list <PROJECT_ID> [--output FORMAT]
+```
+
+### raps acc asset create
+
+```bash
+raps acc asset create <PROJECT_ID> [OPTIONS]
+```
+
+**Example:**
+
+```bash
+$ raps acc asset list my-project-id --output json
+$ raps acc asset get my-project-id asset-123
+```
+
+---
+
+## Submittal Commands
+
+Manage submittal packages and their review workflows.
+
+| Command | Description |
+|---------|-------------|
+| `raps acc submittal list` | List submittals in a project |
+| `raps acc submittal get` | Get a specific submittal |
+| `raps acc submittal create` | Create a new submittal |
+| `raps acc submittal update` | Update an existing submittal |
+| `raps acc submittal delete` | Delete a submittal |
+
+### raps acc submittal list
+
+```bash
+raps acc submittal list <PROJECT_ID> [--output FORMAT]
+```
+
+**Example:**
+
+```bash
+$ raps acc submittal list my-project-id
+$ raps acc submittal get my-project-id submittal-456
+```
+
+---
+
+## Checklist Commands
+
+Manage quality and safety checklists.
+
+| Command | Description |
+|---------|-------------|
+| `raps acc checklist list` | List checklists in a project |
+| `raps acc checklist get` | Get a specific checklist |
+| `raps acc checklist create` | Create a new checklist |
+| `raps acc checklist update` | Update an existing checklist |
+| `raps acc checklist templates` | List checklist templates |
+
+### raps acc checklist list
+
+```bash
+raps acc checklist list <PROJECT_ID> [--output FORMAT]
+```
+
+### raps acc checklist templates
+
+```bash
+raps acc checklist templates <PROJECT_ID> [--output FORMAT]
+```
+
+**Example:**
+
+```bash
+$ raps acc checklist list my-project-id --output json
+$ raps acc checklist templates my-project-id
+```
+
+---
+
+## Next Steps
+
+- [Issue Commands](/docs/issues) — Manage project issues
+- [RFI Commands](/docs/rfis) — Requests for Information
+- [Portfolio Reports](/docs/report) — Aggregate reports across projects
+- [Admin Commands](/docs/admin) — Bulk user and project administration

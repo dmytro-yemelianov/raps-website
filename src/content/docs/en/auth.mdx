@@ -42,11 +42,12 @@ $ raps auth test
 Login with 3-legged OAuth. Supports multiple methods.
 
 ```bash
-raps auth login [--default] [--device] [--token <token>]
+raps auth login [--default] [--preset PRESET] [--device] [--token <token>]
 ```
 
 **Options:**
 - `--default`: Use default scopes without prompting
+- `--preset <PRESET>`: Use a preset scope collection (e.g., `all` for every scope) **(New in v4.6)**
 - `--device`: Use device code flow (for headless/server environments)
 - `--token <token>`: Provide access token directly (for CI/CD)
 
@@ -79,6 +80,15 @@ Device Code Authentication
 Please visit the URL above and enter the user code.
 Waiting for authorization...
 ✓ Authorization successful!
+```
+
+**Preset scopes (v4.6+):**
+
+```bash
+$ raps auth login --preset all
+Opening browser for authentication...
+Using preset: all (all available scopes)
+✓ Login successful!
 ```
 
 **Token-based login (CI/CD):**

@@ -1,0 +1,108 @@
+---
+title: "RFI Commands"
+description: "Manage ACC Requests for Information (RFIs)"
+section: "commands"
+order: 14
+icon: "❓"
+---
+
+# RFI Commands
+
+Create and manage Requests for Information (RFIs) in ACC/BIM 360 projects.
+
+> **Note:** RFI commands require 3-legged OAuth with project access. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps rfi list` | List RFIs in a project |
+| `raps rfi get` | Get details of a specific RFI |
+| `raps rfi create` | Create a new RFI |
+| `raps rfi update` | Update an existing RFI |
+| `raps rfi delete` | Delete an RFI |
+
+---
+
+## raps rfi list
+
+List RFIs in a project.
+
+```bash
+raps rfi list <PROJECT_ID> [--output FORMAT]
+```
+
+**Arguments:**
+- `<PROJECT_ID>` — Project ID (without `b.` prefix)
+
+**Example:**
+
+```bash
+$ raps rfi list my-project-id
+$ raps rfi list my-project-id --output json
+```
+
+---
+
+## raps rfi get
+
+Get detailed information about a specific RFI.
+
+```bash
+raps rfi get <PROJECT_ID> <RFI_ID>
+```
+
+---
+
+## raps rfi create
+
+Create a new RFI or bulk-create from a CSV file.
+
+```bash
+raps rfi create [OPTIONS] <PROJECT_ID>
+```
+
+**Options:**
+- `--title <TITLE>` — RFI title
+- `--question <QUESTION>` — RFI question/description
+- `--priority <PRIORITY>` — Priority: `low`, `normal`, `high`, `critical` (default: normal)
+- `--due-date <DATE>` — Due date in ISO 8601 format (YYYY-MM-DD)
+- `--assigned-to <USER_ID>` — User ID to assign to
+- `--location <LOCATION>` — Location reference
+- `--discipline <DISCIPLINE>` — Discipline
+- `--from-csv <FILE>` — Create RFIs from CSV (columns: title, description, assigned_to)
+
+**Example:**
+
+```bash
+$ raps rfi create my-project-id --title "Confirm structural capacity at A-3" --priority high
+$ raps rfi create my-project-id --from-csv rfis.csv
+```
+
+---
+
+## raps rfi update
+
+Update an existing RFI.
+
+```bash
+raps rfi update <PROJECT_ID> <RFI_ID> [OPTIONS]
+```
+
+---
+
+## raps rfi delete
+
+Delete an RFI.
+
+```bash
+raps rfi delete <PROJECT_ID> <RFI_ID>
+```
+
+---
+
+## Next Steps
+
+- [Issue Commands](/docs/issues) — Manage project issues
+- [ACC Modules](/docs/acc-modules) — Assets, Submittals, Checklists
+- [Portfolio Reports](/docs/report) — Aggregate RFI reports across projects

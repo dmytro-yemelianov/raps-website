@@ -1,0 +1,236 @@
+---
+title: "Design Automation"
+description: "Automate design tasks with engines, app bundles, activities, and work items"
+section: "commands"
+order: 7
+icon: "⚙️"
+---
+
+# Design Automation Commands
+
+Run automated design tasks using the APS Design Automation v3 API. Create app bundles with custom plugins, define activities, and submit work items for processing.
+
+> **Note:** Design Automation commands require 2-legged OAuth. Run `raps auth test` to verify credentials.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps da engines` | List available engines |
+| `raps da appbundles` | List app bundles |
+| `raps da appbundle-create` | Create an app bundle |
+| `raps da appbundle-delete` | Delete an app bundle |
+| `raps da activities` | List activities |
+| `raps da activity-create` | Create an activity |
+| `raps da activity-delete` | Delete an activity |
+| `raps da run` | Submit a work item |
+| `raps da workitems` | List recent work items |
+| `raps da status` | Check work item status |
+
+---
+
+## raps da engines
+
+List available Design Automation engines (e.g., AutoCAD, Revit, Inventor, 3ds Max).
+
+```bash
+raps da engines [--output FORMAT]
+```
+
+**Example:**
+
+```bash
+$ raps da engines
+$ raps da engines --output json
+```
+
+---
+
+## raps da appbundles
+
+List all registered app bundles.
+
+```bash
+raps da appbundles [--output FORMAT]
+```
+
+---
+
+## raps da appbundle-create
+
+Create a new app bundle. A "default" alias is automatically created after successful creation.
+
+```bash
+raps da appbundle-create [OPTIONS]
+```
+
+**Options:**
+- `-i, --id <ID>` — App bundle ID (CamelCase, no hyphens)
+- `-e, --engine <ENGINE>` — Engine ID (e.g., `Autodesk.Revit+2025`)
+- `-d, --description <DESCRIPTION>` — Description
+
+**Example:**
+
+```bash
+$ raps da appbundle-create -i ExtractData -e "Autodesk.Revit+2025"
+$ raps da appbundle-create -i MyPlugin -e "Autodesk.AutoCAD+24" -d "Custom extraction plugin"
+```
+
+> **New in v4.6:** Bare bundle names are automatically qualified with your DA nickname. A "default" alias is auto-created after bundle creation.
+
+---
+
+## raps da appbundle-delete
+
+Delete an app bundle and its aliases.
+
+```bash
+raps da appbundle-delete <BUNDLE_ID>
+```
+
+**Example:**
+
+```bash
+$ raps da appbundle-delete ExtractData
+```
+
+---
+
+## raps da activities
+
+List all registered activities.
+
+```bash
+raps da activities [--output FORMAT]
+```
+
+---
+
+## raps da activity-create
+
+Create a new activity from CLI flags or a JSON/YAML definition file. A "default" alias is automatically created after successful creation.
+
+```bash
+raps da activity-create [OPTIONS]
+```
+
+**Options:**
+- `--id <ID>` — Activity ID (CamelCase, no hyphens)
+- `--engine <ENGINE>` — Engine ID (e.g., `Autodesk.Revit+2025`)
+- `--appbundle <APPBUNDLE>` — App bundle ID to use
+- `--command <COMMAND>` — Command line to execute
+- `--description <DESCRIPTION>` — Description
+- `-f, --file <FILE>` — Path to JSON or YAML activity definition file
+
+**From CLI flags:**
+
+```bash
+$ raps da activity-create --id ExtractAct --engine "Autodesk.Revit+2025" --appbundle ExtractData --command "..."
+```
+
+**From definition file:**
+
+```bash
+$ raps da activity-create -f activity.json
+```
+
+> **New in v4.6:** Bare activity and bundle names are automatically qualified. A "default" alias is auto-created.
+
+---
+
+## raps da activity-delete
+
+Delete an activity and its aliases.
+
+```bash
+raps da activity-delete <ACTIVITY_ID>
+```
+
+---
+
+## raps da run
+
+Submit a work item to run an activity.
+
+```bash
+raps da run [OPTIONS] <ACTIVITY>
+```
+
+**Arguments:**
+- `<ACTIVITY>` — Activity ID (fully qualified, e.g., `owner.activity+alias`)
+
+**Options:**
+- `-i, --input <INPUT>` — Input arguments as `key=value` pairs (use `@file.dwg` for file inputs)
+- `-o, --out-arg <OUT_ARG>` — Output arguments as `key=value` pairs
+- `-w, --wait` — Wait for completion and download results
+
+**Example:**
+
+```bash
+$ raps da run MyNickname.ExtractAct+default -i "inputFile=@model.rvt" -o "result=output.json" -w
+```
+
+---
+
+## raps da workitems
+
+List recent work items.
+
+```bash
+raps da workitems [--output FORMAT]
+```
+
+---
+
+## raps da status
+
+Check the status of a work item.
+
+```bash
+raps da status [OPTIONS] <WORKITEM_ID>
+```
+
+**Options:**
+- `-w, --wait` — Wait for completion
+- `-d, --download` — Download outputs on completion
+- `--output-dir <DIR>` — Output directory for downloads
+
+**Example:**
+
+```bash
+$ raps da status abc123-workitem-id
+$ raps da status abc123-workitem-id --wait --download --output-dir ./results
+```
+
+---
+
+## Typical Workflow
+
+```bash
+# 1. Check available engines
+raps da engines
+
+# 2. Create an app bundle with your plugin
+raps da appbundle-create -i MyPlugin -e "Autodesk.Revit+2025"
+
+# 3. Upload your plugin binary (via signed URL)
+raps object upload my-bucket plugin.zip
+
+# 4. Create an activity that uses the bundle
+raps da activity-create --id MyActivity --engine "Autodesk.Revit+2025" --appbundle MyPlugin --command "..."
+
+# 5. Submit a work item
+raps da run owner.MyActivity+default -i "inputFile=@model.rvt" -w
+
+# 6. Clean up
+raps da activity-delete MyActivity
+raps da appbundle-delete MyPlugin
+```
+
+---
+
+## Next Steps
+
+- [Bucket Commands](/docs/buckets) — Store plugin binaries and input files
+- [Object Commands](/docs/objects) — Upload and download files
+- [Translation](/docs/translation) — Convert models to viewable formats

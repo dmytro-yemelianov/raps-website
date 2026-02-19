@@ -1,0 +1,149 @@
+---
+title: "Reality Capture"
+description: "Photogrammetry and reality capture processing"
+section: "commands"
+order: 15
+icon: "📸"
+---
+
+# Reality Capture Commands
+
+Create photoscenes, upload photos, and process them into 3D models using the APS Reality Capture API.
+
+> **Note:** Reality Capture commands require 2-legged OAuth. Run `raps auth test` to verify credentials.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps reality list` | List photoscenes |
+| `raps reality create` | Create a new photoscene |
+| `raps reality upload` | Upload photos to a photoscene |
+| `raps reality process` | Start processing a photoscene |
+| `raps reality status` | Check photoscene progress |
+| `raps reality result` | Get result (download link) |
+| `raps reality formats` | List available output formats |
+| `raps reality delete` | Delete a photoscene |
+
+---
+
+## raps reality create
+
+Create a new photoscene for processing.
+
+```bash
+raps reality create [OPTIONS]
+```
+
+**Options:**
+- `-n, --name <NAME>` — Photoscene name
+- `-s, --scene-type <TYPE>` — Scene type: `aerial` or `object`
+- `-f, --format <FORMAT>` — Output format: `rcm`, `rcs`, `obj`, `fbx`, `ortho`
+
+**Example:**
+
+```bash
+$ raps reality create -n "Foundation Survey" -f obj
+$ raps reality create -n "Site Aerial" -s aerial -f rcm
+```
+
+---
+
+## raps reality upload
+
+Upload photos to an existing photoscene.
+
+```bash
+raps reality upload <PHOTOSCENE_ID> <FILE>...
+```
+
+**Example:**
+
+```bash
+$ raps reality upload abc123 ./photos/photo1.jpg ./photos/photo2.jpg
+```
+
+---
+
+## raps reality process
+
+Start processing a photoscene after uploading all photos.
+
+```bash
+raps reality process <PHOTOSCENE_ID>
+```
+
+---
+
+## raps reality status
+
+Check the processing progress of a photoscene.
+
+```bash
+raps reality status <PHOTOSCENE_ID>
+```
+
+---
+
+## raps reality result
+
+Get the download link for processed results.
+
+```bash
+raps reality result <PHOTOSCENE_ID>
+```
+
+---
+
+## raps reality formats
+
+List all available output formats.
+
+```bash
+raps reality formats
+```
+
+---
+
+## raps reality delete
+
+Delete a photoscene and its data.
+
+```bash
+raps reality delete <PHOTOSCENE_ID> [--yes]
+```
+
+---
+
+## Typical Workflow
+
+```bash
+# 1. List available output formats
+raps reality formats
+
+# 2. Create a photoscene
+raps reality create -n "Foundation Survey" -f obj
+
+# 3. Upload photos
+raps reality upload <photoscene-id> ./photos/*.jpg
+
+# 4. Start processing
+raps reality process <photoscene-id>
+
+# 5. Check status (poll until complete)
+raps reality status <photoscene-id>
+
+# 6. Download result
+raps reality result <photoscene-id>
+
+# 7. Clean up
+raps reality delete <photoscene-id> --yes
+```
+
+---
+
+## Next Steps
+
+- [Bucket Commands](/docs/buckets) — Store processed output files
+- [Data Management](/docs/data-management) — Upload results to BIM 360/ACC
+- [Translation](/docs/translation) — Convert models to viewable formats

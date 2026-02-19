@@ -1,0 +1,213 @@
+---
+title: "Webhook Commands"
+description: "Manage webhook subscriptions for real-time event notifications"
+section: "commands"
+order: 6
+icon: "🔔"
+---
+
+# Webhook Commands
+
+Manage webhook subscriptions to receive real-time notifications when events occur in your APS projects.
+
+> **Note:** Webhook commands require 2-legged OAuth. Run `raps auth test` to verify credentials.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps webhook list` | List all webhooks |
+| `raps webhook create` | Create a new webhook subscription |
+| `raps webhook get` | Get a specific webhook |
+| `raps webhook update` | Update a webhook |
+| `raps webhook delete` | Delete a webhook |
+| `raps webhook events` | List available webhook events |
+| `raps webhook test` | Test webhook endpoint connectivity |
+| `raps webhook verify-signature` | Verify webhook payload signature |
+
+---
+
+## raps webhook list
+
+List all registered webhook subscriptions.
+
+```bash
+raps webhook list [--output FORMAT]
+```
+
+**Example:**
+
+```bash
+$ raps webhook list
+$ raps webhook list --output json
+```
+
+---
+
+## raps webhook create
+
+Create a new webhook subscription for a specific event type.
+
+```bash
+raps webhook create [OPTIONS]
+```
+
+**Options:**
+- `-u, --url <URL>` — Callback URL for webhook notifications
+- `-e, --event <EVENT>` — Event type (e.g., `dm.version.added`)
+
+**Example:**
+
+```bash
+$ raps webhook create -e "dm.version.added" -u "https://hooks.example.com/aps"
+```
+
+> **Note:** The callback URL must be publicly reachable. APS will send a validation request to the URL during creation.
+
+---
+
+## raps webhook get
+
+Get details of a specific webhook.
+
+```bash
+raps webhook get --event <EVENT> --hook-id <HOOK_ID> [OPTIONS]
+```
+
+**Options:**
+- `-e, --event <EVENT>` — Event type
+- `--hook-id <HOOK_ID>` — Hook ID
+- `-s, --system <SYSTEM>` — System (default: `data`)
+
+**Example:**
+
+```bash
+$ raps webhook get -e "dm.version.added" --hook-id abc123
+```
+
+---
+
+## raps webhook update
+
+Update an existing webhook subscription.
+
+```bash
+raps webhook update --event <EVENT> --hook-id <HOOK_ID> [OPTIONS]
+```
+
+**Options:**
+- `-e, --event <EVENT>` — Event type
+- `--hook-id <HOOK_ID>` — Hook ID
+- `--callback-url <URL>` — New callback URL
+- `--status <STATUS>` — New status (`active` or `inactive`)
+- `-s, --system <SYSTEM>` — System (default: `data`)
+
+**Example:**
+
+```bash
+$ raps webhook update -e "dm.version.added" --hook-id abc123 --status inactive
+```
+
+---
+
+## raps webhook delete
+
+Delete a webhook subscription.
+
+```bash
+raps webhook delete --event <EVENT> <HOOK_ID>
+```
+
+**Arguments:**
+- `<HOOK_ID>` — Hook ID to delete
+
+**Options:**
+- `-e, --event <EVENT>` — Event type
+- `-s, --system <SYSTEM>` — System (default: `data`)
+
+**Example:**
+
+```bash
+$ raps webhook delete -e "dm.version.added" abc123
+```
+
+---
+
+## raps webhook events
+
+List all available webhook event types.
+
+```bash
+raps webhook events [--output FORMAT]
+```
+
+**Example:**
+
+```bash
+$ raps webhook events
+$ raps webhook events --output json
+```
+
+---
+
+## raps webhook test
+
+Test connectivity to a webhook callback URL by sending a test POST request.
+
+```bash
+raps webhook test [OPTIONS] <URL>
+```
+
+**Arguments:**
+- `<URL>` — Webhook callback URL to test
+
+**Options:**
+- `-t, --timeout <TIMEOUT>` — Timeout in seconds (default: 10)
+
+**Example:**
+
+```bash
+$ raps webhook test https://hooks.example.com/aps
+```
+
+---
+
+## raps webhook verify-signature
+
+Verify the HMAC signature of a webhook payload to ensure authenticity.
+
+```bash
+raps webhook verify-signature --signature <SIG> --secret <SECRET> <PAYLOAD>
+```
+
+**Arguments:**
+- `<PAYLOAD>` — The webhook payload (JSON string or `@file`)
+
+**Options:**
+- `-s, --signature <SIGNATURE>` — The signature from `X-Adsk-Signature` header
+- `--secret <SECRET>` — The webhook secret
+
+**Example:**
+
+```bash
+$ raps webhook verify-signature --signature "abc123..." --secret "my-secret" '{"event":"dm.version.added"}'
+```
+
+---
+
+## Common Event Types
+
+| Event | Description |
+|-------|-------------|
+| `dm.version.added` | New file version uploaded |
+| `dm.version.modified` | File version modified |
+| `dm.folder.added` | New folder created |
+| `dm.folder.modified` | Folder modified |
+
+---
+
+## Next Steps
+
+- [Authentication](/docs/auth) — Set up OAuth credentials
+- [Data Management](/docs/data-management) — Manage hubs, projects, and folders
+- [Pipelines](/docs/pipelines) — Automate webhook-driven workflows

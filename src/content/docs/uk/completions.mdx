@@ -1,0 +1,84 @@
+---
+title: "Shell Completions"
+description: "Generate tab completions for bash, zsh, fish, PowerShell, and elvish"
+section: "commands"
+order: 18
+icon: "⌨️"
+---
+
+# Shell Completions
+
+Generate tab completion scripts for your shell to enable auto-completion of RAPS commands, subcommands, and options.
+
+## raps completions
+
+```bash
+raps completions <SHELL>
+```
+
+**Supported shells:** `bash`, `zsh`, `fish`, `powershell`, `elvish`
+
+---
+
+## Installation
+
+### Bash
+
+```bash
+# Add to ~/.bashrc
+eval "$(raps completions bash)"
+```
+
+Or save to a file:
+
+```bash
+raps completions bash > ~/.local/share/bash-completion/completions/raps
+```
+
+### Zsh
+
+```bash
+# Add to ~/.zshrc
+eval "$(raps completions zsh)"
+```
+
+Or save to a file:
+
+```bash
+raps completions zsh > ~/.zfunc/_raps
+# Then add to ~/.zshrc: fpath+=~/.zfunc
+```
+
+### Fish
+
+```bash
+raps completions fish > ~/.config/fish/completions/raps.fish
+```
+
+### PowerShell
+
+```powershell
+# Add to your PowerShell profile ($PROFILE)
+raps completions powershell | Out-String | Invoke-Expression
+```
+
+Or save to a file:
+
+```powershell
+raps completions powershell > raps-completions.ps1
+# Then add to $PROFILE: . path\to\raps-completions.ps1
+```
+
+### Elvish
+
+```bash
+raps completions elvish > ~/.config/elvish/lib/raps.elv
+# Then add to ~/.config/elvish/rc.elv: use raps
+```
+
+---
+
+## Next Steps
+
+- [Interactive Shell](/docs/interactive-shell) — Built-in REPL with tab completion
+- [Installation](/docs/installation) — Install RAPS

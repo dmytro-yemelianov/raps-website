@@ -1,0 +1,111 @@
+---
+title: "Plugins & Aliases"
+description: "Manage plugins, hooks, and command aliases"
+section: "commands"
+order: 16
+icon: "🔌"
+---
+
+# Plugin & Alias Commands
+
+Extend RAPS with plugins and create short aliases for frequently used commands.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps plugin list` | List discovered and configured plugins |
+| `raps plugin enable` | Enable a plugin |
+| `raps plugin disable` | Disable a plugin |
+| `raps plugin alias list` | List all configured aliases |
+| `raps plugin alias add` | Add a new alias |
+| `raps plugin alias remove` | Remove an alias |
+
+---
+
+## raps plugin list
+
+List all discovered and configured plugins with their status.
+
+```bash
+raps plugin list [--output FORMAT]
+```
+
+---
+
+## raps plugin enable
+
+Enable a plugin by name.
+
+```bash
+raps plugin enable <PLUGIN_NAME>
+```
+
+---
+
+## raps plugin disable
+
+Disable a plugin by name.
+
+```bash
+raps plugin disable <PLUGIN_NAME>
+```
+
+---
+
+## Alias Commands
+
+Aliases let you create shortcuts for frequently used commands.
+
+### raps plugin alias list
+
+List all configured aliases.
+
+```bash
+raps plugin alias list [--output FORMAT]
+```
+
+### raps plugin alias add
+
+Add a new alias.
+
+```bash
+raps plugin alias add "<ALIAS>" "<COMMAND>"
+```
+
+**Example:**
+
+```bash
+$ raps plugin alias add "bl" "bucket list"
+$ raps plugin alias add "ol" "object list"
+$ raps plugin alias add "ts" "translate status"
+```
+
+After adding aliases, use them directly:
+
+```bash
+$ raps bl        # equivalent to: raps bucket list
+$ raps ol mybkt  # equivalent to: raps object list mybkt
+```
+
+### raps plugin alias remove
+
+Remove an existing alias.
+
+```bash
+raps plugin alias remove "<ALIAS>"
+```
+
+**Example:**
+
+```bash
+$ raps plugin alias remove "bl"
+```
+
+---
+
+## Next Steps
+
+- [Configuration](/docs/configuration) — Manage profiles and settings
+- [Interactive Shell](/docs/interactive-shell) — Use aliases in the REPL
+- [Pipelines](/docs/pipelines) — Automate workflows

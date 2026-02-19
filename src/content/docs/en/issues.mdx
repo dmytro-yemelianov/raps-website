@@ -1,0 +1,148 @@
+---
+title: "Issue Commands"
+description: "Manage ACC/BIM 360 project issues"
+section: "commands"
+order: 12
+icon: "🐛"
+---
+
+# Issue Commands
+
+Create, track, and manage issues in ACC (Autodesk Construction Cloud) and BIM 360 projects.
+
+> **Note:** Issue commands require 3-legged OAuth with project access. Run `raps auth login` first.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps issue list` | List issues in a project |
+| `raps issue create` | Create a new issue |
+| `raps issue update` | Update an issue |
+| `raps issue types` | List issue types/categories |
+| `raps issue comment` | Manage issue comments |
+| `raps issue attachments` | List issue attachments |
+| `raps issue transition` | Transition issue status |
+| `raps issue delete` | Delete an issue |
+
+---
+
+## raps issue list
+
+List issues in a project with optional filtering.
+
+```bash
+raps issue list [OPTIONS] <PROJECT_ID>
+```
+
+**Arguments:**
+- `<PROJECT_ID>` — Project ID (without `b.` prefix)
+
+**Options:**
+- `-s, --status <STATUS>` — Filter by status (open, closed, etc.)
+- `--since <SINCE>` — Only show issues created after this date (YYYY-MM-DD)
+
+**Example:**
+
+```bash
+$ raps issue list my-project-id
+$ raps issue list my-project-id --status open --output json
+$ raps issue list my-project-id --since "2026-01-01"
+```
+
+---
+
+## raps issue create
+
+Create a new issue or bulk-create from a CSV file.
+
+```bash
+raps issue create [OPTIONS] <PROJECT_ID>
+```
+
+**Options:**
+- `-t, --title <TITLE>` — Issue title
+- `-d, --description <DESCRIPTION>` — Issue description
+- `--from-csv <FILE>` — Create issues from CSV (columns: title, description, status)
+
+**Example:**
+
+```bash
+$ raps issue create my-project-id -t "Clash at grid A-3" -d "Structural clash detected"
+$ raps issue create my-project-id --from-csv issues.csv
+```
+
+---
+
+## raps issue update
+
+Update an existing issue.
+
+```bash
+raps issue update <PROJECT_ID> <ISSUE_ID> [OPTIONS]
+```
+
+---
+
+## raps issue types
+
+List available issue types (categories) for a project.
+
+```bash
+raps issue types <PROJECT_ID> [--output FORMAT]
+```
+
+---
+
+## raps issue comment
+
+Manage comments on issues. Subcommands: `add`, `list`.
+
+```bash
+raps issue comment add <PROJECT_ID> <ISSUE_ID> -b "Comment text"
+raps issue comment list <PROJECT_ID> <ISSUE_ID>
+```
+
+**Example:**
+
+```bash
+$ raps issue comment add my-project demo-issue-001 -b "See model view at Level 2"
+```
+
+---
+
+## raps issue attachments
+
+List attachments for an issue.
+
+```bash
+raps issue attachments <PROJECT_ID> <ISSUE_ID>
+```
+
+---
+
+## raps issue transition
+
+Transition an issue to a new status.
+
+```bash
+raps issue transition <PROJECT_ID> <ISSUE_ID> --status <STATUS>
+```
+
+---
+
+## raps issue delete
+
+Delete an issue.
+
+```bash
+raps issue delete <PROJECT_ID> <ISSUE_ID>
+```
+
+---
+
+## Next Steps
+
+- [RFI Commands](/docs/rfis) — Manage Requests for Information
+- [ACC Modules](/docs/acc-modules) — Assets, Submittals, Checklists
+- [Portfolio Reports](/docs/report) — Aggregate issue reports
