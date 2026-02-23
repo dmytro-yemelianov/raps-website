@@ -21,7 +21,7 @@ RAPS supports both 2-legged (client credentials) and 3-legged (authorization cod
 | `raps auth logout` | Clear stored tokens |
 | `raps auth status` | Show authentication status |
 | `raps auth whoami` | Show user profile |
-| `raps auth inspect-token` | Inspect token details |
+| `raps auth inspect` | Inspect token details (scopes, expiry) |
 
 ## raps auth test
 
@@ -127,12 +127,12 @@ Authentication Status
     Expires in: 1h 30m
 ```
 
-## raps auth inspect-token
+## raps auth inspect
 
 Inspect the current access token for scope, expiry, and metadata.
 
 ```bash
-$ raps auth inspect-token
+$ raps auth inspect
 Token Information:
 ────────────────────────────────────────────────────────────
   Valid: ✓ Yes
@@ -149,7 +149,7 @@ Token Information:
 **With expiry warning:**
 
 ```bash
-$ raps auth inspect-token --warn-expiry 3600
+$ raps auth inspect --warn-expiry 3600
 ⚠ WARNING: Token expires in less than 1 hour!
 ```
 

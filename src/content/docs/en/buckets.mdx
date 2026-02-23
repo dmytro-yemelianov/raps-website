@@ -18,7 +18,7 @@ Manage Object Storage Service (OSS) buckets for storing files.
 |---------|-------------|
 | `raps bucket create` | Create a new bucket |
 | `raps bucket list` | List all buckets |
-| `raps bucket details` | Get bucket details |
+| `raps bucket info` | Get bucket details |
 | `raps bucket delete` | Delete a bucket |
 
 ## raps bucket create
@@ -105,12 +105,12 @@ EMEA Region:
 raps bucket list --output json
 ```
 
-## raps bucket details
+## raps bucket info
 
 Get detailed information about a specific bucket.
 
 ```bash
-$ raps bucket details my-bucket
+$ raps bucket info my-bucket
 Bucket Details:
   Key: my-bucket
   Policy: persistent
@@ -129,10 +129,10 @@ $ raps bucket delete my-bucket
 ✓ Bucket deleted successfully
 ```
 
-**Force delete (skip confirmation):**
+**Skip confirmation:**
 
 ```bash
-raps bucket delete my-bucket --force
+raps bucket delete my-bucket --yes
 ```
 
 > **Note:** Buckets must be empty before deletion. Delete all objects first.

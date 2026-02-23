@@ -9,6 +9,56 @@
 
 export const releases = [
   {
+    version: '4.11.0',
+    date: '2026-02-22',
+    highlights: ['101 MCP Tools', 'Code Hardening', 'Auth Safety', 'UX Improvements'],
+    description: 'Hardened error handling, auth safety, and code quality across the entire codebase with 18 robustness improvements',
+    type: 'minor',
+    changes: {
+      added: [
+        '29 new MCP tools bringing total to 101: project CRUD, user management, template convert, and more',
+        'TUI Dashboard with 7 tabs and 33 views (behind `--features dashboard` flag)',
+        'AEC GraphQL API for faster hubs/projects loading with REST fallback',
+      ],
+      changed: [
+        'Improved robustness, UX safety, and code quality across 18 findings',
+        'Hardened error handling and auth safety across all crates',
+      ],
+    },
+  },
+  {
+    version: '4.9.0',
+    date: '2026-02-21',
+    highlights: ['Profiler Overhaul', 'Structured Logging', 'JSON Log Format', 'Env Config'],
+    description: 'Overhauled profiler accuracy and reporting, enhanced logging with structured fields and JSON file output',
+    type: 'minor',
+    changes: {
+      changed: [
+        'Overhauled profiler accuracy, tracking, and reporting',
+        'Enhanced logging with structured fields and JSON file format',
+        'Environment variable configuration for log levels',
+      ],
+    },
+  },
+  {
+    version: '4.8.0',
+    date: '2026-02-20',
+    highlights: ['Tracing Logging', 'Performance Profiler', 'Reedline Shell', 'Keychain Fallback'],
+    description: 'Tracing-based logging, performance profiler, reedline interactive shell, resilient keychain fallback',
+    type: 'minor',
+    changes: {
+      added: [
+        'Tracing-based structured logging across all crates',
+        'Performance profiler for command execution timing',
+        'Resilient keychain fallback for token storage',
+      ],
+      changed: [
+        'Switched interactive shell from rustyline to reedline for better UX',
+        'Improved logging infrastructure with configurable verbosity',
+      ],
+    },
+  },
+  {
     version: '4.7.0',
     date: '2026-02-19',
     highlights: ['6 Auth Presets', '-p Short Flag', 'Viewer/Editor/Admin', 'Storage/Automation'],

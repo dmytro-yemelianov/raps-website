@@ -17,6 +17,7 @@ The `raps serve` command starts a Model Context Protocol (MCP) server, enabling 
 > **Improved in v4.1.1** — Server starts without credentials and provides interactive setup guidance.
 > **Enhanced in v4.4.0** — Now with 51 tools including folder permissions, operation lifecycle, and full CRUD for ACC modules.
 > **Expanded in v4.5.0** — Now with 72 tools: custom API calls, portfolio reports, templates, webhooks, Design Automation, Reality Capture, and more.
+> **Expanded in v4.11.0** — Now with 101 tools: project CRUD (update, archive), user management (remove, update), template convert, and comprehensive coverage of all APS APIs.
 
 ## From "Chat with PDF" to "Chat with Tools"
 
@@ -117,7 +118,7 @@ Add to `.cursor/mcp.json` in your project:
 
 ## Available Tools
 
-The RAPS MCP server exposes **72 tools** organized by functionality:
+The RAPS MCP server exposes **101 tools** organized by functionality:
 
 ### Authentication
 
@@ -176,6 +177,15 @@ The RAPS MCP server exposes **72 tools** organized by functionality:
 | `item_delete` | Delete an item |
 | `item_rename` | Rename an existing item |
 | `item_versions` | List item versions |
+
+### Project Management
+
+| Tool | Description |
+|------|-------------|
+| `project_update` | Update project details |
+| `project_archive` | Archive a project |
+| `project_user_remove` | Remove a user from a project |
+| `project_user_update` | Update a user's role in a project |
 
 ### Admin Bulk Operations
 
@@ -265,6 +275,7 @@ The RAPS MCP server exposes **72 tools** organized by functionality:
 | `template_create` | Create a new project template |
 | `template_update` | Update an existing template |
 | `template_archive` | Archive a template |
+| `template_convert` | Convert a project to a template |
 
 ### Webhooks
 

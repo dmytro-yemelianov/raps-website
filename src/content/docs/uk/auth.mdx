@@ -21,7 +21,7 @@ RAPS підтримує як 2-legged (client credentials), так і 3-legged (
 | `raps auth logout` | Очистити збережені токени |
 | `raps auth status` | Показати статус автентифікації |
 | `raps auth whoami` | Показати профіль користувача |
-| `raps auth inspect-token` | Переглянути деталі токена |
+| `raps auth inspect` | Переглянути деталі токена (області дії, термін дії) |
 
 ## raps auth test
 
@@ -114,12 +114,12 @@ Authentication Status
     Expires in: 1h 30m
 ```
 
-## raps auth inspect-token
+## raps auth inspect
 
 Перегляд поточного токена доступу: області дії, термін дії та метадані.
 
 ```bash
-$ raps auth inspect-token
+$ raps auth inspect
 Token Information:
 ────────────────────────────────────────────────────────────
   Valid: ✓ Yes
@@ -136,7 +136,7 @@ Token Information:
 **З попередженням про закінчення терміну:**
 
 ```bash
-$ raps auth inspect-token --warn-expiry 3600
+$ raps auth inspect --warn-expiry 3600
 ⚠ WARNING: Token expires in less than 1 hour!
 ```
 

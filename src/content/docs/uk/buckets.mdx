@@ -18,7 +18,7 @@ icon: "📦"
 |---------|------|
 | `raps bucket create` | Створити новий бакет |
 | `raps bucket list` | Показати список усіх бакетів |
-| `raps bucket details` | Отримати деталі бакета |
+| `raps bucket info` | Отримати деталі бакета |
 | `raps bucket delete` | Видалити бакет |
 
 ## raps bucket create
@@ -105,12 +105,12 @@ EMEA Region:
 raps bucket list --output json
 ```
 
-## raps bucket details
+## raps bucket info
 
 Отримання детальної інформації про конкретний бакет.
 
 ```bash
-$ raps bucket details my-bucket
+$ raps bucket info my-bucket
 Bucket Details:
   Key: my-bucket
   Policy: persistent
@@ -129,10 +129,10 @@ $ raps bucket delete my-bucket
 ✓ Bucket deleted successfully
 ```
 
-**Примусове видалення (без підтвердження):**
+**Пропуск підтвердження:**
 
 ```bash
-raps bucket delete my-bucket --force
+raps bucket delete my-bucket --yes
 ```
 
 > **Примітка:** Бакети повинні бути порожніми перед видаленням. Спочатку видаліть усі об'єкти.
