@@ -9,6 +9,62 @@
 
 export const releases = [
   {
+    version: '4.14.0',
+    date: '2026-02-25',
+    highlights: ['API Health Tracking', 'Live Progress Spinners', 'Headless Auth', 'Major Refactor'],
+    description: 'Live progress spinners with API health and latency info, headless environment detection for auth, major codebase refactoring',
+    type: 'minor',
+    changes: {
+      added: [
+        'Live progress spinners with API health and latency tracking across all commands',
+        'Streaming bucket listing per-region with concurrent fetching',
+        'Headless environment detection for `auth login` — auto-switches to device code flow on SSH, CI, containers',
+        'Unix pipe support (stdin/stdout) across CLI commands',
+        'Manual PKCE-based device code flow replacing broken browser-based flow',
+      ],
+      changed: [
+        'Major refactor: split MCP server.rs (6,312 lines) into 8 focused modules',
+        'Split 14 monolithic files into focused modules across all crates',
+        'Improved keychain fallback warnings with actionable guidance',
+        'Comprehensive MCP server review fixes (20 issues)',
+      ],
+      fixed: [
+        'Validate empty auth code input and reset refreshing flag on error',
+        'Validate client credentials before auth operations',
+        'Device code flow replaced with working PKCE-based implementation',
+      ],
+    },
+  },
+  {
+    version: '4.13.0',
+    date: '2026-02-24',
+    highlights: ['API Bug Fixes', 'Code Quality', 'Review Findings', 'Stability'],
+    description: 'Fixed 6 API alignment bugs (2 blocking, 4 high severity) and resolved 11 medium/low review findings',
+    type: 'minor',
+    changes: {
+      fixed: [
+        'Resolved 6 API alignment bugs including 2 blocking and 4 high severity issues',
+        'Resolved 11 medium and low severity review findings across codebase',
+      ],
+    },
+  },
+  {
+    version: '4.12.0',
+    date: '2026-02-23',
+    highlights: ['AEC GraphQL', 'TUI Dashboard', '7 Tabs', '33 Views'],
+    description: 'AEC GraphQL API for faster hubs/projects loading, expanded TUI dashboard with 7 tabs and 33 views',
+    type: 'minor',
+    changes: {
+      added: [
+        'AEC GraphQL API for faster hubs/projects loading with REST fallback',
+        'Expanded TUI Dashboard from 4 to 7 tabs with 33 views',
+      ],
+      changed: [
+        'Dashboard made optional behind `--features dashboard` flag to reduce default binary size',
+      ],
+    },
+  },
+  {
     version: '4.11.0',
     date: '2026-02-22',
     highlights: ['101 MCP Tools', 'Code Hardening', 'Auth Safety', 'UX Improvements'],
@@ -17,8 +73,6 @@ export const releases = [
     changes: {
       added: [
         '29 new MCP tools bringing total to 101: project CRUD, user management, template convert, and more',
-        'TUI Dashboard with 7 tabs and 33 views (behind `--features dashboard` flag)',
-        'AEC GraphQL API for faster hubs/projects loading with REST fallback',
       ],
       changed: [
         'Improved robustness, UX safety, and code quality across 18 findings',
