@@ -13,43 +13,30 @@ icon: "📋"
 ## Огляд
 
 Пайплайни дозволяють:
-- Визначати багатокрокові робочі процеси в декларативних файлах
+- Визначати багатокрокові робочі процеси в декларативних YAML або JSON файлах
 - Використовувати підстановку змінних для динамічних значень
 - Коректно обробляти помилки з опцією continue-on-error
-- Перевіряти перед виконанням у режимі dry-run
+- Перевіряти пайплайни перед виконанням
+- Попередній перегляд у режимі dry-run
 
-## Базова структура пайплайну
+## Структура пайплайну
+
+Файл пайплайну має чотири поля:
 
 ```yaml
-# pipeline.yaml
-name: Model Processing Pipeline
-description: Upload and translate models
-
-variables:
-  bucket: my-project-bucket
-  region: US
-
-steps:
-  - name: Create Bucket
-    command: bucket create
-    args:
-      key: "{{ bucket }}"
-      policy: persistent
-      region: "{{ region }}"
-
-  - name: Upload Model
-    command: object upload
-    args:
-      bucket: "{{ bucket }}"
-      file: "./models/building.rvt"
-
-  - name: Start Translation
-    command: translate start
-    args:
-      urn: "{{ steps.Upload Model.output.urn }}"
-      format: svf2
-      wait: true
+name: My Pipeline            # Обов'язково: назва пайплайну
+description: What it does    # Необов'язково: опис
+variables:                   # Необов'язково: пари ключ-значення для підстановки
+  BUCKET: my-bucket
+  PROJECT_ID: "12345"
+steps:                       # Обов'язково: список кроків для виконання
+  - name: Step Name          # Обов'язково: назва кроку
+    command: bucket list     # Обов'язково: підкоманда raps
+    continue_on_error: false # Необов'язково: не зупинятися при помилці (за замовчуванням: false)
+    condition: "true"        # Необов'язково: пропустити якщо хибне (порожнє, "false", або "0")
 ```
+
+`command` кожного кроку — це рядок підкоманди raps (без префіксу `raps`). Наприклад, `bucket list`, `object upload my-bucket -f model.rvt`, або `auth test`.
 
 ## Запуск пайплайнів
 
@@ -57,213 +44,135 @@ steps:
 # Виконати пайплайн
 raps pipeline run pipeline.yaml
 
-# Dry-run (перевірка без виконання)
+# Dry-run (показати команди без виконання)
 raps pipeline run pipeline.yaml --dry-run
-
-# Перевизначити змінні
-raps pipeline run pipeline.yaml --var bucket=custom-bucket --var region=EMEA
 
 # Продовжити при помилках
 raps pipeline run pipeline.yaml --continue-on-error
+
+# Читати пайплайн з stdin (парситься як YAML)
+cat pipeline.yaml | raps pipeline run -
 ```
 
 ## Підстановка змінних
 
-### Статичні змінні
-
-Визначте змінні на початку вашого пайплайну:
+Визначте змінні на початку пайплайну та використовуйте їх у командах кроків за допомогою синтаксису `${VARIABLE}`:
 
 ```yaml
+name: Upload Pipeline
 variables:
-  project_name: Downtown Office
-  bucket_prefix: company-aps
-```
+  BUCKET: my-project-bucket
+  MODEL: building.rvt
 
-Використовуйте з `{{ variable_name }}`:
-
-```yaml
 steps:
   - name: Create Bucket
-    command: bucket create
-    args:
-      key: "{{ bucket_prefix }}-{{ project_name | slugify }}"
-```
+    command: "bucket create -k ${BUCKET} -p transient -r US"
+    continue_on_error: true
 
-### Змінні середовища
-
-Доступ до змінних середовища:
-
-```yaml
-steps:
-  - name: Upload
-    command: object upload
-    args:
-      bucket: "{{ env.BUCKET_NAME }}"
-      file: "{{ env.MODEL_PATH }}"
-```
-
-### Результати кроків
-
-Посилання на результати попередніх кроків:
-
-```yaml
-steps:
   - name: Upload Model
-    id: upload
-    command: object upload
-    args:
-      bucket: my-bucket
-      file: model.rvt
+    command: "object upload ${BUCKET} -f ./models/${MODEL}"
 
-  - name: Get URN
-    command: object urn
-    args:
-      bucket: my-bucket
-      object: "{{ steps.upload.output.object_key }}"
+  - name: List Objects
+    command: "object list ${BUCKET}"
 ```
+
+Підтримуються обидва синтаксиси: `${VAR}` та `$VAR`.
 
 ## Умовні кроки
 
-Виконання кроків на основі умов:
+Кроки можуть містити поле `condition`. Якщо умова оцінюється як хибна (порожній рядок, `"false"`, або `"0"`), крок пропускається:
 
 ```yaml
 steps:
-  - name: Create Bucket
-    command: bucket create
-    args:
-      key: my-bucket
-    condition: "{{ env.CREATE_BUCKET == 'true' }}"
+  - name: Cleanup Old Data
+    command: "bucket delete old-bucket -y"
+    condition: "true"          # Цей крок виконується
 
-  - name: Upload
-    command: object upload
-    args:
-      bucket: my-bucket
-      file: model.rvt
-    condition: "{{ steps['Create Bucket'].success or env.BUCKET_EXISTS == 'true' }}"
+  - name: Skip This
+    command: "bucket list"
+    condition: "false"         # Цей крок пропускається
+
+  - name: Also Skipped
+    command: "bucket list"
+    condition: "0"             # Цей крок пропускається
 ```
 
 ## Обробка помилок
 
-### Продовження при помилці
+За замовчуванням пайплайн зупиняється при невдачі кроку. Використовуйте `continue_on_error` для окремих кроків або прапорець `--continue-on-error` CLI для продовження:
 
 ```yaml
 steps:
   - name: Delete Old Bucket
-    command: bucket delete
-    args:
-      key: old-bucket
-    continue_on_error: true
+    command: "bucket delete old-bucket -y"
+    continue_on_error: true   # Пайплайн продовжується якщо це не вдалось
 
   - name: Create New Bucket
-    command: bucket create
-    args:
-      key: new-bucket
+    command: "bucket create -k new-bucket -p persistent -r US"
+    # Пайплайн зупиняється якщо це не вдалось (поведінка за замовчуванням)
 ```
 
-### Повторна спроба при невдачі
+## Перевірка пайплайнів
 
-```yaml
-steps:
-  - name: Upload Large File
-    command: object upload
-    args:
-      bucket: my-bucket
-      file: large-model.ifc
-    retry:
-      attempts: 3
-      delay: 10  # секунди
+Перевірте файл пайплайну на синтаксичні помилки перед запуском:
+
+```bash
+raps pipeline validate pipeline.yaml
+```
+
+## Генерація зразка пайплайну
+
+Створіть стартовий файл пайплайну:
+
+```bash
+# Згенерувати YAML (за замовчуванням)
+raps pipeline sample
+
+# Згенерувати у вказаний файл
+raps pipeline sample --out-file my-pipeline.yaml
 ```
 
 ## Повний приклад
 
-Готовий до продакшену пайплайн для обробки моделей:
+Практичний пайплайн для управління життєвим циклом бакету:
 
 ```yaml
-name: Production Model Pipeline
-description: Full workflow for processing architectural models
+name: Bucket Lifecycle
+description: Create a bucket, upload files, and clean up
 
 variables:
-  project_id: project-2024-001
-  bucket_name: "aps-{{ project_id }}"
-  output_formats:
-    - svf2
-    - obj
-    - thumbnail
+  BUCKET: raps-demo-bucket
+  PROJECT_ID: "12345"
 
 steps:
   - name: Verify Authentication
     command: auth test
 
+  - name: List Existing Buckets
+    command: bucket list
+
   - name: Create Project Bucket
-    command: bucket create
-    args:
-      key: "{{ bucket_name }}"
-      policy: persistent
-      region: US
-    continue_on_error: true  # Може вже існувати
+    command: "bucket create -k ${BUCKET} -p transient -r US"
+    continue_on_error: true
 
-  - name: Upload Models
-    command: object upload
-    args:
-      bucket: "{{ bucket_name }}"
-      file: "./models/*.rvt"
-      batch: true
-      parallel: true
-      concurrency: 5
+  - name: Upload Model
+    command: "object upload ${BUCKET} -f ./models/building.rvt"
 
-  - name: Process Each Model
-    foreach: "{{ steps['Upload Models'].output.objects }}"
-    as: model
-    steps:
-      - name: Get URN
-        command: object urn
-        args:
-          bucket: "{{ bucket_name }}"
-          object: "{{ model.key }}"
+  - name: List Objects
+    command: "object list ${BUCKET}"
 
-      - name: Translate to Formats
-        foreach: "{{ output_formats }}"
-        as: format
-        steps:
-          - name: "Translate to {{ format }}"
-            command: translate start
-            args:
-              urn: "{{ parent.steps['Get URN'].output.urn }}"
-              format: "{{ format }}"
-              wait: true
-            retry:
-              attempts: 2
-              delay: 30
-
-  - name: Generate Report
-    command: pipeline report
-    args:
-      output: "./reports/{{ project_id }}-report.json"
-```
-
-## Команди пайплайнів
-
-```bash
-# Запустити пайплайн
-raps pipeline run pipeline.yaml
-
-# Перевірити синтаксис
-raps pipeline validate pipeline.yaml
-
-# Показати план виконання
-raps pipeline plan pipeline.yaml
-
-# Відновити невдалий пайплайн
-raps pipeline resume .raps-pipeline-state.json
+  - name: Delete Bucket
+    command: "bucket delete ${BUCKET} -y"
+    continue_on_error: true
 ```
 
 ## Найкращі практики
 
-1. **Використовуйте описові назви кроків** — Полегшує читання логів
-2. **Встановлюйте continue_on_error обдумано** — Тільки для некритичних кроків
-3. **Спочатку використовуйте dry-run** — Перевіряйте перед виконанням
-4. **Зберігайте секрети в змінних середовища** — Ніколи у файлах пайплайнів
-5. **Використовуйте retry для мережевих операцій** — API можуть мати тимчасові збої
+1. **Використовуйте описові назви кроків** — Полегшує читання логів та підсумків
+2. **Встановлюйте continue_on_error обдумано** — Тільки для некритичних кроків, як очистка
+3. **Спочатку використовуйте dry-run** — Перевіряйте перед виконанням: `--dry-run`
+4. **Зберігайте секрети в змінних середовища** — Ніколи не додавайте облікові дані у файли пайплайнів
+5. **Використовуйте змінні для повторюваних значень** — Назви бакетів, ID проектів, шляхи до файлів
 
 ## Наступні кроки
 

@@ -13,43 +13,30 @@ Execute batch operations from YAML or JSON pipeline files for complex automation
 ## Overview
 
 Pipelines allow you to:
-- Define multi-step workflows in declarative files
+- Define multi-step workflows in declarative YAML or JSON files
 - Use variable substitution for dynamic values
 - Handle errors gracefully with continue-on-error
-- Validate before execution with dry-run mode
+- Validate pipelines before execution
+- Preview with dry-run mode
 
-## Basic Pipeline Structure
+## Pipeline Structure
+
+A pipeline file has four fields:
 
 ```yaml
-# pipeline.yaml
-name: Model Processing Pipeline
-description: Upload and translate models
-
-variables:
-  bucket: my-project-bucket
-  region: US
-
-steps:
-  - name: Create Bucket
-    command: bucket create
-    args:
-      key: "{{ bucket }}"
-      policy: persistent
-      region: "{{ region }}"
-    
-  - name: Upload Model
-    command: object upload
-    args:
-      bucket: "{{ bucket }}"
-      file: "./models/building.rvt"
-    
-  - name: Start Translation
-    command: translate start
-    args:
-      urn: "{{ steps.Upload Model.output.urn }}"
-      format: svf2
-      wait: true
+name: My Pipeline            # Required: pipeline name
+description: What it does    # Optional: description
+variables:                   # Optional: key-value pairs for substitution
+  BUCKET: my-bucket
+  PROJECT_ID: "12345"
+steps:                       # Required: list of steps to execute
+  - name: Step Name          # Required: step display name
+    command: bucket list     # Required: raps subcommand to run
+    continue_on_error: false # Optional: don't abort on failure (default: false)
+    condition: "true"        # Optional: skip if falsy (empty, "false", or "0")
 ```
+
+Each step's `command` is a raps subcommand string (without the `raps` prefix). For example, `bucket list`, `object upload my-bucket -f model.rvt`, or `auth test`.
 
 ## Running Pipelines
 
@@ -57,216 +44,167 @@ steps:
 # Execute a pipeline
 raps pipeline run pipeline.yaml
 
-# Dry-run (validate without executing)
+# Dry-run (show commands without executing)
 raps pipeline run pipeline.yaml --dry-run
 
-# Override variables
-raps pipeline run pipeline.yaml --var bucket=custom-bucket --var region=EMEA
-
-# Continue on errors
+# Continue past failures
 raps pipeline run pipeline.yaml --continue-on-error
+
+# Read pipeline from stdin (parsed as YAML)
+cat pipeline.yaml | raps pipeline run -
 ```
 
 ## Variable Substitution
 
-### Static Variables
-
-Define variables at the top of your pipeline:
+Define variables at the top of your pipeline and reference them in step commands using `${VARIABLE}` syntax:
 
 ```yaml
+name: Upload Pipeline
 variables:
-  project_name: Downtown Office
-  bucket_prefix: company-aps
-```
+  BUCKET: my-project-bucket
+  MODEL: building.rvt
 
-Use with `{{ variable_name }}`:
-
-```yaml
 steps:
   - name: Create Bucket
-    command: bucket create
-    args:
-      key: "{{ bucket_prefix }}-{{ project_name | slugify }}"
-```
+    command: "bucket create -k ${BUCKET} -p transient -r US"
+    continue_on_error: true
 
-### Environment Variables
-
-Access environment variables:
-
-```yaml
-steps:
-  - name: Upload
-    command: object upload
-    args:
-      bucket: "{{ env.BUCKET_NAME }}"
-      file: "{{ env.MODEL_PATH }}"
-```
-
-### Step Outputs
-
-Reference outputs from previous steps:
-
-```yaml
-steps:
   - name: Upload Model
-    id: upload
-    command: object upload
-    args:
-      bucket: my-bucket
-      file: model.rvt
-    
-  - name: Get URN
-    command: object urn
-    args:
-      bucket: my-bucket
-      object: "{{ steps.upload.output.object_key }}"
+    command: "object upload ${BUCKET} -f ./models/${MODEL}"
+
+  - name: List Objects
+    command: "object list ${BUCKET}"
 ```
+
+Both `${VAR}` and `$VAR` syntax are supported.
 
 ## Conditional Steps
 
-Run steps based on conditions:
+Steps can include a `condition` field. If the condition evaluates to falsy (empty string, `"false"`, or `"0"`), the step is skipped:
 
 ```yaml
 steps:
-  - name: Create Bucket
-    command: bucket create
-    args:
-      key: my-bucket
-    condition: "{{ env.CREATE_BUCKET == 'true' }}"
-    
-  - name: Upload
-    command: object upload
-    args:
-      bucket: my-bucket
-      file: model.rvt
-    condition: "{{ steps['Create Bucket'].success or env.BUCKET_EXISTS == 'true' }}"
+  - name: Cleanup Old Data
+    command: "bucket delete old-bucket -y"
+    condition: "true"          # This step runs
+
+  - name: Skip This
+    command: "bucket list"
+    condition: "false"         # This step is skipped
+
+  - name: Also Skipped
+    command: "bucket list"
+    condition: "0"             # This step is skipped
 ```
 
 ## Error Handling
 
-### Continue on Error
+By default, the pipeline aborts when a step fails. Use `continue_on_error` on individual steps or the `--continue-on-error` CLI flag to continue past failures:
 
 ```yaml
 steps:
   - name: Delete Old Bucket
-    command: bucket delete
-    args:
-      key: old-bucket
-    continue_on_error: true
-    
+    command: "bucket delete old-bucket -y"
+    continue_on_error: true   # Pipeline continues if this fails
+
   - name: Create New Bucket
-    command: bucket create
-    args:
-      key: new-bucket
+    command: "bucket create -k new-bucket -p persistent -r US"
+    # Pipeline aborts if this fails (default behavior)
 ```
 
-### Retry on Failure
+## Validating Pipelines
 
-```yaml
-steps:
-  - name: Upload Large File
-    command: object upload
-    args:
-      bucket: my-bucket
-      file: large-model.ifc
-    retry:
-      attempts: 3
-      delay: 10  # seconds
+Check a pipeline file for syntax errors before running it:
+
+```bash
+raps pipeline validate pipeline.yaml
+```
+
+## Generating a Sample Pipeline
+
+Generate a starter pipeline file:
+
+```bash
+# Generate YAML (default)
+raps pipeline sample
+
+# Generate to a specific file
+raps pipeline sample --out-file my-pipeline.yaml
 ```
 
 ## Complete Example
 
-A production-ready pipeline for model processing:
+A practical pipeline for bucket lifecycle management:
 
 ```yaml
-name: Production Model Pipeline
-description: Full workflow for processing architectural models
+name: Bucket Lifecycle
+description: Create a bucket, upload files, and clean up
 
 variables:
-  project_id: project-2024-001
-  bucket_name: "aps-{{ project_id }}"
-  output_formats:
-    - svf2
-    - obj
-    - thumbnail
+  BUCKET: raps-demo-bucket
+  PROJECT_ID: "12345"
 
 steps:
   - name: Verify Authentication
     command: auth test
-    
-  - name: Create Project Bucket
-    command: bucket create
-    args:
-      key: "{{ bucket_name }}"
-      policy: persistent
-      region: US
-    continue_on_error: true  # May already exist
-    
-  - name: Upload Models
-    command: object upload
-    args:
-      bucket: "{{ bucket_name }}"
-      file: "./models/*.rvt"
-      batch: true
-      parallel: true
-      concurrency: 5
-    
-  - name: Process Each Model
-    foreach: "{{ steps['Upload Models'].output.objects }}"
-    as: model
-    steps:
-      - name: Get URN
-        command: object urn
-        args:
-          bucket: "{{ bucket_name }}"
-          object: "{{ model.key }}"
-          
-      - name: Translate to Formats
-        foreach: "{{ output_formats }}"
-        as: format
-        steps:
-          - name: "Translate to {{ format }}"
-            command: translate start
-            args:
-              urn: "{{ parent.steps['Get URN'].output.urn }}"
-              format: "{{ format }}"
-              wait: true
-            retry:
-              attempts: 2
-              delay: 30
 
-  - name: Generate Report
-    command: pipeline report
-    args:
-      output: "./reports/{{ project_id }}-report.json"
+  - name: List Existing Buckets
+    command: bucket list
+
+  - name: Create Project Bucket
+    command: "bucket create -k ${BUCKET} -p transient -r US"
+    continue_on_error: true
+
+  - name: Upload Model
+    command: "object upload ${BUCKET} -f ./models/building.rvt"
+
+  - name: List Objects
+    command: "object list ${BUCKET}"
+
+  - name: Delete Bucket
+    command: "bucket delete ${BUCKET} -y"
+    continue_on_error: true
 ```
 
-## Pipeline Commands
+## Pipeline Output
+
+When a pipeline completes, you get a summary:
+
+```
+Pipeline: Bucket Lifecycle
+  Create a bucket, upload files, and clean up
+────────────────────────────────────────────────────────────
+
+[1/6] Verify Authentication
+  Command: auth test
+  ✓ Success
+
+[2/6] List Existing Buckets
+  Command: bucket list
+  ✓ Success
+
+...
+
+────────────────────────────────────────────────────────────
+Pipeline Summary:
+  ✓ 5 passed, ✗ 1 failed, → 0 skipped
+```
+
+For non-table output formats (JSON, YAML, CSV), the summary is machine-readable:
 
 ```bash
-# Run pipeline
-raps pipeline run pipeline.yaml
-
-# Validate syntax
-raps pipeline validate pipeline.yaml
-
-# Show execution plan
-raps pipeline plan pipeline.yaml
-
-# Resume failed pipeline
-raps pipeline resume .raps-pipeline-state.json
+raps pipeline run pipeline.yaml --output json
 ```
 
 ## Best Practices
 
-1. **Use descriptive step names** — Makes logs easier to read
-2. **Set continue_on_error wisely** — Only for non-critical steps
-3. **Use dry-run first** — Validate before executing
-4. **Store secrets in environment** — Never in pipeline files
-5. **Use retry for network operations** — APIs can have transient failures
+1. **Use descriptive step names** — Makes logs and summaries easier to read
+2. **Set continue_on_error wisely** — Only for non-critical steps like cleanup
+3. **Use dry-run first** — Validate before executing: `--dry-run`
+4. **Store secrets in environment** — Never put credentials in pipeline files
+5. **Use variables for reusable values** — Bucket names, project IDs, file paths
 
 ## Next Steps
 
 - [Examples](/docs/examples) — More workflow examples
 - [Exit Codes](/docs/exit-codes) — CI/CD integration
-

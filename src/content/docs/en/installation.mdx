@@ -30,7 +30,7 @@ This script:
 **Options:**
 ```bash
 # Install specific version
-RAPS_VERSION=3.11.0 curl -fsSL .../install.sh | bash
+RAPS_VERSION=4.14.0 curl -fsSL .../install.sh | bash
 
 # Custom install directory
 RAPS_INSTALL_DIR=/opt/raps/bin curl -fsSL .../install.sh | bash
@@ -58,10 +58,10 @@ This script:
 **Options:**
 ```powershell
 # Install specific version
-$env:RAPS_VERSION = "3.11.0"; irm .../install.ps1 | iex
+$env:RAPS_VERSION = "4.14.0"; irm .../install.ps1 | iex
 
 # Or with parameters (download first)
-.\install.ps1 -Version "3.11.0"
+.\install.ps1 -Version "4.14.0"
 .\install.ps1 -InstallDir "C:\Tools\raps"
 .\install.ps1 -NoPathUpdate
 .\install.ps1 -Uninstall
@@ -120,8 +120,7 @@ npx @dmytro-yemelianov/raps-cli --version
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew tap dmytro-yemelianov/raps
-brew install raps
+brew install dmytro-yemelianov/tap/raps
 ```
 
 ### Scoop (Windows)
@@ -229,7 +228,7 @@ raps --version
 You should see output like:
 
 ```
-raps 4.3.0
+raps 4.14.0
 ```
 
 ## Troubleshooting

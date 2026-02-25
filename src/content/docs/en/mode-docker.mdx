@@ -29,7 +29,7 @@ docker run --rm \
 | Tag | Description |
 |-----|-------------|
 | `latest` | Latest stable release |
-| `3.8.0` | Specific version |
+| `4.14.0` | Specific version |
 | `3.8` | Latest patch of 3.8.x |
 | `3` | Latest minor of 3.x |
 
@@ -183,7 +183,7 @@ docker-compose run --rm raps auth test
 ```yaml
 # .gitlab-ci.yml
 variables:
-  RAPS_IMAGE: ghcr.io/dmytro-yemelianov/raps:3.8.0
+  RAPS_IMAGE: ghcr.io/dmytro-yemelianov/raps:4.14.0
 
 translate:
   image: $RAPS_IMAGE
@@ -205,7 +205,7 @@ translate:
 pipeline {
     agent {
         docker {
-            image 'ghcr.io/dmytro-yemelianov/raps:3.8.0'
+            image 'ghcr.io/dmytro-yemelianov/raps:4.14.0'
         }
     }
     environment {
@@ -235,7 +235,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 container:
-  image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+  image: ghcr.io/dmytro-yemelianov/raps:4.14.0
 
 variables:
   - group: aps-credentials
@@ -261,7 +261,7 @@ version: 2.1
 jobs:
   translate:
     docker:
-      - image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+      - image: ghcr.io/dmytro-yemelianov/raps:4.14.0
     environment:
       APS_CLIENT_ID: $APS_CLIENT_ID
       APS_CLIENT_SECRET: $APS_CLIENT_SECRET
@@ -291,7 +291,7 @@ spec:
     spec:
       containers:
         - name: raps
-          image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+          image: ghcr.io/dmytro-yemelianov/raps:4.14.0
           command: ["raps", "translate", "start", "$(URN)", "--wait"]
           env:
             - name: APS_CLIENT_ID
@@ -325,7 +325,7 @@ spec:
         spec:
           containers:
             - name: raps
-              image: ghcr.io/dmytro-yemelianov/raps:3.8.0
+              image: ghcr.io/dmytro-yemelianov/raps:4.14.0
               command: ["/bin/sh", "-c"]
               args:
                 - |
@@ -354,7 +354,7 @@ Extend the RAPS image with additional tools:
 
 ```dockerfile
 # Dockerfile
-FROM ghcr.io/dmytro-yemelianov/raps:3.8.0
+FROM ghcr.io/dmytro-yemelianov/raps:4.14.0
 
 # Add jq for JSON processing
 RUN apk add --no-cache jq

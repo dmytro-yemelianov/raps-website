@@ -53,7 +53,7 @@ jobs:
 - name: Setup RAPS
   uses: dmytro-yemelianov/raps-action@v1
   with:
-    version: '3.8.0'  # Закріпити конкретну версію
+    version: '4.14.0'  # Закріпити конкретну версію
 ```
 
 ## Налаштування секретів
@@ -344,12 +344,12 @@ jobs:
   uses: actions/cache@v4
   with:
     path: ~/.cargo/bin/raps
-    key: raps-${{ runner.os }}-3.8.0
+    key: raps-${{ runner.os }}-4.14.0
 
 - name: Setup RAPS
   uses: dmytro-yemelianov/raps-action@v1
   with:
-    version: '3.8.0'
+    version: '4.14.0'
 ```
 
 ## Зневадження воркфлоу

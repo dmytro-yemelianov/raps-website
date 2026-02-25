@@ -13,8 +13,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="raps-tip">
       <h3>💡 RAPS CLI Alternative</h3>
       <p>Instead of using this web tool, you can use RAPS CLI:</p>
-      <p><code>raps auth login --scopes data:read,data:write,viewables:read</code></p>
-      <p><code>raps auth status --scopes</code> - Check current scopes</p>
+      <p><code>raps auth login</code> - Interactive scope selection</p>
+      <p><code>raps auth login --preset all</code> - Use preset scope collection</p>
+      <p><code>raps auth login --default</code> - Use default scopes</p>
     </div>
     
     <!-- Authentication Type Selector -->

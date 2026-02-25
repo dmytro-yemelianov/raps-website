@@ -10,7 +10,8 @@ const services = [
       { name: '2-legged OAuth (Client Credentials)', command: 'auth test', status: 'full' },
       { name: '3-legged OAuth (Authorization Code)', command: 'auth login', status: 'full' },
       { name: 'Device Code Flow', command: 'auth login --device', status: 'full' },
-      { name: 'Token Inspection', command: 'auth inspect-token', status: 'full' },
+      { name: 'Headless Auto-Detection', command: 'auth login (auto)', status: 'full' },
+      { name: 'Token Inspection', command: 'auth inspect', status: 'full' },
       { name: 'User Profile', command: 'auth whoami', status: 'full' },
     ]
   },
@@ -18,13 +19,15 @@ const services = [
     name: 'Object Storage (OSS)',
     icon: '📦',
     features: [
-      { name: 'Bucket CRUD', command: 'bucket create/list/delete', status: 'full' },
+      { name: 'Bucket CRUD', command: 'bucket create/list/info/delete', status: 'full' },
+      { name: 'Streaming Bucket List', command: 'bucket list (per-region)', status: 'full' },
       { name: 'Object Upload', command: 'object upload', status: 'full' },
       { name: 'Resumable Uploads', command: 'object upload (auto)', status: 'full' },
-      { name: 'Batch Upload', command: 'object upload --batch', status: 'full' },
+      { name: 'Batch Upload', command: 'object upload-batch', status: 'full' },
       { name: 'Object Download', command: 'object download', status: 'full' },
       { name: 'Signed URLs', command: 'object signed-url', status: 'full' },
       { name: 'Object URN', command: 'object urn', status: 'full' },
+      { name: 'Copy & Rename', command: 'object copy/rename', status: 'full' },
     ]
   },
   {
@@ -32,9 +35,12 @@ const services = [
     icon: '🔄',
     features: [
       { name: 'Translation Jobs', command: 'translate start', status: 'full' },
-      { name: 'Status Polling', command: 'translate status --wait', status: 'full' },
-      { name: 'Manifest/Metadata', command: 'translate manifest', status: 'full' },
+      { name: 'Translation Presets', command: 'translate preset list/show/create/use', status: 'full' },
+      { name: 'Status Polling', command: 'translate status', status: 'full' },
+      { name: 'Manifest/Metadata', command: 'translate manifest/metadata', status: 'full' },
       { name: 'Derivative Download', command: 'translate download', status: 'full' },
+      { name: 'Object Tree', command: 'translate tree', status: 'full' },
+      { name: 'Properties Query', command: 'translate properties/query-properties', status: 'full' },
       { name: 'SVF/SVF2 Output', command: '--format svf/svf2', status: 'full' },
       { name: 'OBJ/STL/STEP Export', command: '--format obj/stl/step', status: 'full' },
       { name: 'Thumbnail Generation', command: '--format thumbnail', status: 'full' },
@@ -44,23 +50,23 @@ const services = [
     name: 'Data Management',
     icon: '🏗️',
     features: [
-      { name: 'Hub Listing', command: 'hub list', status: 'full' },
-      { name: 'Project Listing', command: 'project list', status: 'full' },
-      { name: 'Folder Operations', command: 'folder list/create', status: 'full' },
-      { name: 'Item Operations', command: 'item list/versions', status: 'full' },
+      { name: 'Hub Listing', command: 'hub list/info', status: 'full' },
+      { name: 'Project Listing', command: 'project list/info', status: 'full' },
+      { name: 'Folder Operations', command: 'folder list/create/rename/delete/rights', status: 'full' },
+      { name: 'Item Operations', command: 'item info/versions/create-from-oss/rename/delete', status: 'full' },
       { name: 'BIM 360 Support', command: '(integrated)', status: 'full' },
       { name: 'ACC Support', command: '(integrated)', status: 'full' },
-      { name: 'Object Binding', command: 'item bind', status: 'full' },
     ]
   },
   {
     name: 'ACC Issues',
     icon: '🔧',
     features: [
-      { name: 'Issue CRUD', command: 'issue list/create/edit', status: 'full' },
+      { name: 'Issue CRUD', command: 'issue list/create/update/delete', status: 'full' },
+      { name: 'Bulk CSV Import', command: 'issue create --from-csv', status: 'full' },
       { name: 'Issue Types', command: 'issue types', status: 'full' },
-      { name: 'Comments', command: 'issue comment', status: 'full' },
-      { name: 'Attachments', command: 'issue attachment', status: 'full' },
+      { name: 'Comments', command: 'issue comment list/add/delete', status: 'full' },
+      { name: 'Attachments', command: 'issue attachments', status: 'full' },
       { name: 'State Transitions', command: 'issue transition', status: 'full' },
     ]
   },
@@ -68,19 +74,31 @@ const services = [
     name: 'ACC RFIs',
     icon: '❓',
     features: [
-      { name: 'RFI CRUD', command: 'rfi list/create/update', status: 'full' },
-      { name: 'RFI Responses', command: 'rfi answer', status: 'full' },
-      { name: 'RFI Status Tracking', command: 'rfi status', status: 'full' },
+      { name: 'RFI CRUD', command: 'rfi list/get/create/update/delete', status: 'full' },
+      { name: 'Bulk CSV Import', command: 'rfi create --from-csv', status: 'full' },
     ]
   },
   {
     name: 'ACC Extended',
     icon: '📋',
     features: [
-      { name: 'Assets', command: 'acc asset list/...', status: 'full' },
-      { name: 'Submittals', command: 'acc submittal list/...', status: 'full' },
-      { name: 'Checklists', command: 'acc checklist list/...', status: 'full' },
+      { name: 'Assets', command: 'acc asset list/get/create/update/delete', status: 'full' },
+      { name: 'Submittals', command: 'acc submittal list/get/create/update/delete', status: 'full' },
+      { name: 'Checklists', command: 'acc checklist list/get/create/update', status: 'full' },
       { name: 'Checklist Templates', command: 'acc checklist templates', status: 'full' },
+    ]
+  },
+  {
+    name: 'Account Admin',
+    icon: '👥',
+    features: [
+      { name: 'User Management', command: 'admin user list/add/remove/update', status: 'full' },
+      { name: 'Project Users', command: 'admin user add-to-project/remove-from-project', status: 'full' },
+      { name: 'Bulk CSV Import', command: 'admin user import', status: 'full' },
+      { name: 'Project Management', command: 'admin project list/create/update/archive', status: 'full' },
+      { name: 'Folder Permissions', command: 'admin folder rights', status: 'full' },
+      { name: 'Company List', command: 'admin company-list', status: 'full' },
+      { name: 'Resumable Operations', command: 'admin operation status/resume/cancel', status: 'full' },
     ]
   },
   {
@@ -90,14 +108,14 @@ const services = [
       { name: 'Engine Discovery', command: 'da engines', status: 'full' },
       { name: 'Activity Management', command: 'da activities/activity-create/activity-delete', status: 'full' },
       { name: 'App Bundles', command: 'da appbundles/appbundle-create/appbundle-delete', status: 'full' },
-      { name: 'Work Items', command: 'da run', status: 'full' },
+      { name: 'Work Items', command: 'da run/workitems/status', status: 'full' },
     ]
   },
   {
     name: 'Reality Capture',
     icon: '📸',
     features: [
-      { name: 'Photoscene CRUD', command: 'reality create/delete', status: 'full' },
+      { name: 'Photoscene CRUD', command: 'reality list/create/delete', status: 'full' },
       { name: 'Photo Upload', command: 'reality upload', status: 'full' },
       { name: 'Processing', command: 'reality process', status: 'full' },
       { name: 'Status & Results', command: 'reality status/result', status: 'full' },
@@ -108,20 +126,59 @@ const services = [
     name: 'Webhooks',
     icon: '🔔',
     features: [
-      { name: 'Subscription CRUD', command: 'webhook create/delete/list', status: 'full' },
+      { name: 'Subscription CRUD', command: 'webhook create/list/get/update/delete', status: 'full' },
       { name: 'Event Discovery', command: 'webhook events', status: 'full' },
-      { name: 'Endpoint Testing', command: 'webhook test', status: 'new' },
+      { name: 'Endpoint Testing', command: 'webhook test', status: 'full' },
+      { name: 'Signature Verification', command: 'webhook verify-signature', status: 'full' },
+    ]
+  },
+  {
+    name: 'Custom API',
+    icon: '🔗',
+    features: [
+      { name: 'GET Requests', command: 'api get', status: 'full' },
+      { name: 'POST Requests', command: 'api post', status: 'full' },
+      { name: 'PUT/PATCH/DELETE', command: 'api put/patch/delete', status: 'full' },
+    ]
+  },
+  {
+    name: 'Reporting',
+    icon: '📊',
+    features: [
+      { name: 'RFI Summary', command: 'report rfi-summary', status: 'full' },
+      { name: 'Issues Summary', command: 'report issues-summary', status: 'full' },
+      { name: 'Submittals Summary', command: 'report submittals-summary', status: 'full' },
+      { name: 'Checklists Summary', command: 'report checklists-summary', status: 'full' },
+      { name: 'Assets Summary', command: 'report assets-summary', status: 'full' },
+    ]
+  },
+  {
+    name: 'Templates',
+    icon: '📝',
+    features: [
+      { name: 'Template CRUD', command: 'template list/info/create/update/archive', status: 'full' },
+    ]
+  },
+  {
+    name: 'Pipelines',
+    icon: '📋',
+    features: [
+      { name: 'Run Pipelines', command: 'pipeline run', status: 'full' },
+      { name: 'Validate', command: 'pipeline validate', status: 'full' },
+      { name: 'Generate Sample', command: 'pipeline sample', status: 'full' },
     ]
   },
   {
     name: 'MCP Server',
     icon: '🤖',
     features: [
-      { name: 'AI Tool Integration', command: 'serve', status: 'new' },
-      { name: 'Authentication Tools', command: 'auth_test, auth_status', status: 'new' },
-      { name: 'OSS Tools', command: 'bucket_*, object_*', status: 'new' },
-      { name: 'Translation Tools', command: 'translate_*', status: 'new' },
-      { name: 'Data Management Tools', command: 'hub_list, project_list', status: 'new' },
+      { name: 'AI Tool Integration', command: 'serve', status: 'full' },
+      { name: 'Authentication Tools', command: 'auth_test, auth_status, auth_login', status: 'full' },
+      { name: 'OSS Tools', command: 'bucket_*, object_*', status: 'full' },
+      { name: 'Translation Tools', command: 'translate_*', status: 'full' },
+      { name: 'Data Management Tools', command: 'hub_*, project_*, folder_*, item_*', status: 'full' },
+      { name: 'ACC Tools', command: 'issue_*, rfi_*, asset_*, submittal_*, checklist_*', status: 'full' },
+      { name: 'Admin Tools', command: 'admin_*', status: 'full' },
     ]
   },
 ];
@@ -142,7 +199,7 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
 <BaseLayout title="API Coverage" description="Comprehensive overview of APS API coverage in RAPS CLI">
   <section class="py-16 sm:py-24">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
-      
+
       <!-- Header -->
       <div class="mb-12 sm:mb-16">
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
@@ -152,7 +209,7 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
           {services.length} APS services • {totalFeatures} features implemented
         </p>
       </div>
-      
+
       <!-- Stats Grid -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-12">
         <div class="p-4 sm:p-5 bg-slate-900/30 border border-slate-800 rounded-lg">
@@ -168,11 +225,11 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
           <div class="text-xs sm:text-sm text-slate-400">Full Coverage</div>
         </div>
         <div class="p-4 sm:p-5 bg-slate-900/30 border border-slate-800 rounded-lg">
-          <div class="text-2xl sm:text-3xl font-bold text-purple-400 mb-1">{newFeatures}</div>
-          <div class="text-xs sm:text-sm text-slate-400">New in v3</div>
+          <div class="text-2xl sm:text-3xl font-bold text-purple-400 mb-1">{services.length}</div>
+          <div class="text-xs sm:text-sm text-slate-400">Service Categories</div>
         </div>
       </div>
-      
+
       <!-- Legend -->
       <div class="flex flex-wrap gap-3 sm:gap-4 mb-8 text-xs sm:text-sm text-slate-400">
         <span class="flex items-center gap-1.5">
@@ -185,7 +242,7 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
           <span class="text-purple-400 text-base">★</span> New
         </span>
       </div>
-      
+
       <!-- Services List -->
       <div class="space-y-6 sm:space-y-8">
         {services.map((service) => (
@@ -197,7 +254,7 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
                 <span>{service.name}</span>
               </h2>
             </div>
-            
+
             <!-- Features Table -->
             <div class="divide-y divide-slate-800/50">
               {service.features.map((feature) => (
@@ -220,13 +277,13 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
           </div>
         ))}
       </div>
-      
+
       <!-- Footer Info -->
       <div class="mt-12 sm:mt-16 p-4 sm:p-6 bg-slate-900/30 border border-slate-800 rounded-lg">
         <p class="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
-          Built on official <a 
-            href="https://github.com/autodesk-platform-services/aps-sdk-openapi" 
-            target="_blank" 
+          Built on official <a
+            href="https://github.com/autodesk-platform-services/aps-sdk-openapi"
+            target="_blank"
             rel="noopener noreferrer"
             class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
           >APS OpenAPI Specs</a>
@@ -253,8 +310,7 @@ const newFeatures = services.reduce((acc, s) => acc + s.features.filter(f => f.s
           </a>
         </div>
       </div>
-      
+
     </div>
   </section>
 </BaseLayout>
-
