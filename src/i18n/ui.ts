@@ -45,6 +45,8 @@ export const ui = {
     'header.project.status_desc': 'Release & build status',
     'header.project.about': 'About',
     'header.project.about_desc': 'Project background',
+    'header.project.security': 'Security',
+    'header.project.security_desc': 'Security practices & compliance',
 
     // footer
     'footer.section.product': 'Product',
@@ -245,7 +247,7 @@ export const ui = {
     'quickstart.step4.description': 'Upload a model and translate it',
     'quickstart.step5.title': 'MCP Server (Optional)',
     'quickstart.step5.description': 'Enable AI assistants like Claude and Cursor to interact with APS',
-    'quickstart.step5.intro': 'RAPS v3.0.0+ includes an MCP server for natural language APS operations.',
+    'quickstart.step5.intro': 'RAPS includes an MCP server with 101 tools for natural language APS operations.',
     'quickstart.step5.claude_desktop': 'Claude Desktop',
     'quickstart.step5.cursor_ide': 'Cursor IDE',
     'quickstart.step5.after_config': 'After configuration, ask your AI assistant: "Show me all my APS buckets"',
@@ -298,6 +300,8 @@ export const ui = {
     'header.project.status_desc': 'Статус релізів та збірок',
     'header.project.about': 'Про проєкт',
     'header.project.about_desc': 'Передісторія проєкту',
+    'header.project.security': 'Безпека',
+    'header.project.security_desc': 'Практики безпеки та відповідність',
 
     // footer
     'footer.section.product': 'Продукт',
@@ -498,7 +502,7 @@ export const ui = {
     'quickstart.step4.description': 'Завантажте модель та запустіть трансляцію',
     'quickstart.step5.title': 'MCP-сервер (необов\'язково)',
     'quickstart.step5.description': 'Дозвольте ШІ-асистентам (Claude, Cursor) взаємодіяти з APS',
-    'quickstart.step5.intro': 'RAPS v3.0.0+ містить MCP-сервер для роботи з APS природною мовою.',
+    'quickstart.step5.intro': 'RAPS містить MCP-сервер зі 101 інструментом для роботи з APS природною мовою.',
     'quickstart.step5.claude_desktop': 'Claude Desktop',
     'quickstart.step5.cursor_ide': 'Cursor IDE',
     'quickstart.step5.after_config': 'Після налаштування попросіть ШІ-асистента: "Покажи всі мої APS-бакети"',

@@ -1,0 +1,341 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Security"
+  description="Security practices, compliance tooling, and vulnerability reporting for RAPS CLI."
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <!-- Header -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="px-3 py-1 text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
+            OpenSSF Scorecard
+          </span>
+          <span class="px-3 py-1 text-xs font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">
+            SLSA Build L2
+          </span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-display font-black text-white mb-6">
+          Security <span class="text-rapeseed-400">&amp; Compliance</span>
+        </h1>
+        <p class="text-xl text-slate-400">
+          How RAPS protects your builds, your credentials, and your supply chain.
+        </p>
+      </div>
+
+      <!-- Vulnerability Reporting -->
+      <div class="mb-16 p-8 bg-gradient-to-br from-red-500/10 to-slate-900/50 border border-red-800/50 rounded-xl">
+        <h2 class="text-2xl font-display font-bold text-white mb-4">Reporting a Vulnerability</h2>
+        <p class="text-slate-300 leading-relaxed mb-4">
+          If you discover a security vulnerability, please <strong class="text-white">do not</strong> open a public issue. Use one of the following methods:
+        </p>
+        <div class="space-y-4">
+          <div class="flex items-start gap-3">
+            <span class="text-lg mt-0.5">1.</span>
+            <div>
+              <div class="font-medium text-white">GitHub Security Advisories (preferred)</div>
+              <p class="text-sm text-slate-400 mt-1">
+                Go to the
+                <a href="https://github.com/dmytro-yemelianov/raps/security" target="_blank" rel="noopener noreferrer" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">Security tab</a>
+                and click "Report a vulnerability."
+              </p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-lg mt-0.5">2.</span>
+            <div>
+              <div class="font-medium text-white">Email</div>
+              <p class="text-sm text-slate-400 mt-1">
+                <a href="mailto:security@autodesk.com" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">security@autodesk.com</a>
+                &mdash; subject: <code class="text-xs bg-slate-800 px-1.5 py-0.5 rounded">[APS CLI Security]</code>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+          <div class="bg-slate-900/50 rounded-lg p-3">
+            <div class="text-lg font-bold text-white">48h</div>
+            <div class="text-xs text-slate-400">Initial Response</div>
+          </div>
+          <div class="bg-slate-900/50 rounded-lg p-3">
+            <div class="text-lg font-bold text-white">7 days</div>
+            <div class="text-xs text-slate-400">Status Update</div>
+          </div>
+          <div class="bg-slate-900/50 rounded-lg p-3">
+            <div class="text-lg font-bold text-white">v4.x</div>
+            <div class="text-xs text-slate-400">Supported</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supply Chain Security -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Supply Chain Security</h2>
+        <p class="text-slate-300 leading-relaxed mb-6">
+          Every release includes verifiable provenance and a full software bill of materials.
+        </p>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="text-2xl mb-3">📦</div>
+            <h3 class="font-semibold text-white mb-2">CycloneDX SBOM</h3>
+            <p class="text-sm text-slate-400">
+              Every release ships with a CycloneDX JSON SBOM attached to the GitHub Release, listing all direct and transitive dependencies.
+            </p>
+          </div>
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="text-2xl mb-3">🔏</div>
+            <h3 class="font-semibold text-white mb-2">SLSA Build L2 Provenance</h3>
+            <p class="text-sm text-slate-400">
+              Builds generate SLSA provenance attestations via GitHub Actions, proving artifacts were built from the claimed source.
+            </p>
+          </div>
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="text-2xl mb-3">📌</div>
+            <h3 class="font-semibold text-white mb-2">Pinned Actions</h3>
+            <p class="text-sm text-slate-400">
+              All GitHub Actions are pinned by full commit SHA, preventing supply-chain attacks via tag mutation.
+            </p>
+          </div>
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="text-2xl mb-3">🔑</div>
+            <h3 class="font-semibold text-white mb-2">OIDC Publishing</h3>
+            <p class="text-sm text-slate-400">
+              PyPI packages use OIDC trusted publishing &mdash; no long-lived API tokens, only ephemeral OIDC identity tokens from GitHub Actions.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Static Analysis & Scanning -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Static Analysis &amp; Scanning</h2>
+        <p class="text-slate-300 leading-relaxed mb-6">
+          Multiple layers of automated analysis catch vulnerabilities before they reach users.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400">
+                <th class="py-3 pr-4 font-medium">Tool</th>
+                <th class="py-3 pr-4 font-medium">Purpose</th>
+                <th class="py-3 font-medium">Frequency</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-300">
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">CodeQL</td>
+                <td class="py-3 pr-4">Semantic SAST with security-extended + security-and-quality queries</td>
+                <td class="py-3">Every push/PR + weekly</td>
+              </tr>
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">Semgrep</td>
+                <td class="py-3 pr-4">Rust-specific and security-audit rule packs plus custom rules</td>
+                <td class="py-3">Every PR + weekly</td>
+              </tr>
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">cargo clippy</td>
+                <td class="py-3 pr-4">Lint-level analysis with <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">-D warnings</code></td>
+                <td class="py-3">Every push/PR</td>
+              </tr>
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">cargo-audit</td>
+                <td class="py-3 pr-4">RustSec advisory database checks for known vulnerabilities</td>
+                <td class="py-3">Every push/PR</td>
+              </tr>
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">cargo-deny</td>
+                <td class="py-3 pr-4">License compliance, advisory checks, and duplicate detection</td>
+                <td class="py-3">Every push/PR</td>
+              </tr>
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">Gitleaks</td>
+                <td class="py-3 pr-4">Secret detection across full commit history</td>
+                <td class="py-3">Every push/PR</td>
+              </tr>
+              <tr class="border-b border-slate-800">
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">FOSSA</td>
+                <td class="py-3 pr-4">License scanning and open-source compliance</td>
+                <td class="py-3">Every push/PR</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-mono text-rapeseed-400">OpenSSF Scorecard</td>
+                <td class="py-3 pr-4">Holistic project security health assessment</td>
+                <td class="py-3">Weekly + on push to main</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Fuzzing -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Continuous Fuzzing</h2>
+        <p class="text-slate-300 leading-relaxed mb-6">
+          Nightly fuzz testing with <code class="text-sm bg-slate-800 px-1.5 py-0.5 rounded">cargo-fuzz</code> probes edge cases that unit tests miss.
+        </p>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-lg text-center">
+            <div class="font-mono text-sm text-rapeseed-400 mb-1">fuzz_url_validation</div>
+            <div class="text-xs text-slate-500">Input URL parsing</div>
+          </div>
+          <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-lg text-center">
+            <div class="font-mono text-sm text-rapeseed-400 mb-1">fuzz_config_parsing</div>
+            <div class="text-xs text-slate-500">Configuration files</div>
+          </div>
+          <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-lg text-center">
+            <div class="font-mono text-sm text-rapeseed-400 mb-1">fuzz_json_parsing</div>
+            <div class="text-xs text-slate-500">API response handling</div>
+          </div>
+        </div>
+        <p class="text-sm text-slate-500 mt-4">
+          Each target runs for 5 minutes nightly. Crash artifacts are automatically uploaded for triage.
+        </p>
+      </div>
+
+      <!-- Testing & Quality -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Testing &amp; Quality</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <h3 class="font-semibold text-white mb-2">Cross-Platform CI</h3>
+            <p class="text-sm text-slate-400">
+              Tests run on Ubuntu, macOS, and Windows on every push and PR via <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">cargo-nextest</code>.
+            </p>
+          </div>
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <h3 class="font-semibold text-white mb-2">Code Coverage</h3>
+            <p class="text-sm text-slate-400">
+              Coverage tracked via <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">cargo-llvm-cov</code> and reported to Codecov with patch-level thresholds.
+            </p>
+          </div>
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <h3 class="font-semibold text-white mb-2">Branch Protection</h3>
+            <p class="text-sm text-slate-400">
+              Merges require all CI checks to pass: check, test, fmt, clippy, docs, license-scan, audit, deny, secrets, and typos.
+            </p>
+          </div>
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <h3 class="font-semibold text-white mb-2">Install Verification</h3>
+            <p class="text-sm text-slate-400">
+              Post-release CI verifies install scripts on all platforms, ensuring downloads aren't corrupted or tampered with.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Credential Security -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Credential Security</h2>
+        <p class="text-slate-300 leading-relaxed mb-6">
+          RAPS handles APS credentials with care. Follow these best practices:
+        </p>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">Never commit credentials</div>
+              <div class="text-sm text-slate-400">Keep <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">APS_CLIENT_ID</code> and <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">APS_CLIENT_SECRET</code> out of version control.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">Use environment variables or .env files</div>
+              <div class="text-sm text-slate-400">Prefer environment variables or <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">.env</code> files over hardcoding secrets.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">Rotate credentials regularly</div>
+              <div class="text-sm text-slate-400">Periodically rotate your APS application credentials.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">Review OAuth scopes</div>
+              <div class="text-sm text-slate-400">Only grant necessary scopes and permissions to your APS application.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">Secure token storage</div>
+              <div class="text-sm text-slate-400">RAPS stores tokens in platform-specific secure directories. Be aware of file permissions on shared systems.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Allowed Licenses -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">License Compliance</h2>
+        <p class="text-slate-300 leading-relaxed mb-4">
+          RAPS is licensed under <span class="text-white font-medium">Apache-2.0</span>. All dependencies must use one of these approved licenses, enforced by <code class="text-sm bg-slate-800 px-1.5 py-0.5 rounded">cargo-deny</code>:
+        </p>
+        <div class="flex flex-wrap gap-2">
+          {['Apache-2.0', 'MIT', 'BSD-2-Clause', 'BSD-3-Clause', 'BSL-1.0', 'ISC', 'MPL-2.0', 'OpenSSL', 'Zlib', 'Unicode-3.0', 'Unicode-DFS-2016'].map((license) => (
+            <span class="px-2.5 py-1 text-xs font-mono bg-slate-800 text-slate-300 border border-slate-700 rounded-md">
+              {license}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <!-- Scope -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Scope</h2>
+        <div class="grid sm:grid-cols-2 gap-6">
+          <div>
+            <h3 class="font-semibold text-white mb-3">In Scope</h3>
+            <ul class="space-y-2 text-sm text-slate-300">
+              <li class="flex items-start gap-2"><span class="text-emerald-400">&#10003;</span> The RAPS CLI codebase</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-400">&#10003;</span> Dependencies managed by this project</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-400">&#10003;</span> GitHub Actions workflows</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-400">&#10003;</span> Install scripts (install.sh, install.ps1)</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-semibold text-white mb-3">Out of Scope</h3>
+            <ul class="space-y-2 text-sm text-slate-300">
+              <li class="flex items-start gap-2"><span class="text-slate-500">&mdash;</span> Autodesk Platform Services APIs themselves</li>
+              <li class="flex items-start gap-2"><span class="text-slate-500">&mdash;</span> Social engineering attacks</li>
+              <li class="flex items-start gap-2"><span class="text-slate-500">&mdash;</span> Denial of service attacks</li>
+              <li class="flex items-start gap-2"><span class="text-slate-500">&mdash;</span> Issues requiring physical access</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="text-center p-8 bg-slate-800/30 border border-slate-700 rounded-xl">
+        <h2 class="text-xl font-display font-bold text-white mb-3">Found something?</h2>
+        <p class="text-slate-400 mb-6">
+          We appreciate responsible disclosure. Researchers who help keep RAPS secure may be credited in security advisories.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/security"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-2.5 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors"
+          >
+            Report a Vulnerability
+          </a>
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/blob/main/SECURITY.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+          >
+            View SECURITY.md
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
