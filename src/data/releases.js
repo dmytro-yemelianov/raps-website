@@ -9,6 +9,21 @@
 
 export const releases = [
   {
+    version: '4.17.0',
+    date: '2026-03-01',
+    highlights: ['Pipeline MCP Tools', '105 MCP Tools', 'Pipeline Validate', 'Pipeline Discovery'],
+    description: '4 new Pipeline v2 MCP tools: validate, dry-run, run, and list-templates. Total MCP tools now 105.',
+    type: 'minor',
+    changes: {
+      added: [
+        'MCP tool `pipeline_validate` — validate pipeline YAML/JSON files for syntax errors',
+        'MCP tool `pipeline_dry_run` — preview pipeline execution without running commands',
+        'MCP tool `pipeline_run` — execute pipeline files with dry-run, ignore-failure, and variable options',
+        'MCP tool `pipeline_list_templates` — discover pipeline files in a directory',
+      ],
+    },
+  },
+  {
     version: '4.16.0',
     date: '2026-03-01',
     highlights: ['Pipeline v2 Engine', 'GitHub Actions', 'GitLab CI Templates', 'CI/CD Integrations'],
