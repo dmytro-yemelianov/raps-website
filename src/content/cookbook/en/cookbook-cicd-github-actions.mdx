@@ -1,0 +1,183 @@
+---
+title: "CI/CD with GitHub Actions"
+description: "Automate APS workflows with official RAPS GitHub Actions — upload, translate, and run pipelines in your CI/CD"
+category: "aec"
+order: 50
+icon: "⚡"
+---
+
+# CI/CD with GitHub Actions
+
+RAPS provides four official GitHub Actions that bring APS automation directly into your CI/CD pipeline. With these actions you can authenticate, upload design files, translate models, and execute full RAPS pipeline files -- all triggered by git events like pushes or pull requests.
+
+## Workflow Overview
+
+<div className="not-prose mb-8">
+  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔧</div>
+      <div className="font-semibold">Setup</div>
+      <div className="text-sm text-gray-400">Install RAPS + Auth</div>
+    </div>
+    <div className="text-2xl text-gray-500">→</div>
+    <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">📤</div>
+      <div className="font-semibold">Upload</div>
+      <div className="text-sm text-gray-400">Files to OSS Bucket</div>
+    </div>
+    <div className="text-2xl text-gray-500">→</div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔄</div>
+      <div className="font-semibold">Translate</div>
+      <div className="text-sm text-gray-400">Model Derivative SVF2</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Available Actions
+
+| Action | Purpose |
+|--------|---------|
+| `raps-actions/setup@v1` | Install RAPS and configure APS authentication |
+| `raps-actions/upload@v1` | Upload files to OSS buckets |
+| `raps-actions/translate@v1` | Translate models via Model Derivative |
+| `raps-actions/pipeline@v1` | Run a RAPS pipeline file |
+
+All actions are hosted at `dmytro-yemelianov/raps-actions` and pinned to the `v1` tag.
+
+---
+
+## Basic Setup
+
+The setup action installs the RAPS CLI and configures APS credentials from repository secrets. Every workflow that interacts with APS should begin with this step.
+
+```yaml
+- uses: dmytro-yemelianov/raps-actions/setup@v1
+  with:
+    client-id: ${{ secrets.APS_CLIENT_ID }}
+    client-secret: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+Store your APS application credentials in **Settings → Secrets and variables → Actions**:
+
+- `APS_CLIENT_ID` -- Your APS application client ID
+- `APS_CLIENT_SECRET` -- Your APS application client secret
+
+---
+
+## Upload + Translate Workflow
+
+A complete workflow that uploads Revit models when they change and translates them to SVF2 for web viewing:
+
+```yaml
+name: Process Models
+on:
+  push:
+    paths: ['models/**']
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
+      - uses: dmytro-yemelianov/raps-actions/upload@v1
+        id: upload
+        with:
+          bucket: my-project-models
+          files: 'models/*.rvt'
+          create-bucket: 'true'
+      - uses: dmytro-yemelianov/raps-actions/translate@v1
+        with:
+          urn: ${{ steps.upload.outputs.urn }}
+          wait: 'true'
+          timeout: '30m'
+```
+
+### How it works
+
+1. **Trigger** -- The workflow runs whenever files under `models/` are pushed.
+2. **Setup** -- RAPS is installed and authenticated using repository secrets.
+3. **Upload** -- All `.rvt` files are uploaded to the `my-project-models` OSS bucket. The bucket is created automatically if it does not exist.
+4. **Translate** -- The uploaded model URN is passed to the translate action, which starts an SVF2 translation and waits up to 30 minutes for completion.
+
+---
+
+## Pipeline Execution
+
+For more complex workflows, use the pipeline action to execute a RAPS pipeline file. Pipeline files define multi-step operations declaratively in YAML.
+
+```yaml
+      - uses: dmytro-yemelianov/raps-actions/pipeline@v1
+        with:
+          file: raps-pipeline.yaml
+          dry-run: 'false'
+```
+
+The `dry-run` option lets you validate the pipeline without executing any APS operations -- useful for pull request checks.
+
+### Example: PR Validation
+
+```yaml
+name: Validate Pipeline
+on: pull_request
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
+      - uses: dmytro-yemelianov/raps-actions/pipeline@v1
+        with:
+          file: raps-pipeline.yaml
+          dry-run: 'true'
+```
+
+---
+
+## Troubleshooting
+
+### Missing secrets
+
+If the workflow fails with an authentication error, verify that both `APS_CLIENT_ID` and `APS_CLIENT_SECRET` are set in your repository secrets. For organization repositories, ensure the secrets are accessible to the workflow (check environment protection rules).
+
+### Timeout on large models
+
+Revit models over 500 MB can take significant time to translate. Increase the timeout value in the translate action:
+
+```yaml
+      - uses: dmytro-yemelianov/raps-actions/translate@v1
+        with:
+          urn: ${{ steps.upload.outputs.urn }}
+          wait: 'true'
+          timeout: '60m'
+```
+
+### Bucket naming rules
+
+OSS bucket keys must be globally unique, 3-128 characters, and contain only lowercase letters, digits, and hyphens. A common pattern is to include your GitHub repository ID:
+
+```yaml
+bucket: my-project-${{ github.repository_id }}
+```
+
+### Action version pinning
+
+Always pin to a major version tag (`@v1`) rather than `@main` to avoid breaking changes in production workflows.
+
+---
+
+## Related
+
+- [CI/CD with GitLab CI](/cookbook/cookbook-cicd-gitlab-ci) -- GitLab CI/CD templates for RAPS
+- [Cookbook: AEC & BIM](/cookbook/cookbook-aec) -- AEC workflow recipes
+- [Model Coordination Pipeline](/cookbook/cookbook-aec-coordination) -- Multi-discipline model coordination

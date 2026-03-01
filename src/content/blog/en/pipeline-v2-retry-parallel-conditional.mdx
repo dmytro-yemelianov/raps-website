@@ -1,0 +1,200 @@
+---
+title: "Pipeline v2: Retry, Parallelism, and Conditionals for APS Automation"
+description: "RAPS Pipeline v2 adds retry policies, per-step timeouts, conditional execution, parallel steps, and for-each loops to YAML pipeline files"
+pubDate: 2026-03-01
+author: "Dmytro Yemelianov"
+tags: ["pipelines", "automation", "ci-cd", "devops", "yaml"]
+featured: true
+draft: false
+---
+
+## The Problem With Linear Pipelines
+
+If you've ever had a 45-minute pipeline fail at step 9 of 10 because of a transient 429 error, you know the pain. Pipeline v1 in RAPS gave teams a clean way to define multi-step APS workflows in YAML: upload a model, translate it, download derivatives, notify stakeholders. But every step ran sequentially, there was no retry logic, no timeout, and no way to branch. One flaky API call killed the whole run, and the only recovery was to start over from the top.
+
+That was fine for simple three-step scripts. It was not fine for production workflows that orchestrate dozens of models across ACC projects at scale. Teams were wrapping `raps pipeline run` in shell loops with manual sleep calls, bolting on ad-hoc error handling that nobody wanted to maintain.
+
+Pipeline v2 changes all of that.
+
+## What's New in v2
+
+Five capabilities ship in this release, all expressed as optional YAML fields on pipeline steps:
+
+1. **Retry policies** -- automatic re-execution of failed steps with configurable backoff
+2. **Per-step timeouts** -- hard limits that prevent any single step from blocking a run indefinitely
+3. **Conditional execution** -- `if` and `unless` guards that reference the outcomes of earlier steps
+4. **Parallel steps** -- concurrent execution of independent steps within a single stage
+5. **For-each loops** -- dynamic fan-out over a list of items with concurrency control
+
+Every feature is opt-in. Your existing v1 pipelines continue to work without modification.
+
+## Retry Policies
+
+Large Revit model uploads to OSS can fail intermittently. Autodesk enforces rate limits, cloud storage has transient errors, and network conditions fluctuate. Rather than failing the entire pipeline, you can now declare a retry policy directly on the step:
+
+```yaml
+steps:
+  - name: Upload building model
+    command: object upload my-bucket building.rvt
+    retry:
+      max_attempts: 3
+      delay: 10s
+```
+
+When the `object upload` command exits with a non-zero code, RAPS waits the specified delay (10 seconds here) and retries, up to `max_attempts` total attempts. The delay is applied between each attempt, giving the upstream service time to recover. If all attempts fail, the step is marked as failed and the pipeline proceeds according to whatever conditional logic you have defined.
+
+You can also use `delay: exponential` for exponential backoff, which doubles the wait on each subsequent retry -- useful when you are hitting a rate limiter that penalizes rapid retries.
+
+## Step Timeouts
+
+Model Translation via the Model Derivative API can take anywhere from seconds to hours depending on model complexity. Without a timeout, a stuck translation blocks your entire pipeline run forever:
+
+```yaml
+  - name: Translate to SVF2
+    command: translate start $URN --format svf2 --wait
+    timeout: 30m
+```
+
+The `timeout` field accepts durations like `30s`, `5m`, `2h`, or combinations thereof. If the step has not completed when the timeout expires, RAPS terminates the process and marks the step as failed. Combined with a retry policy, this lets you express "try the translation up to 3 times, but never spend more than 30 minutes on a single attempt."
+
+## Conditional Execution
+
+Not every step should run on every execution. Sometimes you only want to download derivatives if the translation succeeded, or send a Slack notification if it failed. Pipeline v2 introduces `if` and `unless` guards that reference step outcomes using expression syntax:
+
+```yaml
+  - name: Download derivatives
+    command: translate download $URN --output ./output
+    if: "${{ steps.translate.exit_code == 0 }}"
+
+  - name: Notify failure
+    command: api post https://hooks.slack.com/... --body '{"text":"Translation failed"}'
+    unless: "${{ steps.translate.exit_code == 0 }}"
+```
+
+The expression inside `$&#123;&#123; &#125;&#125;` is evaluated at runtime. You can reference any earlier step by its `name` (normalized to snake_case). The `if` guard runs the step only when the expression is truthy; `unless` runs it only when the expression is falsy. This replaces the shell-script gymnastics teams were using to handle conditional logic outside of the pipeline file.
+
+Available variables inside expressions include `steps.<name>.exit_code`, `steps.<name>.duration`, and `env.<VAR>` for environment variables.
+
+## Parallel Steps
+
+Uploading models one at a time is slow when you have an architectural model, a structural model, and an MEP model that are completely independent of each other. The `parallel` block runs its children concurrently:
+
+```yaml
+  - name: Upload all models
+    parallel:
+      - name: Upload architectural
+        command: object upload project-bucket architectural.rvt
+      - name: Upload structural
+        command: object upload project-bucket structural.rvt
+      - name: Upload MEP
+        command: object upload project-bucket mep.rvt
+```
+
+All three uploads start simultaneously. The parent step completes when every child has finished. If any child fails, the parent step is marked as failed (but the other children are allowed to complete). Each child inside a `parallel` block supports the same fields as a top-level step: retry, timeout, and conditionals all work.
+
+For a three-model upload where each file takes roughly 2 minutes, parallel execution cuts wall-clock time from 6 minutes to about 2 minutes.
+
+## For-Each Loops
+
+When the list of items is dynamic or long, hard-coding parallel children becomes unwieldy. The `for_each` construct iterates over a list and executes a template step for each item, with optional concurrency control:
+
+```yaml
+  - name: Translate models
+    for_each:
+      items: ["architectural.rvt", "structural.rvt", "mep.rvt"]
+      variable: MODEL
+      max_concurrency: 2
+      template:
+        name: "Translate ${MODEL}"
+        command: "translate start $(raps object urn project-bucket ${MODEL}) --wait"
+```
+
+This creates three translation steps from the template, but only runs two at a time (`max_concurrency: 2`). This is useful when the upstream API imposes per-client concurrency limits and you want to maximize throughput without triggering rate-limit errors.
+
+The `items` field can also reference an environment variable or the output of a previous step, enabling truly dynamic pipelines where the set of models to process is determined at runtime.
+
+## Putting It All Together
+
+Here is a complete pipeline that combines every v2 feature into a realistic production workflow: upload models in parallel, translate each with retry and timeout, download derivatives conditionally, and clean up on failure.
+
+```yaml
+name: Full Model Processing Pipeline
+version: 2
+
+env:
+  BUCKET: project-models-prod
+  OUTPUT_DIR: ./derivatives
+
+steps:
+  - name: Upload all models
+    parallel:
+      - name: Upload architectural
+        command: object upload $BUCKET architectural.rvt
+        retry:
+          max_attempts: 3
+          delay: 5s
+      - name: Upload structural
+        command: object upload $BUCKET structural.rvt
+        retry:
+          max_attempts: 3
+          delay: 5s
+      - name: Upload MEP
+        command: object upload $BUCKET mep.rvt
+        retry:
+          max_attempts: 3
+          delay: 5s
+
+  - name: Translate models
+    for_each:
+      items: ["architectural.rvt", "structural.rvt", "mep.rvt"]
+      variable: MODEL
+      max_concurrency: 2
+      template:
+        name: "Translate ${MODEL}"
+        command: "translate start $(raps object urn $BUCKET ${MODEL}) --format svf2 --wait"
+        timeout: 30m
+        retry:
+          max_attempts: 2
+          delay: 30s
+
+  - name: Download derivatives
+    command: translate download --all --output $OUTPUT_DIR
+    if: "${{ steps.translate_models.exit_code == 0 }}"
+    timeout: 15m
+
+  - name: Notify success
+    command: api post https://hooks.slack.com/T00/B00/xxx --body '{"text":"All models processed"}'
+    if: "${{ steps.translate_models.exit_code == 0 }}"
+
+  - name: Notify failure
+    command: api post https://hooks.slack.com/T00/B00/xxx --body '{"text":"Pipeline failed — check logs"}'
+    unless: "${{ steps.translate_models.exit_code == 0 }}"
+
+  - name: Cleanup temp files
+    command: object delete $BUCKET --prefix tmp/
+    if: "${{ env.CLEANUP == 'true' }}"
+```
+
+This pipeline handles transient failures gracefully, respects API concurrency limits, branches based on outcomes, and finishes in a fraction of the time its v1 equivalent would take.
+
+## Backward Compatibility
+
+Pipeline v2 is a strict superset of v1. Every v1 pipeline file is a valid v2 pipeline. The `version: 2` declaration at the top is recommended but not required -- if omitted, RAPS auto-detects based on whether v2-only fields are present. No migration is necessary. You can adopt v2 features incrementally, one step at a time.
+
+## Getting Started
+
+Update RAPS to the latest release, then validate your pipeline file before running it:
+
+```bash
+raps pipeline validate my-pipeline.yaml
+```
+
+You can also dry-run the pipeline to see the execution plan without making any API calls:
+
+```bash
+raps pipeline run my-pipeline.yaml --dry-run
+```
+
+The dry-run output shows the step execution order, which steps will run in parallel, how retry and timeout are configured, and which conditionals are present.
+
+Full documentation for every v2 field is available in the [Pipeline Reference](/docs/pipeline-reference) section. If you run into issues or have feature requests, open an issue on [GitHub](https://github.com/dmytro-yemelianov/raps).

@@ -1,0 +1,215 @@
+---
+title: "CI/CD with GitLab CI"
+description: "Automate APS workflows with RAPS GitLab CI templates — reusable hidden jobs for upload, translate, and pipeline operations"
+category: "aec"
+order: 51
+icon: "🦊"
+---
+
+# CI/CD with GitLab CI
+
+RAPS provides four reusable GitLab CI templates that you can include in any `.gitlab-ci.yml` file. Each template defines a hidden job (prefixed with `.`) that you extend with your own variables, giving you a clean, declarative way to automate APS operations in GitLab pipelines.
+
+## Workflow Overview
+
+<div className="not-prose mb-8">
+  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔧</div>
+      <div className="font-semibold">Setup</div>
+      <div className="text-sm text-gray-400">Install RAPS + Auth</div>
+    </div>
+    <div className="text-2xl text-gray-500">→</div>
+    <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">📤</div>
+      <div className="font-semibold">Upload</div>
+      <div className="text-sm text-gray-400">Files to OSS Bucket</div>
+    </div>
+    <div className="text-2xl text-gray-500">→</div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔄</div>
+      <div className="font-semibold">Translate</div>
+      <div className="text-sm text-gray-400">Model Derivative SVF2</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Available Templates
+
+| Template | Hidden Job | Purpose |
+|----------|-----------|---------|
+| `setup.yml` | `.raps-setup` | Install RAPS + auth |
+| `upload.yml` | `.raps-upload` | Upload to OSS |
+| `translate.yml` | `.raps-translate` | Translate models |
+| `pipeline.yml` | `.raps-pipeline` | Run pipeline files |
+
+All templates are hosted at `dmytro-yemelianov/raps-actions` under the `gitlab/` directory.
+
+---
+
+## Include Templates
+
+Add the remote templates to your `.gitlab-ci.yml` using the `include: remote` pattern:
+
+```yaml
+include:
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/setup.yml'
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/upload.yml'
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/translate.yml'
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/pipeline.yml'
+```
+
+---
+
+## Required Variables
+
+Set your APS credentials in **Settings → CI/CD → Variables**:
+
+- `APS_CLIENT_ID` -- Your APS application client ID
+- `APS_CLIENT_SECRET` -- Your APS application client secret
+
+Mark both variables as **Protected** and **Masked** to keep them secure. The hidden jobs reference these variables automatically, so no extra configuration is needed in your job definitions.
+
+---
+
+## Upload + Translate Pipeline
+
+A complete `.gitlab-ci.yml` that uploads Revit models and translates them to SVF2, with downloadable output artifacts:
+
+```yaml
+include:
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/setup.yml'
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/upload.yml'
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/translate.yml'
+
+stages:
+  - upload
+  - translate
+
+upload-models:
+  stage: upload
+  extends: .raps-upload
+  variables:
+    RAPS_BUCKET: my-project-models
+    RAPS_FILES: "models/*.rvt"
+    RAPS_CREATE_BUCKET: "true"
+
+translate-model:
+  stage: translate
+  extends: .raps-translate
+  variables:
+    RAPS_URN: "$MODEL_URN"
+    RAPS_TIMEOUT: "30m"
+    RAPS_DOWNLOAD: "true"
+    RAPS_OUTPUT_DIR: "./output"
+  artifacts:
+    paths:
+      - output/
+```
+
+### How it works
+
+1. **Include** -- The remote templates are fetched and their hidden jobs become available.
+2. **Upload stage** -- The `upload-models` job extends `.raps-upload`, which installs RAPS, authenticates, and uploads all `.rvt` files to the specified OSS bucket.
+3. **Translate stage** -- The `translate-model` job extends `.raps-translate`, which translates the model and downloads the derivative output to `./output`.
+4. **Artifacts** -- The translated output is saved as a GitLab artifact for download or use in downstream jobs.
+
+---
+
+## Custom RAPS Commands
+
+For operations beyond upload and translate, extend `.raps-setup` directly and write your own script. This gives you a fully authenticated RAPS CLI to use however you need:
+
+```yaml
+include:
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/setup.yml'
+
+custom-job:
+  extends: .raps-setup
+  script:
+    - raps bucket list
+    - raps translate status $URN --output json
+```
+
+### Example: Nightly Cleanup
+
+```yaml
+cleanup-old-models:
+  extends: .raps-setup
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - |
+      echo "Listing objects in bucket..."
+      raps object list my-project-models --output json
+      echo "Cleanup complete"
+```
+
+---
+
+## Pipeline File Execution
+
+Run declarative RAPS pipeline files using the pipeline template:
+
+```yaml
+include:
+  - remote: 'https://raw.githubusercontent.com/dmytro-yemelianov/raps-actions/v1/gitlab/pipeline.yml'
+
+run-pipeline:
+  extends: .raps-pipeline
+  variables:
+    RAPS_PIPELINE_FILE: "raps-pipeline.yaml"
+    RAPS_DRY_RUN: "false"
+```
+
+Set `RAPS_DRY_RUN` to `"true"` in merge request pipelines to validate without executing.
+
+---
+
+## Troubleshooting
+
+### CI/CD variable visibility
+
+If jobs fail with authentication errors, check variable scope. Variables set at the project level may not be visible to pipelines triggered from forks. For protected branches, ensure the variables are marked as **Protected** and the branch or tag matches.
+
+### Ubuntu image dependencies
+
+The RAPS templates use the default GitLab runner image. If you override the `image` keyword, make sure it includes `curl` and `bash` as the setup job requires them to install the RAPS binary.
+
+```yaml
+custom-job:
+  extends: .raps-setup
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update && apt-get install -y curl
+  script:
+    - raps bucket list
+```
+
+### Timeout format
+
+The `RAPS_TIMEOUT` variable accepts duration strings like `30m`, `1h`, or `90m`. Do not use bare numbers -- `30` is not valid. Always include the unit suffix.
+
+### Merge request pipelines
+
+Use GitLab rules to run dry-run validation on merge requests and full execution on the default branch:
+
+```yaml
+translate-model:
+  extends: .raps-translate
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      variables:
+        RAPS_DRY_RUN: "true"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+```
+
+---
+
+## Related
+
+- [CI/CD with GitHub Actions](/cookbook/cookbook-cicd-github-actions) -- GitHub Actions for RAPS
+- [Cookbook: AEC & BIM](/cookbook/cookbook-aec) -- AEC workflow recipes
+- [Model Coordination Pipeline](/cookbook/cookbook-aec-coordination) -- Multi-discipline model coordination
