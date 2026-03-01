@@ -47,6 +47,8 @@ export const ui = {
     'header.project.about_desc': 'Project background',
     'header.project.security': 'Security',
     'header.project.security_desc': 'Security practices & compliance',
+    'header.project.open_source': 'Open-Source Libraries',
+    'header.project.open_source_desc': 'Dependencies & license info',
 
     // footer
     'footer.section.product': 'Product',
@@ -302,6 +304,8 @@ export const ui = {
     'header.project.about_desc': 'Передісторія проєкту',
     'header.project.security': 'Безпека',
     'header.project.security_desc': 'Практики безпеки та відповідність',
+    'header.project.open_source': 'Бібліотеки',
+    'header.project.open_source_desc': 'Залежності та ліцензії',
 
     // footer
     'footer.section.product': 'Продукт',

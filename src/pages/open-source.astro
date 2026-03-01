@@ -1,0 +1,317 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Dependency categories for RAPS CLI (from workspace Cargo.toml + crate Cargo.tomls)
+const categories = [
+  {
+    name: 'Core Runtime',
+    description: 'Foundational libraries that power the async runtime and HTTP stack.',
+    deps: [
+      { name: 'tokio', version: '1.49', license: 'MIT', description: 'Asynchronous runtime for Rust', url: 'https://tokio.rs', category: 'runtime' },
+      { name: 'reqwest', version: '0.11', license: 'MIT / Apache-2.0', description: 'Ergonomic HTTP client with TLS, streaming, and multipart support', url: 'https://github.com/seanmonstar/reqwest', category: 'http' },
+      { name: 'tokio-util', version: '0.7', license: 'MIT', description: 'Utilities for working with Tokio I/O streams', url: 'https://github.com/tokio-rs/tokio', category: 'runtime' },
+      { name: 'futures-util', version: '0.3', license: 'MIT / Apache-2.0', description: 'Combinators and utilities for async streams and futures', url: 'https://github.com/rust-lang/futures-rs', category: 'runtime' },
+      { name: 'url', version: '2.5', license: 'MIT / Apache-2.0', description: 'URL parsing following the WHATWG standard', url: 'https://github.com/servo/rust-url', category: 'http' },
+      { name: 'urlencoding', version: '2.1', license: 'MIT', description: 'Percent-encoding for URL components', url: 'https://github.com/nickcogan/urlencoding', category: 'http' },
+    ]
+  },
+  {
+    name: 'CLI Framework',
+    description: 'Command-line parsing, shell completions, and interactive terminal features.',
+    deps: [
+      { name: 'clap', version: '4.5', license: 'MIT / Apache-2.0', description: 'Command line argument parser with derive macros', url: 'https://github.com/clap-rs/clap', category: 'cli' },
+      { name: 'clap_complete', version: '4.5', license: 'MIT / Apache-2.0', description: 'Shell completion generation for Bash, Zsh, Fish, PowerShell', url: 'https://github.com/clap-rs/clap', category: 'cli' },
+      { name: 'clap_mangen', version: '0.2', license: 'MIT / Apache-2.0', description: 'Man page generation from clap definitions', url: 'https://github.com/clap-rs/clap', category: 'cli' },
+      { name: 'dialoguer', version: '0.12', license: 'MIT', description: 'Interactive prompts with fuzzy-select support', url: 'https://github.com/console-rs/dialoguer', category: 'cli' },
+      { name: 'console', version: '0.15', license: 'MIT', description: 'Terminal styling, progress bars, and user interaction', url: 'https://github.com/console-rs/console', category: 'cli' },
+      { name: 'reedline', version: '0.45', license: 'MIT', description: 'Interactive line editor powering the RAPS shell', url: 'https://github.com/nushell/reedline', category: 'cli' },
+      { name: 'nu-ansi-term', version: '0.50', license: 'MIT', description: 'ANSI terminal colors and styles', url: 'https://github.com/nushell/nu-ansi-term', category: 'cli' },
+      { name: 'shlex', version: '1.3', license: 'MIT / Apache-2.0', description: 'Shell-like argument splitting for the interactive shell', url: 'https://github.com/comex/rust-shlex', category: 'cli' },
+    ]
+  },
+  {
+    name: 'Serialization & Data',
+    description: 'Encoding, decoding, and transforming data across formats.',
+    deps: [
+      { name: 'serde', version: '1.0', license: 'MIT / Apache-2.0', description: 'Serialization framework with derive macros', url: 'https://serde.rs', category: 'serialization' },
+      { name: 'serde_json', version: '1.0', license: 'MIT / Apache-2.0', description: 'JSON serialization and deserialization', url: 'https://github.com/serde-rs/json', category: 'serialization' },
+      { name: 'serde_yaml', version: '0.9', license: 'MIT / Apache-2.0', description: 'YAML serialization and deserialization', url: 'https://github.com/dtolnay/serde-yaml', category: 'serialization' },
+      { name: 'toml', version: '0.8', license: 'MIT / Apache-2.0', description: 'TOML parsing for plugin manifests and configuration', url: 'https://github.com/toml-rs/toml', category: 'serialization' },
+      { name: 'csv', version: '1.3', license: 'MIT / Unlicense', description: 'CSV reader/writer for tabular data export', url: 'https://github.com/BurntSushi/rust-csv', category: 'serialization' },
+      { name: 'base64', version: '0.22', license: 'MIT / Apache-2.0', description: 'Base64 encoding for APS URNs', url: 'https://github.com/marshallpierce/rust-base64', category: 'serialization' },
+    ]
+  },
+  {
+    name: 'Security & Cryptography',
+    description: 'Authentication, credential storage, and cryptographic operations.',
+    deps: [
+      { name: 'keyring', version: '2.3', license: 'MIT / Apache-2.0', description: 'OS keychain integration for secure token storage', url: 'https://github.com/hwchen/keyring-rs', category: 'security' },
+      { name: 'ed25519-dalek', version: '2.1', license: 'BSD-3-Clause', description: 'Ed25519 signatures for plugin verification', url: 'https://github.com/dalek-cryptography/curve25519-dalek', category: 'security' },
+      { name: 'sha2', version: '0.10', license: 'MIT / Apache-2.0', description: 'SHA-256 hashing for PKCE S256 challenges and integrity checks', url: 'https://github.com/RustCrypto/hashes', category: 'security' },
+      { name: 'hex', version: '0.4', license: 'MIT / Apache-2.0', description: 'Hexadecimal encoding/decoding', url: 'https://github.com/KokaKiwi/rust-hex', category: 'security' },
+      { name: 'webbrowser', version: '0.8', license: 'MIT / Apache-2.0', description: 'Opens browser for OAuth 2.0 authorization flow', url: 'https://github.com/nicohman/rust-webbrowser', category: 'security' },
+      { name: 'tiny_http', version: '0.12', license: 'MIT / Apache-2.0', description: 'Lightweight HTTP server for OAuth callback listener', url: 'https://github.com/tiny-http/tiny-http', category: 'security' },
+    ]
+  },
+  {
+    name: 'AI & MCP Server',
+    description: 'Model Context Protocol server enabling AI assistant integration.',
+    deps: [
+      { name: 'rmcp', version: '0.12', license: 'MIT / Apache-2.0', description: 'MCP server implementation with JSON-RPC transport', url: 'https://github.com/anthropics/rmcp', category: 'mcp' },
+      { name: 'schemars', version: '1.2', license: 'MIT', description: 'JSON Schema generation for MCP tool definitions', url: 'https://github.com/GREsau/schemars', category: 'mcp' },
+      { name: 'tracing', version: '0.1', license: 'MIT', description: 'Structured diagnostics and instrumentation', url: 'https://github.com/tokio-rs/tracing', category: 'mcp' },
+      { name: 'tracing-subscriber', version: '0.3', license: 'MIT', description: 'Subscribers for processing trace data with env-filter and JSON output', url: 'https://github.com/tokio-rs/tracing', category: 'mcp' },
+      { name: 'tracing-appender', version: '0.2', license: 'MIT', description: 'Non-blocking log appender for file-based tracing output', url: 'https://github.com/tokio-rs/tracing', category: 'mcp' },
+    ]
+  },
+  {
+    name: 'Terminal UI',
+    description: 'Rich terminal interfaces including the TUI dashboard and progress display.',
+    deps: [
+      { name: 'ratatui', version: '0.29', license: 'MIT', description: 'TUI framework for the RAPS dashboard', url: 'https://ratatui.rs', category: 'tui' },
+      { name: 'crossterm', version: '0.28', license: 'MIT', description: 'Cross-platform terminal manipulation', url: 'https://github.com/crossterm-rs/crossterm', category: 'tui' },
+      { name: 'indicatif', version: '0.18', license: 'MIT', description: 'Progress bars and spinners for long operations', url: 'https://github.com/console-rs/indicatif', category: 'tui' },
+      { name: 'colored', version: '2.1', license: 'MPL-2.0', description: 'Terminal text coloring', url: 'https://github.com/colored-rs/colored', category: 'tui' },
+    ]
+  },
+  {
+    name: 'Utilities',
+    description: 'General-purpose libraries for common operations.',
+    deps: [
+      { name: 'anyhow', version: '1.0', license: 'MIT / Apache-2.0', description: 'Flexible error handling with context', url: 'https://github.com/dtolnay/anyhow', category: 'util' },
+      { name: 'thiserror', version: '1.0', license: 'MIT / Apache-2.0', description: 'Derive macros for custom error types', url: 'https://github.com/dtolnay/thiserror', category: 'util' },
+      { name: 'chrono', version: '0.4', license: 'MIT / Apache-2.0', description: 'Date and time handling with serde support', url: 'https://github.com/chronotope/chrono', category: 'util' },
+      { name: 'uuid', version: '1.6', license: 'MIT / Apache-2.0', description: 'UUID v4 generation for correlation IDs', url: 'https://github.com/uuid-rs/uuid', category: 'util' },
+      { name: 'rand', version: '0.8', license: 'MIT / Apache-2.0', description: 'Random number generation', url: 'https://github.com/rust-random/rand', category: 'util' },
+      { name: 'regex', version: '1.10', license: 'MIT / Apache-2.0', description: 'Regular expressions for secret redaction and parsing', url: 'https://github.com/rust-lang/regex', category: 'util' },
+      { name: 'glob', version: '0.3', license: 'MIT / Apache-2.0', description: 'Glob pattern matching for file operations', url: 'https://github.com/rust-lang/glob', category: 'util' },
+      { name: 'semver', version: '1.0', license: 'MIT / Apache-2.0', description: 'Semantic versioning parsing and comparison', url: 'https://github.com/dtolnay/semver', category: 'util' },
+      { name: 'dotenvy', version: '0.15', license: 'MIT', description: 'Environment variable loading from .env files', url: 'https://github.com/allan2/dotenvy', category: 'util' },
+      { name: 'directories', version: '5.0', license: 'MIT / Apache-2.0', description: 'Platform-specific directories (config, cache, data)', url: 'https://github.com/dirs-dev/directories-rs', category: 'util' },
+      { name: 'memory-stats', version: '1.2', license: 'MIT', description: 'Runtime memory usage reporting', url: 'https://github.com/jkelleyrtp/memory-stats', category: 'util' },
+      { name: 'tempfile', version: '3.14', license: 'MIT / Apache-2.0', description: 'Temporary file creation for piped uploads', url: 'https://github.com/Stebalien/tempfile', category: 'util' },
+    ]
+  },
+  {
+    name: 'Packaging & Compression',
+    description: 'Archive and compression support for plugin packages.',
+    deps: [
+      { name: 'flate2', version: '1.0', license: 'MIT / Apache-2.0', description: 'Gzip compression and decompression', url: 'https://github.com/rust-lang/flate2-rs', category: 'packaging' },
+      { name: 'tar', version: '0.4', license: 'MIT / Apache-2.0', description: 'Tar archive reading and writing', url: 'https://github.com/alexcrichton/tar-rs', category: 'packaging' },
+      { name: 'fs2', version: '0.4', license: 'MIT / Apache-2.0', description: 'Cross-platform file locking for concurrent operations', url: 'https://github.com/danburkert/fs2-rs', category: 'packaging' },
+    ]
+  },
+];
+
+const totalDeps = categories.reduce((sum, cat) => sum + cat.deps.length, 0);
+const uniqueLicenses = [...new Set(categories.flatMap(cat => cat.deps.flatMap(d => d.license.split(' / '))))].sort();
+---
+
+<BaseLayout
+  title="Open-Source Libraries"
+  description="Open-source dependencies used by RAPS CLI — full transparency into every library powering the tool."
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <!-- Header -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="px-3 py-1 text-xs font-mono font-semibold bg-rapeseed-500/10 text-rapeseed-400 border border-rapeseed-500/20 rounded-full">
+            Apache-2.0
+          </span>
+          <span class="px-3 py-1 text-xs font-mono font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20 rounded-full">
+            {totalDeps} dependencies
+          </span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-display font-black text-white mb-6">
+          Open-Source <span class="text-rapeseed-400">Libraries</span>
+        </h1>
+        <p class="text-xl text-slate-400 mb-6">
+          RAPS is built on the shoulders of the Rust open-source ecosystem.
+          Every direct dependency is listed here for full transparency.
+        </p>
+        <p class="text-sm text-slate-500">
+          RAPS itself is licensed under <span class="text-white font-medium">Apache-2.0</span>.
+          All dependencies are vetted against an
+          <a href="/security" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">approved license list</a>
+          enforced by <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">cargo-deny</code> on every CI run.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-4 mb-16">
+        <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-xl text-center">
+          <div class="text-2xl font-bold text-white">{totalDeps}</div>
+          <div class="text-xs text-slate-400 mt-1">Direct Dependencies</div>
+        </div>
+        <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-xl text-center">
+          <div class="text-2xl font-bold text-white">{categories.length}</div>
+          <div class="text-xs text-slate-400 mt-1">Categories</div>
+        </div>
+        <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-xl text-center">
+          <div class="text-2xl font-bold text-white">{uniqueLicenses.length}</div>
+          <div class="text-xs text-slate-400 mt-1">License Types</div>
+        </div>
+      </div>
+
+      <!-- License overview -->
+      <div class="mb-16 p-6 bg-slate-800/30 border border-slate-700 rounded-xl">
+        <h2 class="text-lg font-display font-bold text-white mb-3">Licenses Used</h2>
+        <div class="flex flex-wrap gap-2">
+          {uniqueLicenses.map((license) => (
+            <span class="px-2.5 py-1 text-xs font-mono bg-slate-800 text-slate-300 border border-slate-700 rounded-md">
+              {license}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="space-y-12">
+        {categories.map((category) => (
+          <div>
+            <div class="mb-4">
+              <h2 class="text-xl font-display font-bold text-white">{category.name}</h2>
+              <p class="text-sm text-slate-400 mt-1">{category.description}</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr class="border-b border-slate-700 text-slate-400">
+                    <th class="py-2 pr-4 font-medium">Crate</th>
+                    <th class="py-2 pr-4 font-medium">Version</th>
+                    <th class="py-2 pr-4 font-medium hidden sm:table-cell">License</th>
+                    <th class="py-2 font-medium">Description</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-300">
+                  {category.deps.map((dep) => (
+                    <tr class="border-b border-slate-800/50">
+                      <td class="py-2.5 pr-4">
+                        <a
+                          href={dep.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="font-mono text-rapeseed-400 hover:text-rapeseed-300 transition-colors"
+                        >
+                          {dep.name}
+                        </a>
+                      </td>
+                      <td class="py-2.5 pr-4 font-mono text-slate-500">{dep.version}</td>
+                      <td class="py-2.5 pr-4 hidden sm:table-cell">
+                        <span class="text-xs text-slate-400">{dep.license}</span>
+                      </td>
+                      <td class="py-2.5 text-slate-400">{dep.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Internal crates -->
+      <div class="mt-16 mb-16">
+        <h2 class="text-xl font-display font-bold text-white mb-4">Internal Workspace Crates</h2>
+        <p class="text-sm text-slate-400 mb-4">
+          RAPS is organized as a Cargo workspace with the following crates, all licensed under Apache-2.0:
+        </p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          {[
+            { name: 'raps-kernel', description: 'Authentication, configuration, HTTP clients, secure storage' },
+            { name: 'raps-oss', description: 'Object Storage Service (buckets, objects, signed URLs)' },
+            { name: 'raps-derivative', description: 'Model Derivative API (translation, metadata, thumbnails)' },
+            { name: 'raps-dm', description: 'Data Management API (hubs, projects, folders, items)' },
+            { name: 'raps-da', description: 'Design Automation API (activities, work items, engines)' },
+            { name: 'raps-acc', description: 'Autodesk Construction Cloud modules (issues, RFIs, submittals)' },
+            { name: 'raps-admin', description: 'Account admin operations (users, companies, projects)' },
+            { name: 'raps-webhooks', description: 'Webhook management (create, list, delete, test)' },
+            { name: 'raps-reality', description: 'Reality Capture API (photogrammetry, scene processing)' },
+            { name: 'raps-cli', description: 'CLI binary — orchestrates all workspace crates' },
+          ].map((crate) => (
+            <div class="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg">
+              <span class="font-mono text-sm text-rapeseed-400 shrink-0">{crate.name}</span>
+              <span class="text-xs text-slate-500">{crate.description}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Dev & test dependencies -->
+      <div class="mb-16">
+        <h2 class="text-xl font-display font-bold text-white mb-4">Dev &amp; Test Dependencies</h2>
+        <p class="text-sm text-slate-400 mb-4">
+          These libraries are used only during development and testing &mdash; they are not included in release binaries.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400">
+                <th class="py-2 pr-4 font-medium">Crate</th>
+                <th class="py-2 pr-4 font-medium">Version</th>
+                <th class="py-2 font-medium">Description</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-300">
+              <tr class="border-b border-slate-800/50">
+                <td class="py-2.5 pr-4 font-mono text-slate-400">assert_cmd</td>
+                <td class="py-2.5 pr-4 font-mono text-slate-500">2.0</td>
+                <td class="py-2.5 text-slate-400">CLI integration test assertions</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-2.5 pr-4 font-mono text-slate-400">predicates</td>
+                <td class="py-2.5 pr-4 font-mono text-slate-500">3.1</td>
+                <td class="py-2.5 text-slate-400">Composable assertions for test output matching</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-2.5 pr-4 font-mono text-slate-400">raps-mock</td>
+                <td class="py-2.5 pr-4 font-mono text-slate-500">0.2.0</td>
+                <td class="py-2.5 text-slate-400">APS API mock server for offline testing</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 pr-4 font-mono text-slate-400">tokio-test</td>
+                <td class="py-2.5 pr-4 font-mono text-slate-500">0.4</td>
+                <td class="py-2.5 text-slate-400">Testing utilities for async code</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SBOM & links -->
+      <div class="text-center p-8 bg-slate-800/30 border border-slate-700 rounded-xl">
+        <h2 class="text-xl font-display font-bold text-white mb-3">Full Dependency Tree</h2>
+        <p class="text-slate-400 mb-6">
+          This page lists direct dependencies. For the complete transitive dependency tree including
+          exact resolved versions, download the CycloneDX SBOM attached to each
+          <a href="https://github.com/dmytro-yemelianov/raps/releases" target="_blank" rel="noopener noreferrer" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">GitHub Release</a>.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-2.5 bg-rapeseed-500 hover:bg-rapeseed-400 text-slate-900 font-semibold rounded-lg transition-colors"
+          >
+            Download SBOM
+          </a>
+          <a
+            href="https://github.com/dmytro-yemelianov/raps/blob/main/Cargo.lock"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+          >
+            View Cargo.lock
+          </a>
+          <a
+            href="/security"
+            class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+          >
+            Security Policy
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
