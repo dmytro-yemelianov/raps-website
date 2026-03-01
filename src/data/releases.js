@@ -9,6 +9,51 @@
 
 export const releases = [
   {
+    version: '4.16.0',
+    date: '2026-03-01',
+    highlights: ['Pipeline v2 Engine', 'GitHub Actions', 'GitLab CI Templates', 'CI/CD Integrations'],
+    description: 'Pipeline v2 engine with retry, timeout, conditionals, parallel steps, and for-each loops. Official GitHub Actions and GitLab CI templates.',
+    type: 'minor',
+    changes: {
+      added: [
+        'Pipeline v2 engine with retry policies, timeout per step, conditional execution (if/unless), parallel steps, and for-each loops',
+        'Expression evaluation in pipelines: `${{ steps.id.exit_code == 0 }}`',
+        'Official GitHub Actions: setup, pipeline, upload, translate (dmytro-yemelianov/raps-actions)',
+        'Official GitLab CI templates: .raps-setup, .raps-pipeline, .raps-upload, .raps-translate',
+      ],
+      changed: [
+        'Pipeline YAML format extended with v2 fields while maintaining backward compatibility with v1 format',
+      ],
+    },
+  },
+  {
+    version: '4.15.0',
+    date: '2026-02-28',
+    highlights: ['ASVS Security', 'npm Fix', 'Path Traversal', 'Log Redaction'],
+    description: 'ASVS L2 security hardening — path traversal protection, automatic log redaction, restricted directory permissions. Fixed npm publishing pipeline.',
+    type: 'minor',
+    changes: {
+      added: [
+        'Path traversal protection for all download operations (sanitize_filename, validate_path_within, safe_join)',
+        'Automatic log redaction via RedactingMakeWriter for Bearer tokens, cookies, API keys, URL params',
+        'Restricted directory permissions (0o700) for log and config directories',
+      ],
+      changed: [
+        'Extended log redaction patterns: Authorization headers, Cookie headers, X-API-Key, URL query params',
+        'Pipeline variable injection hardening with shell metacharacter validation',
+      ],
+      fixed: [
+        'npm publishing pipeline — all 5 platform binary packages now correctly listed in optionalDependencies',
+        'Auth error messages now redact sensitive text before logging',
+      ],
+      security: [
+        'ASVS L2 compliance improved from 74% to ~82% Met',
+        'Path traversal (CWE-22) protection across all file download paths',
+        'Automatic redaction prevents credential leakage in logs',
+      ],
+    },
+  },
+  {
     version: '4.14.0',
     date: '2026-02-25',
     highlights: ['API Health Tracking', 'Live Progress Spinners', 'Headless Auth', 'Major Refactor'],

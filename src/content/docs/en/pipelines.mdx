@@ -204,6 +204,87 @@ raps pipeline run pipeline.yaml --output json
 4. **Store secrets in environment** — Never put credentials in pipeline files
 5. **Use variables for reusable values** — Bucket names, project IDs, file paths
 
+## Pipeline v2 Features
+
+Pipeline v2 extends the basic format with advanced flow control. All v2 fields are optional and backward compatible with the v1 format described above.
+
+### Retry Policy
+
+Automatically retry a step on failure with configurable delay:
+
+```yaml
+steps:
+  - name: Upload model
+    command: object upload my-bucket model.rvt
+    retry:
+      max_attempts: 3
+      delay: 5s
+```
+
+### Step Timeout
+
+Set a maximum execution time for a step:
+
+```yaml
+steps:
+  - name: Translate model
+    command: translate start $URN --wait
+    timeout: 30m
+```
+
+### Conditional Execution
+
+Run or skip steps based on expressions that reference previous step results:
+
+```yaml
+steps:
+  - name: Notify on success
+    command: api post /webhooks/notify
+    if: "${{ steps.translate.exit_code == 0 }}"
+
+  - name: Cleanup on failure
+    command: object delete my-bucket model.rvt
+    unless: "${{ steps.translate.exit_code == 0 }}"
+```
+
+### Parallel Steps
+
+Execute multiple steps concurrently:
+
+```yaml
+steps:
+  - name: Upload files in parallel
+    parallel:
+      - name: Upload model A
+        command: object upload my-bucket model-a.rvt
+      - name: Upload model B
+        command: object upload my-bucket model-b.rvt
+```
+
+### For-Each Loops
+
+Iterate over a list of items with optional concurrency control:
+
+```yaml
+steps:
+  - name: Process models
+    for_each:
+      items: ["model-a.rvt", "model-b.rvt", "model-c.rvt"]
+      variable: MODEL
+      max_concurrency: 2
+      template:
+        name: "Upload ${MODEL}"
+        command: "object upload my-bucket ${MODEL}"
+```
+
+### Expressions
+
+Pipeline expressions use `$&#123;&#123; &#125;&#125;` syntax and can reference step results:
+
+- `$&#123;&#123; steps.&lt;id&gt;.exit_code &#125;&#125;` — exit code of a previous step
+- `$&#123;&#123; env.VARIABLE &#125;&#125;` — environment variable
+- Supports comparison operators: `==`, `!=`, `>`, `<`, `>=`, `<=`
+
 ## Next Steps
 
 - [Examples](/docs/examples) — More workflow examples

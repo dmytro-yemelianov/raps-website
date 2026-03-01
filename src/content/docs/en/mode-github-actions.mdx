@@ -8,7 +8,16 @@ icon: "🐙"
 
 # GitHub Actions
 
-RAPS provides a pre-built GitHub Action for easy CI/CD integration. Automate model uploads, translations, and APS operations directly in your GitHub workflows.
+RAPS provides official composite GitHub Actions for CI/CD integration at [dmytro-yemelianov/raps-actions](https://github.com/dmytro-yemelianov/raps-actions). Automate model uploads, translations, pipelines, and APS operations directly in your GitHub workflows.
+
+## Official Actions
+
+| Action | Description |
+|--------|-------------|
+| `dmytro-yemelianov/raps-actions/setup@v1` | Install RAPS CLI and configure APS authentication |
+| `dmytro-yemelianov/raps-actions/upload@v1` | Upload files to Autodesk OSS buckets |
+| `dmytro-yemelianov/raps-actions/translate@v1` | Translate models via Model Derivative API |
+| `dmytro-yemelianov/raps-actions/pipeline@v1` | Run a RAPS pipeline file |
 
 ## Quick Start
 
@@ -28,32 +37,98 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
         with:
-          version: 'latest'
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: Test Authentication
         run: raps auth test
-        env:
-          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
 ```
 
-## Action Configuration
+## Action Inputs and Outputs
 
-### Inputs
+### Setup Action
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `version` | RAPS version to install | `latest` |
-
-### Example with Version Pinning
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `version` | RAPS version to install | No | `latest` |
+| `client-id` | APS Client ID | Yes | |
+| `client-secret` | APS Client Secret | Yes | |
 
 ```yaml
 - name: Setup RAPS
-  uses: dmytro-yemelianov/raps-action@v1
+  uses: dmytro-yemelianov/raps-actions/setup@v1
   with:
-    version: '4.14.0'  # Pin to specific version
+    version: '4.16.0'
+    client-id: ${{ secrets.APS_CLIENT_ID }}
+    client-secret: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+### Upload Action
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `bucket` | OSS bucket key | Yes | |
+| `files` | File path or glob pattern | Yes | |
+| `create-bucket` | Create bucket if it does not exist | No | `false` |
+| `bucket-policy` | Retention policy (transient, temporary, persistent) | No | `transient` |
+
+| Output | Description |
+|--------|-------------|
+| `urn` | URN of the last uploaded object |
+| `object-count` | Number of objects uploaded |
+
+```yaml
+- name: Upload Model
+  id: upload
+  uses: dmytro-yemelianov/raps-actions/upload@v1
+  with:
+    bucket: my-project-bucket
+    files: models/*.rvt
+    create-bucket: 'true'
+```
+
+### Translate Action
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `urn` | URN of the object to translate | Yes | |
+| `wait` | Wait for translation to complete | No | `true` |
+| `timeout` | Maximum wait time | No | `60m` |
+| `download` | Download derivatives after translation | No | `false` |
+| `output-dir` | Directory for downloaded derivatives | No | `./derivatives` |
+
+| Output | Description |
+|--------|-------------|
+| `status` | Translation status (success, failed, timeout) |
+
+```yaml
+- name: Translate Model
+  uses: dmytro-yemelianov/raps-actions/translate@v1
+  with:
+    urn: ${{ steps.upload.outputs.urn }}
+    wait: 'true'
+    timeout: '30m'
+```
+
+### Pipeline Action
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `file` | Path to pipeline YAML/JSON file | Yes | |
+| `variables` | Pipeline variables (key=value, one per line) | No | |
+| `dry-run` | Preview pipeline without executing | No | `false` |
+| `ignore-failure` | Continue on step failures | No | `false` |
+
+```yaml
+- name: Run Pipeline
+  uses: dmytro-yemelianov/raps-actions/pipeline@v1
+  with:
+    file: pipelines/deploy.yaml
+    variables: |
+      BUCKET=my-bucket
+      MODEL=building.rvt
 ```
 
 ## Setting Up Secrets
@@ -80,15 +155,16 @@ jobs:
   translate:
     runs-on: ubuntu-latest
     env:
-      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
       BUCKET: ci-builds-${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: Create Bucket
         run: raps bucket create $BUCKET --retention transient
@@ -146,15 +222,15 @@ jobs:
       matrix:
         model: ${{ fromJson(needs.list-models.outputs.models) }}
       fail-fast: false
-    env:
-      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: Upload and Translate
         run: |
@@ -179,13 +255,13 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    env:
-      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
 
     steps:
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: List Old Buckets
         run: |
@@ -218,15 +294,15 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: Validate Models
         id: validate
@@ -281,15 +357,15 @@ on:
 jobs:
   export:
     runs-on: ubuntu-latest
-    env:
-      APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-      APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: Translate and Download
         run: |
@@ -326,13 +402,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup RAPS
-        uses: dmytro-yemelianov/raps-action@v1
+        uses: dmytro-yemelianov/raps-actions/setup@v1
+        with:
+          client-id: ${{ secrets.APS_CLIENT_ID }}
+          client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 
       - name: Test
         run: raps auth test
-        env:
-          APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
-          APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
 ```
 
 ## Caching (Optional)
@@ -344,12 +420,14 @@ Speed up workflows by caching the RAPS binary:
   uses: actions/cache@v4
   with:
     path: ~/.cargo/bin/raps
-    key: raps-${{ runner.os }}-4.14.0
+    key: raps-${{ runner.os }}-4.16.0
 
 - name: Setup RAPS
-  uses: dmytro-yemelianov/raps-action@v1
+  uses: dmytro-yemelianov/raps-actions/setup@v1
   with:
-    version: '4.14.0'
+    version: '4.16.0'
+    client-id: ${{ secrets.APS_CLIENT_ID }}
+    client-secret: ${{ secrets.APS_CLIENT_SECRET }}
 ```
 
 ## Debugging Workflows
@@ -385,7 +463,7 @@ Speed up workflows by caching the RAPS binary:
 
 ```yaml
 # Pin by SHA for security
-- uses: dmytro-yemelianov/raps-action@abc123def456...
+- uses: dmytro-yemelianov/raps-actions/setup@abc123def456...
 
 # Always cleanup
 - name: Cleanup
@@ -398,4 +476,4 @@ Speed up workflows by caching the RAPS binary:
 - [CLI Mode](/docs/mode-cli) — Command-line reference
 - [Exit Codes](/docs/exit-codes) — Understanding exit codes
 - [Pipelines](/docs/pipelines) — YAML-based automation
-- [raps-action Repository](https://github.com/dmytro-yemelianov/raps-action) — Action source code
+- [raps-actions Repository](https://github.com/dmytro-yemelianov/raps-actions) — Official GitHub Actions and GitLab CI templates
