@@ -1,0 +1,563 @@
+---
+title: "MCP & AI Workflows"
+description: "Automate APS tasks using the RAPS MCP server with AI assistants like Claude, Cursor, and VS Code Copilot"
+category: "aec"
+order: 52
+icon: "🤖"
+---
+
+# MCP & AI Workflows
+
+The RAPS MCP (Model Context Protocol) server exposes 105 tools across 12 modules, letting AI assistants like Claude Desktop, Cursor, and VS Code Copilot interact with the Autodesk Platform Services APIs through natural language. Instead of memorizing CLI flags or API endpoints, you describe what you want and the AI calls the right RAPS tools automatically.
+
+## Architecture Overview
+
+<div className="not-prose mb-8">
+  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">💬</div>
+      <div className="font-semibold">AI Assistant</div>
+      <div className="text-sm text-gray-400">Claude / Cursor / Copilot</div>
+    </div>
+    <div className="text-2xl text-gray-500">&#8596;</div>
+    <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔌</div>
+      <div className="font-semibold">RAPS MCP Server</div>
+      <div className="text-sm text-gray-400">105 Tools / 12 Modules</div>
+    </div>
+    <div className="text-2xl text-gray-500">&#8596;</div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">☁️</div>
+      <div className="font-semibold">APS Cloud</div>
+      <div className="text-sm text-gray-400">OSS / MD / ACC / Admin</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Available MCP Modules
+
+| Module | Tools | Description |
+|--------|-------|-------------|
+| `auth` | 4 | Token management, status, scopes |
+| `oss` | 8 | Bucket and object operations |
+| `dm` | 10 | Data Management hubs, projects, folders |
+| `translate` | 6 | Model Derivative translations |
+| `derivative` | 7 | Metadata, viewables, thumbnails |
+| `acc` | 18 | ACC projects, issues, RFIs, forms |
+| `admin` | 12 | Account admin, users, companies |
+| `pipeline` | 6 | Pipeline execution and status |
+| `webhook` | 5 | Webhook management |
+| `reality` | 4 | Reality capture photo scenes |
+| `cost` | 8 | Cost management budgets, contracts |
+| `mock` | 17 | Local mock server for testing |
+
+---
+
+## Setup
+
+### Option 1: Standalone MCP Server
+
+Start the MCP server directly from the command line:
+
+```bash
+raps mcp start
+```
+
+The server starts on `stdio` by default, ready for any MCP-compatible client to connect.
+
+### Option 2: Claude Desktop Configuration
+
+Add RAPS as an MCP server in your Claude Desktop configuration file:
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["mcp", "start"],
+      "env": {
+        "APS_CLIENT_ID": "your-client-id",
+        "APS_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+On macOS this file is located at `~/Library/Application Support/Claude/claude_desktop_config.json`. On Windows it is at `%APPDATA%\Claude\claude_desktop_config.json`.
+
+### Option 3: Cursor Configuration
+
+Add RAPS to your Cursor MCP settings in `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["mcp", "start"],
+      "env": {
+        "APS_CLIENT_ID": "your-client-id",
+        "APS_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+### Option 4: VS Code with Claude Code
+
+Configure RAPS in your VS Code settings for Claude Code:
+
+```json
+{
+  "claude-code.mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["mcp", "start"],
+      "env": {
+        "APS_CLIENT_ID": "your-client-id",
+        "APS_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+### Verify Connection
+
+After configuring your AI assistant, verify the MCP server is available:
+
+```
+User: "List all available RAPS tools"
+```
+
+The AI should respond with the full list of 105 tools grouped by module. If it reports that the RAPS server is not connected, check your configuration paths and ensure the `raps` binary is on your system PATH.
+
+---
+
+## Recipe: Storage Management
+
+Manage OSS buckets and objects through natural language.
+
+### List Buckets
+
+```
+User: "Show me all my APS storage buckets"
+```
+
+<div className="not-prose my-6">
+  <div className="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div className="flex gap-4 mb-4 text-xs font-semibold">
+      <div className="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div className="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div className="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+      <div className="flex-1 text-center py-2 rounded bg-emerald-900/30 text-emerald-400">APS Cloud</div>
+    </div>
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-blue-400">User</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-400 ml-2">Show me all my APS storage buckets</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">bucket_list()</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-emerald-400">APS</span>
+        <span className="text-slate-400 ml-2">GET /oss/v2/buckets</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-emerald-400">APS</span>
+        <span className="text-slate-500">&#8592;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2">Bucket list JSON</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-blue-400">User</span>
+        <span className="text-slate-400 ml-2">Formatted table of buckets</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> You have 4 buckets:
+>
+> | Bucket | Policy | Region | Objects |
+> |--------|--------|--------|---------|
+> | project-alpha | persistent | US | 23 |
+> | staging-models | transient | US | 7 |
+> | client-deliverables | persistent | EMEA | 12 |
+> | test-bucket | temporary | US | 0 |
+
+### Upload and Organize Files
+
+```
+User: "Create a new bucket called 'q1-deliverables' and upload all the Revit files from my models directory"
+```
+
+**AI Response:**
+> I created the bucket `q1-deliverables` with a persistent retention policy in the US region and uploaded 5 Revit files:
+>
+> - arch-floor-01.rvt (45.2 MB)
+> - arch-floor-02.rvt (38.7 MB)
+> - struct-foundations.rvt (22.1 MB)
+> - mep-hvac.rvt (31.4 MB)
+> - mep-plumbing.rvt (18.9 MB)
+>
+> Total: 156.3 MB uploaded.
+
+---
+
+## Recipe: Model Translation Workflow
+
+Upload, translate, and inspect 3D models using conversational commands.
+
+### End-to-End Translation
+
+```
+User: "Upload building.rvt to my project bucket, translate it to SVF2, and show me the metadata when it's done"
+```
+
+<div className="not-prose my-6">
+  <div className="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div className="flex gap-4 mb-4 text-xs font-semibold">
+      <div className="flex-1 text-center py-2 rounded bg-blue-900/30 text-blue-400">User</div>
+      <div className="flex-1 text-center py-2 rounded bg-purple-900/30 text-purple-400">AI Assistant</div>
+      <div className="flex-1 text-center py-2 rounded bg-amber-900/30 text-amber-400">RAPS MCP</div>
+    </div>
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-blue-400">User</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-400 ml-2">Upload, translate, show metadata</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">object_upload(bucket, "building.rvt")</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">translate_submit(urn, format="svf2")</span>
+      </div>
+      <div className="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span className="text-slate-500 text-xs">poll</span>
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">translate_status(urn)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">derivative_metadata(urn)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-blue-400">User</span>
+        <span className="text-slate-400 ml-2">Translation complete + metadata summary</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> building.rvt has been uploaded and translated successfully (2 min 34 sec).
+>
+> **Model Metadata:**
+> - Format: Revit 2024
+> - Views: 42 (24 floor plans, 8 sections, 6 3D views, 4 schedules)
+> - Elements: 12,847
+> - Levels: 5 (B1, L0, L1, L2, Roof)
+> - Categories: Walls (2,103), Doors (187), Windows (234), Floors (45)
+
+### Check Translation Status
+
+```
+User: "What's the translation status for all models in my staging bucket?"
+```
+
+**AI Response:**
+> Translation status for `staging-models`:
+>
+> | Model | Status | Progress | Duration |
+> |-------|--------|----------|----------|
+> | arch-v2.rvt | Complete | 100% | 3m 12s |
+> | struct-v2.rvt | Complete | 100% | 1m 45s |
+> | mep-v2.rvt | In Progress | 68% | -- |
+> | site.dwg | Failed | -- | Error: unsupported version |
+
+---
+
+## Recipe: ACC Project Management
+
+Query and manage ACC projects, issues, and documents conversationally.
+
+### List Projects
+
+```
+User: "Show me all active ACC projects in my account"
+```
+
+**AI Response:**
+> You have 6 active ACC projects:
+>
+> | Project | Type | Status | Members |
+> |---------|------|--------|---------|
+> | Downtown Tower | Building | Active | 24 |
+> | Highway Bridge Retrofit | Infrastructure | Active | 12 |
+> | Campus Renovation Ph2 | Building | Active | 18 |
+> | Warehouse Expansion | Building | Active | 8 |
+> | Solar Farm Layout | Infrastructure | Active | 6 |
+> | Office Interior Fit-Out | Building | Active | 15 |
+
+### Create and Track Issues
+
+```
+User: "Create a quality issue in the Downtown Tower project: 'Concrete pour inspection needed for Level 3 slab' and assign it to john@example.com"
+```
+
+<div className="not-prose my-6">
+  <div className="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">acc_list_projects()</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">acc_create_issue(project_id, title, assignee, type="quality")</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-blue-400">User</span>
+        <span className="text-slate-400 ml-2">Issue created with ID and link</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> Issue created successfully:
+>
+> - **ID:** ISS-1247
+> - **Title:** Concrete pour inspection needed for Level 3 slab
+> - **Type:** Quality
+> - **Assigned to:** john@example.com
+> - **Status:** Open
+> - **Due date:** Not set (you can ask me to set one)
+
+### Daily Log Entry
+
+```
+User: "Add a daily log entry for Downtown Tower: weather was clear, 45 workers on site, concrete pour completed for Level 3 east wing"
+```
+
+**AI Response:**
+> Daily log entry added for Downtown Tower (March 1, 2026):
+>
+> - **Weather:** Clear
+> - **Workers on site:** 45
+> - **Activities:** Concrete pour completed for Level 3 east wing
+> - **Log ID:** DL-2026-03-01-001
+
+---
+
+## Recipe: Pipeline Execution via MCP
+
+Run and monitor RAPS pipelines through your AI assistant.
+
+### Execute a Pipeline
+
+```
+User: "Run my raps-pipeline.yaml file and tell me when it's done"
+```
+
+<div className="not-prose my-6">
+  <div className="bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">pipeline_run(file="raps-pipeline.yaml")</span>
+      </div>
+      <div className="flex items-center gap-2 pl-4 border-l-2 border-slate-700">
+        <span className="text-slate-500 text-xs">poll</span>
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-amber-400">MCP</span>
+        <span className="text-slate-400 ml-2 font-mono text-xs">pipeline_status(run_id)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400">AI</span>
+        <span className="text-slate-500">&#8594;</span>
+        <span className="text-blue-400">User</span>
+        <span className="text-slate-400 ml-2">Pipeline complete with step results</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+**AI Response:**
+> Pipeline `raps-pipeline.yaml` completed successfully in 4m 22s.
+>
+> | Step | Status | Duration |
+> |------|--------|----------|
+> | create-bucket | Passed | 1.2s |
+> | upload-models | Passed | 45s |
+> | translate-all | Passed | 3m 15s |
+> | verify-output | Passed | 21s |
+
+### Dry Run Validation
+
+```
+User: "Validate my pipeline file without actually running it"
+```
+
+**AI Response:**
+> Dry run of `raps-pipeline.yaml` passed validation. All 4 steps are syntactically correct and all referenced environment variables are defined. No issues found.
+
+---
+
+## Recipe: Multi-Step Automation
+
+Chain multiple APS operations together in a single conversation.
+
+### Full Project Setup
+
+```
+User: "Set up a new APS project: create a bucket called 'hospital-phase2', upload all .rvt files from the current directory, translate them to SVF2, and give me a summary when done"
+```
+
+The AI orchestrates this as a multi-step workflow:
+
+1. `bucket_create(key="hospital-phase2", policy="persistent", region="US")`
+2. For each `.rvt` file found:
+   - `object_upload(bucket="hospital-phase2", file=...)`
+3. For each uploaded object:
+   - `translate_submit(urn=..., format="svf2")`
+4. Poll `translate_status()` until all translations complete
+5. `bucket_details(key="hospital-phase2")` for summary
+
+**AI Response:**
+> Project setup complete for `hospital-phase2`:
+>
+> | File | Size | Translation | Duration |
+> |------|------|-------------|----------|
+> | arch-ground.rvt | 67 MB | Complete | 4m 12s |
+> | arch-upper.rvt | 54 MB | Complete | 3m 28s |
+> | struct-all.rvt | 31 MB | Complete | 2m 05s |
+> | mep-mechanical.rvt | 42 MB | Complete | 3m 41s |
+> | mep-electrical.rvt | 28 MB | Complete | 1m 55s |
+>
+> **Total:** 5 models, 222 MB uploaded, all translations successful.
+
+---
+
+## Recipe: Exploratory Queries
+
+Use the AI assistant to explore and understand your APS data.
+
+### Inspect Model Contents
+
+```
+User: "What views are available in the building model I translated yesterday?"
+```
+
+**AI Response:**
+> The model `building-v3.rvt` has 38 views:
+>
+> **Floor Plans (12):** B1, Ground, L1, L2, L3, L4, L5, L6, L7, L8, Roof Plan, Site
+>
+> **Sections (6):** Section A-A, Section B-B, Section C-C, Longitudinal, Transverse N, Transverse S
+>
+> **3D Views (8):** Default 3D, Exterior, Interior, Structural, MEP, North Facade, Entry Detail, Aerial
+>
+> **Schedules (12):** Door Schedule, Window Schedule, Room Schedule, Wall Types, Floor Areas, ...
+
+### Compare Buckets
+
+```
+User: "Compare the contents of my staging and production buckets"
+```
+
+**AI Response:**
+> **staging-models** (7 objects, 312 MB):
+> - 3 files newer than production
+> - 2 files only in staging (new additions)
+>
+> **production-models** (5 objects, 245 MB):
+> - All files also present in staging
+> - 2 files are outdated compared to staging
+>
+> Files ready to promote from staging to production:
+> - arch-v3.rvt (staging: v3, production: v2)
+> - struct-v3.rvt (staging: v3, production: v2)
+> - mep-electrical.rvt (new, not in production)
+> - mep-plumbing.rvt (new, not in production)
+
+---
+
+## Troubleshooting
+
+### MCP server not recognized
+
+If the AI assistant does not list RAPS tools, verify the MCP configuration file path and restart the application. On macOS, Claude Desktop requires a full restart (not just closing the window) after editing the config.
+
+### Authentication errors
+
+The MCP server uses the same credentials as the CLI. Make sure `APS_CLIENT_ID` and `APS_CLIENT_SECRET` are set in the MCP configuration `env` block or exported in your shell environment before starting the server.
+
+```bash
+# Test credentials outside the AI assistant
+raps auth status
+```
+
+### Tool call timeouts
+
+Large file uploads or translations may exceed the default MCP tool timeout. For operations that take longer than 60 seconds, the AI assistant will typically poll for status rather than waiting in a single tool call. If you encounter timeouts, break the request into smaller steps:
+
+```
+User: "Upload the file first, then I'll ask you to translate it separately"
+```
+
+### Rate limiting
+
+The APS platform enforces rate limits. If the AI assistant reports 429 errors, wait a few seconds and retry. For batch operations, ask the AI to add delays:
+
+```
+User: "Upload these 20 files but add a 1-second pause between each upload"
+```
+
+---
+
+## Next Steps
+
+- [Pipeline v2 Recipes](/cookbook/cookbook-pipeline-v2) -- Advanced pipeline features: retry, parallel, conditionals
+- [Security & Authentication](/cookbook/cookbook-security-auth) -- Authentication patterns for MCP and CLI
+- [CI/CD with GitHub Actions](/cookbook/cookbook-cicd-github-actions) -- Automate with GitHub Actions
+- [MCP Server Documentation](/docs/mcp-server) -- Full MCP server reference

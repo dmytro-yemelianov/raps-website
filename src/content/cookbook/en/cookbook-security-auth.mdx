@@ -1,0 +1,596 @@
+---
+title: "Security & Authentication"
+description: "Authentication patterns for APS — 2-legged, 3-legged, device code flow, and token management with RAPS"
+category: "aec"
+order: 54
+icon: "🔐"
+---
+
+# Security & Authentication
+
+RAPS supports all three APS OAuth 2.0 flows plus comprehensive token management. Choose the right authentication pattern for your use case: machine-to-machine automation, interactive user sessions, or headless CI/CD environments.
+
+## Authentication Flows
+
+<div className="not-prose mb-8">
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+      <div className="text-2xl mb-2">🤖</div>
+      <div className="font-semibold">2-Legged (Client Credentials)</div>
+      <div className="text-sm text-gray-400 mt-2">Machine-to-machine. No user interaction. Access application-owned data only.</div>
+      <div className="mt-3 text-xs">
+        <span className="bg-blue-900/40 text-blue-300 rounded px-2 py-1">CI/CD</span>
+        <span className="bg-blue-900/40 text-blue-300 rounded px-2 py-1 ml-1">Automation</span>
+        <span className="bg-blue-900/40 text-blue-300 rounded px-2 py-1 ml-1">Pipelines</span>
+      </div>
+    </div>
+    <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4">
+      <div className="text-2xl mb-2">👤</div>
+      <div className="font-semibold">3-Legged (Authorization Code)</div>
+      <div className="text-sm text-gray-400 mt-2">User-interactive. Browser-based consent. Access user-owned data in ACC/BIM 360.</div>
+      <div className="mt-3 text-xs">
+        <span className="bg-purple-900/40 text-purple-300 rounded px-2 py-1">Desktop</span>
+        <span className="bg-purple-900/40 text-purple-300 rounded px-2 py-1 ml-1">Web Apps</span>
+        <span className="bg-purple-900/40 text-purple-300 rounded px-2 py-1 ml-1">User Data</span>
+      </div>
+    </div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4">
+      <div className="text-2xl mb-2">📱</div>
+      <div className="font-semibold">Device Code</div>
+      <div className="text-sm text-gray-400 mt-2">Headless authentication. User authorizes on a separate device. User-context without local browser.</div>
+      <div className="mt-3 text-xs">
+        <span className="bg-emerald-900/40 text-emerald-300 rounded px-2 py-1">SSH</span>
+        <span className="bg-emerald-900/40 text-emerald-300 rounded px-2 py-1 ml-1">Containers</span>
+        <span className="bg-emerald-900/40 text-emerald-300 rounded px-2 py-1 ml-1">Headless CI</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## 2-Legged Authentication (Client Credentials)
+
+The simplest flow. Your application authenticates directly with APS using a client ID and secret. No user interaction is required. This is ideal for server-side automation, CI/CD pipelines, and background jobs that work with application-owned data (OSS buckets, Model Derivative translations).
+
+### Flow Diagram
+
+<div className="not-prose my-6">
+  <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 text-center">
+      <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">RAPS CLI</div>
+      <div className="text-sm text-slate-300 mt-1">Client ID + Secret</div>
+    </div>
+    <div className="text-gray-500">&#8594;</div>
+    <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3 text-center">
+      <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">APS OAuth</div>
+      <div className="text-sm text-slate-300 mt-1">POST /authentication/v2/token</div>
+    </div>
+    <div className="text-gray-500">&#8594;</div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 text-center">
+      <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Access Token</div>
+      <div className="text-sm text-slate-300 mt-1">Stored in keyring</div>
+    </div>
+  </div>
+</div>
+
+### CLI Usage
+
+```bash
+# Authenticate with client credentials
+raps auth 2lo --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
+
+# Or use environment variables (preferred for CI/CD)
+export APS_CLIENT_ID="your-client-id"
+export APS_CLIENT_SECRET="your-client-secret"
+raps auth 2lo
+
+# Verify the token
+raps auth status
+```
+
+### With Specific Scopes
+
+```bash
+# Read-only access to OSS and Model Derivative
+raps auth 2lo \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret YOUR_CLIENT_SECRET \
+  --scope "data:read viewables:read"
+
+# Full access for upload and translation
+raps auth 2lo \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret YOUR_CLIENT_SECRET \
+  --scope "data:read data:write data:create bucket:create bucket:read"
+```
+
+### In CI/CD
+
+```yaml
+# GitHub Actions
+- name: Authenticate with APS
+  run: raps auth 2lo
+  env:
+    APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
+    APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+```
+
+```yaml
+# GitLab CI
+authenticate:
+  script:
+    - raps auth 2lo
+  variables:
+    APS_CLIENT_ID: $APS_CLIENT_ID
+    APS_CLIENT_SECRET: $APS_CLIENT_SECRET
+```
+
+### When to Use 2-Legged
+
+- Automated pipelines and CI/CD workflows
+- Server-side batch processing
+- Operations on application-owned OSS buckets
+- Model Derivative translations
+- Any workflow that does not need user-specific data
+
+### Limitations
+
+2-legged tokens cannot access user-owned data in ACC or BIM 360. If you need to list a user's ACC projects or access their Data Management folders, use 3-legged or device code authentication instead.
+
+---
+
+## 3-Legged Authentication (Authorization Code)
+
+The standard OAuth 2.0 authorization code flow. RAPS opens a browser window where the user signs in to their Autodesk account and grants consent. After authorization, RAPS receives an access token and refresh token scoped to that user's data.
+
+### Flow Diagram
+
+<div className="not-prose my-6">
+  <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">RAPS CLI</div>
+        <div className="text-sm text-slate-300 mt-1">Start local server</div>
+      </div>
+      <div className="text-gray-500">&#8594;</div>
+      <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">Browser</div>
+        <div className="text-sm text-slate-300 mt-1">User signs in + consents</div>
+      </div>
+      <div className="text-gray-500">&#8594;</div>
+      <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Callback</div>
+        <div className="text-sm text-slate-300 mt-1">localhost:8080/callback</div>
+      </div>
+    </div>
+    <div className="text-gray-500">&#8595;</div>
+    <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+      <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Auth Code</div>
+        <div className="text-sm text-slate-300 mt-1">Exchange for tokens</div>
+      </div>
+      <div className="text-gray-500">&#8594;</div>
+      <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Tokens</div>
+        <div className="text-sm text-slate-300 mt-1">Access + Refresh</div>
+      </div>
+      <div className="text-gray-500">&#8594;</div>
+      <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Keyring</div>
+        <div className="text-sm text-slate-300 mt-1">Secure storage</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+### CLI Usage
+
+```bash
+# Start 3-legged auth (opens browser)
+raps auth 3lo \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret YOUR_CLIENT_SECRET \
+  --callback http://localhost:8080/callback
+
+# With specific scopes for ACC access
+raps auth 3lo \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret YOUR_CLIENT_SECRET \
+  --callback http://localhost:8080/callback \
+  --scope "data:read data:write account:read"
+```
+
+After running this command, RAPS starts a temporary local HTTP server on port 8080 and opens your default browser to the Autodesk sign-in page. Once you authorize the application, the browser redirects to `localhost:8080/callback` where RAPS captures the authorization code and exchanges it for tokens.
+
+### Custom Callback Port
+
+```bash
+# Use a different port if 8080 is in use
+raps auth 3lo \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret YOUR_CLIENT_SECRET \
+  --callback http://localhost:9090/callback
+```
+
+Make sure the callback URL you use here matches exactly what is configured in your APS application settings at https://aps.autodesk.com.
+
+### Access User Data
+
+Once authenticated with 3-legged tokens, you can access user-owned resources:
+
+```bash
+# List the user's ACC hubs
+raps dm hubs
+
+# List projects in a hub
+raps dm projects --hub-id b.XXXXXXXX
+
+# List ACC projects
+raps acc projects list
+
+# Access user folders
+raps dm folders --project-id XXXXXXXX --folder-id XXXXXXXX
+```
+
+### When to Use 3-Legged
+
+- Accessing user-owned data in ACC, BIM 360, or Fusion
+- Desktop applications and local development
+- Any operation that requires user consent
+- Reading or writing to user-specific projects and folders
+
+---
+
+## Device Code Authentication
+
+The device code flow is designed for environments without a local browser -- SSH sessions, Docker containers, headless CI runners, and remote servers. RAPS displays a URL and a one-time code. The user opens the URL on any device (phone, laptop) and enters the code to authorize.
+
+### Flow Diagram
+
+<div className="not-prose my-6">
+  <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">RAPS CLI (headless)</div>
+        <div className="text-sm text-slate-300 mt-1">Request device code</div>
+      </div>
+      <div className="text-gray-500">&#8594;</div>
+      <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">APS OAuth</div>
+        <div className="text-sm text-slate-300 mt-1">Returns code + URL</div>
+      </div>
+    </div>
+    <div className="text-gray-500">&#8595;</div>
+    <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 text-center max-w-md">
+      <div className="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">User Action (separate device)</div>
+      <div className="text-sm text-slate-300">Open <span className="font-mono text-amber-300">https://autodesk.com/device</span></div>
+      <div className="text-sm text-slate-300 mt-1">Enter code: <span className="font-mono text-amber-300 font-bold">ABCD-1234</span></div>
+    </div>
+    <div className="text-gray-500">&#8595;</div>
+    <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">RAPS CLI</div>
+        <div className="text-sm text-slate-300 mt-1">Polls until authorized</div>
+      </div>
+      <div className="text-gray-500">&#8594;</div>
+      <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Tokens</div>
+        <div className="text-sm text-slate-300 mt-1">Access + Refresh</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+### CLI Usage
+
+```bash
+# Start device code flow
+raps auth device --client-id YOUR_CLIENT_ID
+
+# Terminal output:
+# To authorize this device, open: https://autodesk.com/device
+# Enter code: ABCD-1234
+# Waiting for authorization...
+```
+
+RAPS polls the APS token endpoint every few seconds until the user completes authorization on their separate device, or until the code expires (typically 10 minutes).
+
+### With Scopes
+
+```bash
+raps auth device \
+  --client-id YOUR_CLIENT_ID \
+  --scope "data:read data:write account:read"
+```
+
+### In Docker / Remote Sessions
+
+```bash
+# SSH into a build server
+ssh build-server
+
+# Start device code auth
+raps auth device --client-id YOUR_CLIENT_ID
+# Copy the URL and code, open on your local machine
+# Once authorized, continue working on the remote server
+
+# Verify
+raps auth status
+```
+
+### When to Use Device Code
+
+- SSH sessions on remote servers
+- Docker containers without browser access
+- CI/CD runners that need user-context tokens
+- Headless environments where 3-legged auth is not possible
+
+---
+
+## Token Management
+
+RAPS stores tokens securely in the operating system keyring (macOS Keychain, Windows Credential Manager, or Linux Secret Service) and handles refresh automatically.
+
+### Check Token Status
+
+```bash
+# View current authentication status
+raps auth status
+```
+
+Example output:
+
+```
+Authentication Status
+─────────────────────
+Flow:        2-legged (client credentials)
+Client ID:   abc...xyz
+Scopes:      data:read data:write bucket:create
+Expires:     2026-03-01T15:30:00Z (47 minutes remaining)
+Storage:     system keyring
+```
+
+### Token Refresh
+
+For 3-legged and device code flows, RAPS automatically refreshes expired tokens using the stored refresh token. You do not need to re-authenticate unless the refresh token itself expires (typically 14 days for APS).
+
+```bash
+# Force a token refresh
+raps auth refresh
+
+# Check new expiry
+raps auth status
+```
+
+### Revoke Tokens
+
+```bash
+# Revoke the current token
+raps auth revoke
+
+# Confirm revocation
+raps auth status
+# Output: Not authenticated
+```
+
+### Multiple Profiles
+
+Manage multiple APS applications or accounts by using named profiles:
+
+```bash
+# Authenticate with a named profile
+raps auth 2lo --profile production \
+  --client-id PROD_CLIENT_ID \
+  --client-secret PROD_CLIENT_SECRET
+
+raps auth 2lo --profile staging \
+  --client-id STAGING_CLIENT_ID \
+  --client-secret STAGING_CLIENT_SECRET
+
+# Switch between profiles
+raps auth use --profile production
+
+# Check which profile is active
+raps auth status
+
+# List all profiles
+raps auth profiles
+```
+
+### Environment Variable Precedence
+
+RAPS checks for credentials in the following order:
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 | CLI flags | `--client-id X --client-secret Y` |
+| 2 | Environment variables | `APS_CLIENT_ID` / `APS_CLIENT_SECRET` |
+| 3 | Active profile in keyring | Set via `raps auth use` |
+| 4 | Default profile in keyring | First authenticated profile |
+
+---
+
+## Security Best Practices
+
+### Never Commit Secrets
+
+Do not store client secrets in code, configuration files, or version control. Use environment variables or CI/CD secrets:
+
+```bash
+# Wrong - secret in shell history
+raps auth 2lo --client-id abc --client-secret my-secret-value
+
+# Better - from environment
+export APS_CLIENT_ID="abc"
+export APS_CLIENT_SECRET="$(vault read -field=secret aps/production)"
+raps auth 2lo
+```
+
+### Use Least-Privilege Scopes
+
+Request only the scopes your workflow needs:
+
+```bash
+# Read-only for reporting
+raps auth 2lo --scope "data:read viewables:read"
+
+# Upload and translate only
+raps auth 2lo --scope "data:read data:write data:create bucket:create bucket:read"
+
+# Full ACC access (only when needed)
+raps auth 3lo --scope "data:read data:write account:read account:write"
+```
+
+### Available APS Scopes
+
+| Scope | Description |
+|-------|-------------|
+| `data:read` | Read OSS objects and Data Management resources |
+| `data:write` | Write and modify objects |
+| `data:create` | Create new objects and folders |
+| `bucket:create` | Create new OSS buckets |
+| `bucket:read` | List and read bucket details |
+| `bucket:update` | Modify bucket policies |
+| `bucket:delete` | Delete buckets |
+| `code:all` | Design Automation |
+| `account:read` | Read ACC/BIM 360 account data |
+| `account:write` | Write ACC/BIM 360 account data |
+| `viewables:read` | Read translated viewable output |
+
+### Rotate Secrets Regularly
+
+Rotate your APS application secrets periodically. After rotating in the APS Developer Portal:
+
+```bash
+# Update CI/CD secrets in GitHub
+gh secret set APS_CLIENT_SECRET --body "new-secret-value"
+
+# Update local keyring
+raps auth revoke
+raps auth 2lo --client-id YOUR_CLIENT_ID --client-secret NEW_SECRET
+```
+
+### Audit Token Usage
+
+Monitor token usage and revoke tokens that are no longer needed:
+
+```bash
+# Check when your token was last used
+raps auth status --verbose
+
+# Revoke all stored tokens
+raps auth revoke --all
+
+# Re-authenticate with fresh tokens
+raps auth 2lo
+```
+
+---
+
+## MCP Server Authentication
+
+When using RAPS as an MCP server for AI assistants, credentials are passed through the MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "raps": {
+      "command": "raps",
+      "args": ["mcp", "start"],
+      "env": {
+        "APS_CLIENT_ID": "your-client-id",
+        "APS_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+For user-context operations through MCP (accessing ACC projects, user data), authenticate with 3-legged or device code flow before starting the MCP server:
+
+```bash
+# Authenticate interactively first
+raps auth 3lo --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET \
+  --callback http://localhost:8080/callback
+
+# Then start MCP server (it uses the stored token)
+raps mcp start
+```
+
+The MCP server automatically refreshes tokens as needed during the session.
+
+---
+
+## Troubleshooting
+
+### Token expired and refresh failed
+
+If the refresh token has also expired (after 14 days of inactivity for 3-legged tokens), you need to re-authenticate:
+
+```bash
+raps auth revoke
+raps auth 3lo --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET \
+  --callback http://localhost:8080/callback
+```
+
+### Invalid scope error
+
+The requested scopes must be enabled for your APS application. Check your application configuration at https://aps.autodesk.com and ensure the required APIs are activated.
+
+### Callback URL mismatch
+
+For 3-legged auth, the callback URL must match exactly what is configured in your APS application settings, including the port number and path:
+
+```bash
+# Must match APS app settings exactly
+raps auth 3lo --callback http://localhost:8080/callback
+```
+
+### Keyring not available
+
+On headless Linux systems without a desktop environment, the system keyring may not be available. RAPS falls back to file-based storage in `~/.raps/credentials` with restricted file permissions (0600):
+
+```bash
+# Check storage method
+raps auth status
+# Output includes: Storage: file (~/.raps/credentials)
+```
+
+### Port already in use
+
+If port 8080 is already in use when starting 3-legged auth:
+
+```bash
+# Use a different port
+raps auth 3lo --callback http://localhost:9090/callback
+
+# Remember to update the callback URL in your APS application settings
+```
+
+---
+
+## Quick Reference
+
+| Flow | Command | User Interaction | Use Case |
+|------|---------|-----------------|----------|
+| 2-legged | `raps auth 2lo` | None | CI/CD, automation, app-owned data |
+| 3-legged | `raps auth 3lo` | Browser sign-in | Desktop, user data, ACC |
+| Device code | `raps auth device` | Separate device | SSH, Docker, headless |
+
+| Management | Command |
+|------------|---------|
+| Check status | `raps auth status` |
+| Refresh token | `raps auth refresh` |
+| Revoke token | `raps auth revoke` |
+| Switch profile | `raps auth use --profile NAME` |
+| List profiles | `raps auth profiles` |
+
+---
+
+## Next Steps
+
+- [MCP & AI Workflows](/cookbook/cookbook-mcp-ai-workflows) -- Use authenticated MCP server with AI assistants
+- [Pipeline v2 Recipes](/cookbook/cookbook-pipeline-v2) -- Advanced pipeline patterns with authenticated steps
+- [CI/CD with GitHub Actions](/cookbook/cookbook-cicd-github-actions) -- Secure secrets in GitHub Actions
+- [CI/CD with GitLab CI](/cookbook/cookbook-cicd-gitlab-ci) -- Secure variables in GitLab CI

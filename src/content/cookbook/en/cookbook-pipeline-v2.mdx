@@ -1,0 +1,696 @@
+---
+title: "Pipeline v2 Recipes"
+description: "Advanced RAPS pipeline patterns — retry, parallel execution, conditionals, for-each loops, and expressions"
+category: "aec"
+order: 53
+icon: "⚙️"
+---
+
+# Pipeline v2 Recipes
+
+RAPS Pipeline v2 introduces retry logic, parallel execution, conditional steps, for-each iteration, and expression evaluation. These features let you build robust, production-grade automation pipelines that handle failures gracefully, process files in bulk, and branch based on runtime conditions.
+
+## Feature Overview
+
+<div className="not-prose mb-8">
+  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔁</div>
+      <div className="font-semibold text-sm">Retry</div>
+      <div className="text-xs text-gray-400 mt-1">Auto-recover from transient failures</div>
+    </div>
+    <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">⏱️</div>
+      <div className="font-semibold text-sm">Timeout</div>
+      <div className="text-xs text-gray-400 mt-1">Per-step time limits</div>
+    </div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">⚡</div>
+      <div className="font-semibold text-sm">Parallel</div>
+      <div className="text-xs text-gray-400 mt-1">Run steps concurrently</div>
+    </div>
+    <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔀</div>
+      <div className="font-semibold text-sm">Conditionals</div>
+      <div className="text-xs text-gray-400 mt-1">Branch on expressions</div>
+    </div>
+    <div className="bg-rose-900/20 border border-rose-700/50 rounded-lg p-4 text-center">
+      <div className="text-2xl mb-2">🔄</div>
+      <div className="font-semibold text-sm">For-Each</div>
+      <div className="text-xs text-gray-400 mt-1">Iterate over values</div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Retry
+
+Retry automatically re-executes a failed step up to a configurable number of attempts. This is essential for handling transient network errors, API rate limits, and temporary service unavailability.
+
+### Basic Retry
+
+```yaml
+# raps-pipeline.yaml
+name: upload-with-retry
+steps:
+  - name: upload-model
+    action: object_upload
+    params:
+      bucket: project-models
+      file: building.rvt
+    retry:
+      max_attempts: 3
+      delay: "5s"
+```
+
+### Exponential Backoff
+
+For API rate limiting, use exponential backoff to progressively increase the delay between retries:
+
+```yaml
+steps:
+  - name: translate-model
+    action: translate_start
+    params:
+      urn: "${{ steps.upload.outputs.urn }}"
+      format: svf2
+    retry:
+      max_attempts: 5
+      delay: "2s"
+      backoff: "exponential"
+```
+
+With exponential backoff, the delays are 2s, 4s, 8s, 16s, 32s for the five attempts.
+
+### Retry with Timeout
+
+Combine retry with a per-step timeout to cap total execution time:
+
+```yaml
+steps:
+  - name: translate-and-wait
+    action: translate_start
+    params:
+      urn: "${{ steps.upload.outputs.urn }}"
+      format: svf2
+      wait: true
+    timeout: "10m"
+    retry:
+      max_attempts: 3
+      delay: "10s"
+      backoff: "exponential"
+```
+
+If a single attempt exceeds 10 minutes, it is terminated and the next retry begins (subject to the max_attempts limit).
+
+### Run It
+
+```bash
+# Execute with retry logging visible
+raps pipeline run raps-pipeline.yaml --verbose
+
+# Dry run to validate retry configuration
+raps pipeline run raps-pipeline.yaml --dry-run
+```
+
+---
+
+## Timeout
+
+Set a maximum duration for any step. If the step does not complete within the timeout window, it is cancelled and marked as failed (which may trigger a retry if configured).
+
+### Per-Step Timeouts
+
+```yaml
+steps:
+  - name: quick-upload
+    action: object_upload
+    params:
+      bucket: fast-bucket
+      file: small-model.dwg
+    timeout: "2m"
+
+  - name: long-translation
+    action: translate_start
+    params:
+      urn: "${{ steps.quick-upload.outputs.urn }}"
+      format: svf2
+      wait: true
+    timeout: "30m"
+```
+
+### Timeout Format
+
+| Value | Duration |
+|-------|----------|
+| `"30s"` | 30 seconds |
+| `"5m"` | 5 minutes |
+| `"1h"` | 1 hour |
+| `"1h30m"` | 1 hour 30 minutes |
+
+Always include the unit suffix. Bare numbers like `"30"` are not valid.
+
+---
+
+## Parallel Execution
+
+Run multiple independent steps concurrently to reduce total pipeline duration. Parallel steps start at the same time and the pipeline waits for all of them to complete before proceeding.
+
+### Basic Parallel
+
+```yaml
+steps:
+  - name: create-bucket
+    action: bucket_create
+    params:
+      key: multi-discipline
+      policy: persistent
+
+  - name: upload-all
+    parallel:
+      - name: upload-arch
+        action: object_upload
+        params:
+          bucket: multi-discipline
+          file: architectural.rvt
+      - name: upload-struct
+        action: object_upload
+        params:
+          bucket: multi-discipline
+          file: structural.rvt
+      - name: upload-mep
+        action: object_upload
+        params:
+          bucket: multi-discipline
+          file: mep.rvt
+```
+
+### Parallel Flow
+
+<div className="not-prose my-6">
+  <div className="flex flex-col items-center gap-4">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 text-center w-64">
+      <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">Step 1</div>
+      <div className="text-sm text-slate-300 mt-1">create-bucket</div>
+    </div>
+    <div className="text-gray-500">&#8595;</div>
+    <div className="flex gap-4">
+      <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">Parallel</div>
+        <div className="text-sm text-slate-300 mt-1">upload-arch</div>
+      </div>
+      <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">Parallel</div>
+        <div className="text-sm text-slate-300 mt-1">upload-struct</div>
+      </div>
+      <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3 text-center">
+        <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">Parallel</div>
+        <div className="text-sm text-slate-300 mt-1">upload-mep</div>
+      </div>
+    </div>
+    <div className="text-gray-500">&#8595;</div>
+    <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 text-center w-64">
+      <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Continue</div>
+      <div className="text-sm text-slate-300 mt-1">Next sequential step</div>
+    </div>
+  </div>
+</div>
+
+### Parallel Translations with Retry
+
+Combine parallel execution with retry for resilient batch processing:
+
+```yaml
+steps:
+  - name: translate-all
+    parallel:
+      - name: translate-arch
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-arch.outputs.urn }}"
+          format: svf2
+          wait: true
+        timeout: "15m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+      - name: translate-struct
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-struct.outputs.urn }}"
+          format: svf2
+          wait: true
+        timeout: "15m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+      - name: translate-mep
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-mep.outputs.urn }}"
+          format: svf2
+          wait: true
+        timeout: "15m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+```
+
+### Run It
+
+```bash
+# Parallel steps show interleaved output
+raps pipeline run raps-pipeline.yaml --verbose
+
+# Check which parallel step is slowest
+raps pipeline run raps-pipeline.yaml --timing
+```
+
+---
+
+## Conditionals
+
+Execute steps only when a condition evaluates to true. Conditions can reference environment variables, step outputs, and step statuses.
+
+### Branch-Based Conditions
+
+Deploy only on the main branch:
+
+```yaml
+steps:
+  - name: upload-model
+    action: object_upload
+    params:
+      bucket: staging-models
+      file: building.rvt
+
+  - name: promote-to-production
+    action: object_copy
+    params:
+      source_bucket: staging-models
+      target_bucket: production-models
+      key: building.rvt
+    when: "env.BRANCH == 'main'"
+```
+
+### Status-Based Conditions
+
+Run a cleanup step only after a successful upload:
+
+```yaml
+steps:
+  - name: upload
+    action: object_upload
+    params:
+      bucket: project-models
+      file: building.rvt
+
+  - name: translate
+    action: translate_start
+    params:
+      urn: "${{ steps.upload.outputs.urn }}"
+      format: svf2
+    when: "steps.upload.status == 'success'"
+
+  - name: notify-failure
+    action: webhook_send
+    params:
+      url: "${{ env.SLACK_WEBHOOK }}"
+      message: "Upload failed for building.rvt"
+    when: "steps.upload.status == 'failed'"
+```
+
+### Conditional Flow
+
+<div className="not-prose my-6">
+  <div className="flex flex-col items-center gap-4">
+    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 text-center w-64">
+      <div className="text-sm text-slate-300">upload</div>
+    </div>
+    <div className="text-gray-500">&#8595;</div>
+    <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-3 text-center w-64">
+      <div className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Condition</div>
+      <div className="text-sm text-slate-300 mt-1">upload.status?</div>
+    </div>
+    <div className="flex gap-8">
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-xs text-emerald-400">success</div>
+        <div className="text-gray-500">&#8595;</div>
+        <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 text-center">
+          <div className="text-sm text-slate-300">translate</div>
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-xs text-rose-400">failed</div>
+        <div className="text-gray-500">&#8595;</div>
+        <div className="bg-rose-900/20 border border-rose-700/50 rounded-lg p-3 text-center">
+          <div className="text-sm text-slate-300">notify-failure</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+### Output-Based Conditions
+
+Use outputs from a previous step to decide what to do next:
+
+```yaml
+steps:
+  - name: check-bucket
+    action: bucket_details
+    params:
+      key: project-models
+
+  - name: create-bucket
+    action: bucket_create
+    params:
+      key: project-models
+      policy: persistent
+    when: "steps.check-bucket.status == 'failed'"
+```
+
+---
+
+## For-Each
+
+Iterate over a list of values to execute a step multiple times. The `for_each` field accepts a comma-separated string or a reference to an environment variable containing one.
+
+### Iterate Over Files
+
+```yaml
+env:
+  FILES: "arch.rvt,struct.rvt,mep.rvt,site.dwg"
+
+steps:
+  - name: upload-files
+    action: object_upload
+    params:
+      bucket: project-models
+      file: "${{ each.value }}"
+    for_each: "env.FILES"
+    retry:
+      max_attempts: 2
+      delay: "3s"
+```
+
+This expands to four upload operations, one per file. Each iteration has access to `each.value` (the current item) and `each.index` (the zero-based position).
+
+### For-Each with Translation
+
+Upload and translate a dynamic list of models:
+
+```yaml
+env:
+  MODELS: "building-a.rvt,building-b.rvt,building-c.rvt"
+
+steps:
+  - name: upload-models
+    action: object_upload
+    params:
+      bucket: batch-project
+      file: "./models/${{ each.value }}"
+    for_each: "env.MODELS"
+
+  - name: translate-models
+    action: translate_start
+    params:
+      urn: "${{ steps.upload-models.outputs[each.index].urn }}"
+      format: svf2
+      wait: true
+    for_each: "env.MODELS"
+    timeout: "20m"
+    retry:
+      max_attempts: 2
+      delay: "5s"
+      backoff: "exponential"
+```
+
+### For-Each with Conditionals
+
+Process files but only translate Revit formats:
+
+```yaml
+env:
+  FILES: "model.rvt,drawing.dwg,spec.pdf,layout.rvt"
+
+steps:
+  - name: upload-all
+    action: object_upload
+    params:
+      bucket: mixed-assets
+      file: "${{ each.value }}"
+    for_each: "env.FILES"
+
+  - name: translate-revit
+    action: translate_start
+    params:
+      urn: "${{ steps.upload-all.outputs[each.index].urn }}"
+      format: svf2
+    for_each: "env.FILES"
+    when: "each.value ends_with '.rvt'"
+```
+
+### Run It
+
+```bash
+# For-each iterations show per-item progress
+raps pipeline run raps-pipeline.yaml --verbose
+
+# Override the file list at runtime
+raps pipeline run raps-pipeline.yaml --set FILES="new-a.rvt,new-b.rvt"
+```
+
+---
+
+## Expressions
+
+Expressions use the `$&#123;&#123; &#125;&#125;` syntax to reference environment variables, step outputs, and built-in functions within pipeline YAML files.
+
+### Environment Variables
+
+```yaml
+env:
+  BUCKET_PREFIX: "myproject"
+  REGION: "US"
+
+steps:
+  - name: create-bucket
+    action: bucket_create
+    params:
+      key: "${{ env.BUCKET_PREFIX }}-models"
+      policy: persistent
+      region: "${{ env.REGION }}"
+```
+
+### Step Outputs
+
+Reference outputs from previous steps:
+
+```yaml
+steps:
+  - name: upload
+    action: object_upload
+    params:
+      bucket: project-models
+      file: building.rvt
+
+  - name: translate
+    action: translate_start
+    params:
+      urn: "${{ steps.upload.outputs.urn }}"
+      format: svf2
+
+  - name: get-metadata
+    action: derivative_metadata
+    params:
+      urn: "${{ steps.upload.outputs.urn }}"
+    when: "steps.translate.status == 'success'"
+```
+
+### Built-In Variables
+
+| Expression | Description |
+|------------|-------------|
+| `$&#123;&#123; env.VAR &#125;&#125;` | Environment variable |
+| `$&#123;&#123; steps.NAME.outputs.KEY &#125;&#125;` | Output from a named step |
+| `$&#123;&#123; steps.NAME.status &#125;&#125;` | Step status (success, failed, skipped) |
+| `$&#123;&#123; each.value &#125;&#125;` | Current for-each item |
+| `$&#123;&#123; each.index &#125;&#125;` | Current for-each index (zero-based) |
+| `$&#123;&#123; pipeline.name &#125;&#125;` | Pipeline name |
+| `$&#123;&#123; pipeline.run_id &#125;&#125;` | Unique run identifier |
+
+---
+
+## Full Example: Production Pipeline
+
+A complete pipeline that combines all v2 features into a real-world multi-model processing workflow:
+
+```yaml
+name: multi-model-processing
+env:
+  BUCKET: "prod-models-2026"
+  MODELS: "arch.rvt,struct.rvt,mep-hvac.rvt,mep-elec.rvt"
+  SLACK_WEBHOOK: "${{ env.SLACK_WEBHOOK_URL }}"
+
+steps:
+  # Step 1: Ensure the bucket exists
+  - name: ensure-bucket
+    action: bucket_create
+    params:
+      key: "${{ env.BUCKET }}"
+      policy: persistent
+      region: US
+    retry:
+      max_attempts: 2
+      delay: "3s"
+
+  # Step 2: Upload all models in parallel via for-each
+  - name: upload-models
+    action: object_upload
+    params:
+      bucket: "${{ env.BUCKET }}"
+      file: "./models/${{ each.value }}"
+    for_each: "env.MODELS"
+    retry:
+      max_attempts: 3
+      delay: "5s"
+      backoff: "exponential"
+    timeout: "5m"
+
+  # Step 3: Translate all models in parallel
+  - name: translate-models
+    parallel:
+      - name: translate-arch
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-models.outputs[0].urn }}"
+          format: svf2
+          wait: true
+        timeout: "20m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+      - name: translate-struct
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-models.outputs[1].urn }}"
+          format: svf2
+          wait: true
+        timeout: "20m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+      - name: translate-mep-hvac
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-models.outputs[2].urn }}"
+          format: svf2
+          wait: true
+        timeout: "20m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+      - name: translate-mep-elec
+        action: translate_start
+        params:
+          urn: "${{ steps.upload-models.outputs[3].urn }}"
+          format: svf2
+          wait: true
+        timeout: "20m"
+        retry:
+          max_attempts: 2
+          delay: "10s"
+
+  # Step 4: Verify all translations (conditional)
+  - name: verify-translations
+    action: translate_manifest
+    params:
+      urn: "${{ steps.upload-models.outputs[each.index].urn }}"
+    for_each: "env.MODELS"
+    when: "steps.translate-models.status == 'success'"
+
+  # Step 5: Notify on failure
+  - name: notify-failure
+    action: webhook_send
+    params:
+      url: "${{ env.SLACK_WEBHOOK }}"
+      message: "Pipeline failed at step: ${{ pipeline.name }}"
+    when: "steps.translate-models.status == 'failed'"
+```
+
+### Run the Full Pipeline
+
+```bash
+# Production run
+raps pipeline run multi-model-pipeline.yaml
+
+# Dry run first
+raps pipeline run multi-model-pipeline.yaml --dry-run
+
+# Override models list
+raps pipeline run multi-model-pipeline.yaml \
+  --set MODELS="custom-a.rvt,custom-b.rvt"
+
+# With verbose logging to see retry attempts and parallel progress
+raps pipeline run multi-model-pipeline.yaml --verbose
+```
+
+---
+
+## Troubleshooting
+
+### Retry exhaustion
+
+If all retry attempts fail, the step is marked as `failed` and subsequent conditional steps that depend on its success are skipped. Check the verbose output to see individual attempt errors:
+
+```bash
+raps pipeline run raps-pipeline.yaml --verbose 2>&1 | grep "retry"
+```
+
+### Parallel step failures
+
+By default, if one parallel step fails, the other parallel steps continue to completion. The overall parallel group is marked as `failed` if any member fails. To fail fast (cancel siblings on first failure), add `fail_fast: true`:
+
+```yaml
+  - name: upload-all
+    parallel:
+      fail_fast: true
+      steps:
+        - name: upload-a
+          action: object_upload
+          params:
+            bucket: project
+            file: a.rvt
+        - name: upload-b
+          action: object_upload
+          params:
+            bucket: project
+            file: b.rvt
+```
+
+### Expression syntax errors
+
+Expressions must be wrapped in double quotes in YAML. A common mistake is forgetting the quotes:
+
+```yaml
+# Wrong - YAML will parse this as a mapping
+urn: ${{ steps.upload.outputs.urn }}
+
+# Correct
+urn: "${{ steps.upload.outputs.urn }}"
+```
+
+### For-each with empty list
+
+If the `for_each` value resolves to an empty string, the step is skipped entirely and marked as `skipped`. This is not an error.
+
+---
+
+## Next Steps
+
+- [MCP & AI Workflows](/cookbook/cookbook-mcp-ai-workflows) -- Use AI assistants to run pipelines interactively
+- [Security & Authentication](/cookbook/cookbook-security-auth) -- Token management for pipeline execution
+- [CI/CD with GitHub Actions](/cookbook/cookbook-cicd-github-actions) -- Run pipelines in GitHub Actions
+- [CI/CD with GitLab CI](/cookbook/cookbook-cicd-gitlab-ci) -- Run pipelines in GitLab CI
