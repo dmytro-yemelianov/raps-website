@@ -17,6 +17,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <span class="px-3 py-1 text-xs font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">
             SLSA Build L2
           </span>
+          <span class="px-3 py-1 text-xs font-mono font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full">
+            OWASP ASVS
+          </span>
+          <span class="px-3 py-1 text-xs font-mono font-semibold bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">
+            CWE Top 25
+          </span>
         </div>
         <h1 class="text-4xl sm:text-5xl font-display font-black text-white mb-6">
           Security <span class="text-rapeseed-400">&amp; Compliance</span>
@@ -67,6 +73,123 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <div class="bg-slate-900/50 rounded-lg p-3">
             <div class="text-lg font-bold text-white">v4.x</div>
             <div class="text-xs text-slate-400">Supported</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Standards & Frameworks -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Standards &amp; Frameworks</h2>
+        <p class="text-slate-300 leading-relaxed mb-6">
+          RAPS security practices are aligned with industry-recognized frameworks.
+        </p>
+        <div class="space-y-4">
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="px-2.5 py-1 text-xs font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">SLSA v1.0</span>
+              <h3 class="font-semibold text-white">Supply-chain Levels for Software Artifacts</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-3">
+              RAPS meets <a href="https://slsa.dev/spec/v1.0/levels#build-l2" target="_blank" rel="noopener noreferrer" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">SLSA Build Level 2</a> requirements:
+              builds run on GitHub-hosted runners, provenance is generated automatically via
+              <code class="text-xs bg-slate-800 px-1 py-0.5 rounded">actions/attest-build-provenance</code>,
+              and all artifacts are verifiably linked to source commits.
+            </p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Build L2</span>
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Hosted build platform</span>
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Signed provenance</span>
+            </div>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="px-2.5 py-1 text-xs font-mono font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full">OWASP</span>
+              <h3 class="font-semibold text-white">OWASP ASVS Alignment</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-3">
+              While RAPS is a CLI tool (not a web application), its security controls map to relevant
+              <a href="https://owasp.org/www-project-application-security-verification-standard/" target="_blank" rel="noopener noreferrer" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">OWASP ASVS v4.0</a> categories:
+            </p>
+            <div class="grid sm:grid-cols-2 gap-2 text-xs text-slate-300">
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V1 Architecture</strong> &mdash; Minimal dependencies, least-privilege permissions in CI</span></div>
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V2 Authentication</strong> &mdash; OAuth 2.0 with PKCE, secure token storage via OS keychain</span></div>
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V3 Session</strong> &mdash; Token expiry enforcement, no persistent plaintext credentials</span></div>
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V5 Validation</strong> &mdash; Input fuzzing, URL validation, config parsing hardening</span></div>
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V6 Cryptography</strong> &mdash; TLS-only via rustls, no custom crypto implementations</span></div>
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V10 Malicious Code</strong> &mdash; SAST scanning, dependency auditing, secret detection</span></div>
+              <div class="flex items-start gap-2 p-2 bg-slate-900/50 rounded"><span class="text-emerald-400 shrink-0">&#10003;</span> <span><strong class="text-white">V14 Configuration</strong> &mdash; Secure defaults, no hardcoded secrets, env-based config</span></div>
+            </div>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="px-2.5 py-1 text-xs font-mono font-semibold bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">CWE</span>
+              <h3 class="font-semibold text-white">CWE Top 25 Coverage</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-3">
+              RAPS CI includes CodeQL (<code class="text-xs bg-slate-800 px-1 py-0.5 rounded">security-extended</code> queries) and Semgrep (<code class="text-xs bg-slate-800 px-1 py-0.5 rounded">p/security-audit</code>) which scan for
+              <a href="https://cwe.mitre.org/top25/archive/2024/2024_cwe_top25.html" target="_blank" rel="noopener noreferrer" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">CWE Top 25</a> weakness categories
+              including injection flaws, buffer errors, improper input validation, and authentication issues.
+              Rust's memory safety model additionally eliminates entire classes of CWEs by design (buffer overflow, use-after-free, data races).
+            </p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Memory-safe by default</span>
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">No unsafe blocks in application code</span>
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Automated CWE scanning</span>
+            </div>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="px-2.5 py-1 text-xs font-mono font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full">OpenSSF</span>
+              <h3 class="font-semibold text-white">OpenSSF Scorecard</h3>
+            </div>
+            <p class="text-sm text-slate-400">
+              Weekly
+              <a href="https://securityscorecards.dev/" target="_blank" rel="noopener noreferrer" class="text-rapeseed-400 hover:text-rapeseed-300 transition-colors">OpenSSF Scorecard</a>
+              assessments evaluate the project across security dimensions including branch protection, dependency updates,
+              CI tests, code review, pinned dependencies, SAST, token permissions, and vulnerability disclosure.
+              Results are published to GitHub Security tab as SARIF.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Privacy -->
+      <div class="mb-16">
+        <h2 class="text-2xl font-display font-bold text-white mb-6">Data Privacy &amp; GDPR</h2>
+        <p class="text-slate-300 leading-relaxed mb-6">
+          RAPS is designed with privacy by default.
+        </p>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">No telemetry or analytics</div>
+              <div class="text-sm text-slate-400">RAPS does not collect, transmit, or store any usage data. Zero phone-home behavior.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">No personal data collection</div>
+              <div class="text-sm text-slate-400">RAPS does not store PII. OAuth tokens are the only sensitive data, held locally in your OS keychain or platform-specific secure storage.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">Local-first architecture</div>
+              <div class="text-sm text-slate-400">All processing happens on your machine. RAPS communicates only with Autodesk Platform Services APIs that you explicitly invoke.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-4 bg-slate-800/30 rounded-lg">
+            <span class="text-emerald-400 mt-0.5">&#10003;</span>
+            <div>
+              <div class="font-medium text-white">GDPR-compatible by design</div>
+              <div class="text-sm text-slate-400">Since RAPS collects no personal data and stores no data on external servers, there are no GDPR data processing concerns from the CLI itself. Any data exchanged with APS APIs is governed by your Autodesk agreement.</div>
+            </div>
           </div>
         </div>
       </div>
