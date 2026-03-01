@@ -9,6 +9,30 @@
 
 export const releases = [
   {
+    version: '5.0.0',
+    date: '2026-03-01',
+    highlights: ['Swarm Orchestration', 'HTTP/2 Multiplexing', 'TUI Swarm Dashboard', 'ASVS L2 100%'],
+    description: 'Multi-agent swarm orchestration kernel with circuit breaker, rate budget, response cache, metrics, and checkpoint modules. HTTP/2 multiplexing with adaptive window. TUI Swarm Dashboard (F8). Compound MCP tools for bulk operations. ASVS L2 compliance at 100%.',
+    type: 'major',
+    changes: {
+      added: [
+        'Swarm orchestration kernel: circuit breaker, retry policy, rate budget, region routing, response cache, and HTTP middleware wiring',
+        'API metrics collector with per-endpoint latency and error tracking',
+        'Structured audit logger with JSON output for swarm operations',
+        'Checkpoint store for durable progress checkpointing with automatic resume',
+        'TUI Swarm Dashboard (F8) showing circuit breakers, rate budgets, cache stats, API metrics, and checkpoints',
+        'Compound MCP tools: bulk_upload, bulk_download, search_and_download, upload_and_translate, translate_and_download',
+        'Swarm CLI commands: `raps swarm status`, `raps swarm reset`, `raps swarm run`',
+      ],
+      changed: [
+        'HTTP/2 multiplexing enabled with adaptive window, connection pool tuning (idle timeout 90s, max idle 10 per host), TCP keepalive (30s)',
+      ],
+      security: [
+        'ASVS L2 compliance at 100% (34/34 requirements met)',
+      ],
+    },
+  },
+  {
     version: '4.17.0',
     date: '2026-03-01',
     highlights: ['Pipeline MCP Tools', '105 MCP Tools', 'Pipeline Validate', 'Pipeline Discovery'],
