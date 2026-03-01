@@ -4,85 +4,59 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // Roadmap data organized by version/milestone with voting and progress
 const roadmap = [
   {
-    version: '3.5.0',
-    status: 'planned',
+    version: '4.14.0',
+    status: 'shipped',
     quarter: 'Q1 2026',
-    theme: 'Enhanced MCP & AI Integration',
+    theme: 'MCP, Admin & TUI — Shipped',
     features: [
       {
-        title: 'Expanded MCP Tool Coverage',
-        description: 'Add more MCP tools for Data Management (folders, items, versions), ACC modules (RFIs, submittals, assets), and Design Automation.',
+        title: '101 MCP Tools',
+        description: 'Comprehensive MCP server covering all APS APIs: auth, OSS, Model Derivative, Data Management, ACC (issues, RFIs, submittals, assets, checklists), Design Automation, Reality Capture, webhooks, and admin operations.',
         priority: 'high',
         category: 'mcp',
         id: 'mcp-tool-coverage',
       },
       {
-        title: 'MCP Streaming Responses',
-        description: 'Support streaming for long-running operations like translation jobs and file uploads with real-time progress updates.',
-        priority: 'high',
-        category: 'mcp',
-        id: 'mcp-streaming',
-      },
-      {
-        title: 'AI Conversation Context',
-        description: 'Enable MCP tools to maintain context across multiple operations (e.g., "translate that file" after listing objects).',
-        priority: 'medium',
-        category: 'mcp',
-        id: 'ai-context',
-      },
-      {
-        title: 'GitHub Copilot Extension',
-        description: 'Native integration with GitHub Copilot for VS Code to enable APS operations directly from the IDE.',
-        priority: 'medium',
-        category: 'integrations',
-        id: 'copilot-extension',
-      },
-    ],
-  },
-  {
-    version: '4.0.0',
-    status: 'planned',
-    quarter: 'Q2 2026',
-    theme: 'Collaboration & Team Features',
-    features: [
-      {
-        title: 'Multi-User Profile Management',
-        description: 'Support team-wide configuration profiles with role-based access controls and credential sharing.',
+        title: 'Account Admin Management',
+        description: 'Bulk user add/remove/update across projects with dry-run mode, filtering, and resume. New raps-admin crate.',
         priority: 'high',
         category: 'auth',
-        id: 'multi-user-profiles',
+        id: 'admin-management',
       },
       {
-        title: 'Webhook Event Processing',
-        description: 'Built-in webhook server with event routing, filtering, and custom handlers for real-time APS notifications.',
+        title: 'TUI Dashboard',
+        description: 'Terminal UI with 7 tabs and 33 views for real-time monitoring of APS operations. Opt-in via --features dashboard.',
         priority: 'high',
-        category: 'webhooks',
-        id: 'webhook-processing',
-      },
-      {
-        title: 'Audit Logging',
-        description: 'Comprehensive logging of all APS operations with timestamps, user attribution, and export capabilities.',
-        priority: 'medium',
         category: 'monitoring',
+        id: 'tui-dashboard',
       },
       {
-        title: 'Team Dashboard',
-        description: 'Web-based dashboard for monitoring team APS usage, quotas, and operation history.',
+        title: 'Interactive Shell',
+        description: 'Reedline-powered shell with TAB completion, syntax highlighting, history hints, and fuzzy-select prompts.',
+        priority: 'high',
+        category: 'integrations',
+        id: 'interactive-shell',
+      },
+      {
+        title: 'AEC GraphQL Integration',
+        description: 'Faster hub/project loading via AEC GraphQL API with automatic REST fallback.',
         priority: 'medium',
-        category: 'monitoring',
-      },
-      {
-        title: 'Shared Cache Layer',
-        description: 'Redis/Memcached support for sharing translation results and API responses across team members.',
-        priority: 'low',
         category: 'performance',
+        id: 'graphql',
+      },
+      {
+        title: 'Server-Side Object Copy',
+        description: 'Object copy and batch copy/rename operations without re-uploading data.',
+        priority: 'medium',
+        category: 'storage',
+        id: 'object-copy',
       },
     ],
   },
   {
-    version: '4.5.0',
-    status: 'research',
-    quarter: 'Q3 2026',
+    version: '5.0.0',
+    status: 'planned',
+    quarter: 'Q2 2026',
     theme: 'Advanced Automation & Workflows',
     features: [
       {
@@ -98,27 +72,29 @@ const roadmap = [
         category: 'pipelines',
       },
       {
-        title: 'Pipeline Templates Marketplace',
-        description: 'Community-contributed pipeline templates for common AEC/manufacturing workflows.',
-        priority: 'medium',
-        category: 'pipelines',
-      },
-      {
         title: 'Conditional Pipeline Steps',
         description: 'Support for if/else logic, loops, and dynamic parameter substitution in pipelines.',
         priority: 'medium',
         category: 'pipelines',
       },
       {
-        title: 'Integration with CI/CD Platforms',
-        description: 'Native GitHub Actions, GitLab CI, Jenkins, and Azure DevOps integrations with pre-built workflows.',
+        title: 'GitHub Copilot Extension',
+        description: 'Native integration with GitHub Copilot for VS Code to enable APS operations directly from the IDE.',
         priority: 'medium',
         category: 'integrations',
+        id: 'copilot-extension',
+      },
+      {
+        title: 'MCP Streaming Responses',
+        description: 'Streaming for long-running operations like translation jobs and file uploads with real-time progress.',
+        priority: 'medium',
+        category: 'mcp',
+        id: 'mcp-streaming',
       },
     ],
   },
   {
-    version: '5.0.0',
+    version: '6.0.0',
     status: 'research',
     quarter: 'Q4 2026',
     theme: 'Enterprise & Scale',
@@ -226,7 +202,8 @@ const categories = {
 };
 
 const statusLabels = {
-  planned: { label: 'Planned', color: 'emerald', icon: '📋' },
+  shipped: { label: 'Shipped', color: 'emerald', icon: '✅' },
+  planned: { label: 'Planned', color: 'blue', icon: '📋' },
   research: { label: 'Research', color: 'amber', icon: '🔬' },
   ideas: { label: 'Ideas', color: 'slate', icon: '💡' },
 };
@@ -273,6 +250,7 @@ const priorityLabels = {
               <span class={`text-${value.color}-400`}>{value.label}</span>
               <span class="text-slate-500">—</span>
               <span class="text-slate-500">
+                {key === 'shipped' && 'Released and available'}
                 {key === 'planned' && 'Committed for upcoming release'}
                 {key === 'research' && 'Under investigation & design'}
                 {key === 'ideas' && 'Exploring possibilities'}

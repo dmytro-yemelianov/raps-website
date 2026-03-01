@@ -109,6 +109,9 @@ The microkernel architecture separates RAPS into:
       <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
         <code class="text-xs text-emerald-400">raps-reality</code>
       </div>
+      <div class="flex items-center justify-center p-3 bg-slate-900 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-colors">
+        <code class="text-xs text-emerald-400">raps-admin</code>
+      </div>
     </div>
   </div>
 </div>
@@ -147,6 +150,7 @@ Service crates provide APS API functionality:
 - **`raps-acc`**: ACC/BIM 360 (issues, RFIs, assets, submittals, checklists)
 - **`raps-webhooks`**: Webhooks API (subscriptions, events, verification)
 - **`raps-reality`**: Reality Capture API (photoscenes, processing, results)
+- **`raps-admin`**: Account Admin API (bulk user management, folder permissions, project operations)
 
 **Service Principles:**
 - Depend only on `raps-kernel`, not on each other

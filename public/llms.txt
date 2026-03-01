@@ -1,8 +1,10 @@
 # RAPS - Rust Autodesk Platform Services CLI
 
+> Source of truth for counts: [MANIFEST.md](https://github.com/dmytro-yemelianov/raps/blob/master/MANIFEST.md)
+
 > RAPS is a comprehensive command-line interface for Autodesk Platform Services (APS), designed for high-performance CI/CD pipelines and AI agents. Written in Rust, it provides fast, reliable access to all major APS APIs.
 
-RAPS (rapscli.xyz) brings modern DevOps practices to Autodesk Platform Services. It's a single-binary CLI tool with no runtime dependencies, supporting 15+ APS APIs and 100+ commands. Key features include MCP server integration for AI assistants, interactive shell mode, secure OS keychain token storage, and CI/CD-ready output formats.
+RAPS v4.14.0 (rapscli.xyz) brings modern DevOps practices to Autodesk Platform Services. It's a single-binary CLI tool with no runtime dependencies, supporting 15+ APS APIs, 95+ commands, and 101 MCP tools. Key features include MCP server integration for AI assistants, interactive shell mode, TUI dashboard, secure OS keychain token storage, and CI/CD-ready output formats.
 
 ## Documentation
 
@@ -19,7 +21,7 @@ RAPS (rapscli.xyz) brings modern DevOps practices to Autodesk Platform Services.
 - [Objects (OSS)](https://rapscli.xyz/docs/objects): Upload, download, and manage objects with resumable multipart uploads
 - [Translation](https://rapscli.xyz/docs/translation): Translate CAD files to SVF2, OBJ, STL, STEP, and other formats
 - [Data Management](https://rapscli.xyz/docs/data-management): Browse hubs, projects, folders, items, and versions
-- [MCP Server](https://rapscli.xyz/docs/mcp-server): AI assistant integration via Model Context Protocol (14+ tools)
+- [MCP Server](https://rapscli.xyz/docs/mcp-server): AI assistant integration via Model Context Protocol (101 tools)
 - [Interactive Shell](https://rapscli.xyz/docs/interactive-shell): TAB completion, command history, and REPL mode
 - [Pipelines](https://rapscli.xyz/docs/pipelines): CI/CD integration with standardized exit codes
 - [Exit Codes](https://rapscli.xyz/docs/exit-codes): Scripting-friendly exit codes for automation
