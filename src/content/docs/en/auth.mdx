@@ -79,19 +79,21 @@ Select scopes:
   User: john.doe@example.com
 ```
 
-**Device code flow (headless):**
+**Device code flow (headless):** *Updated in v5.1*
 
 ```bash
 $ raps auth login --device
-Device Code Authentication
-──────────────────────────────────────────────────
-  User Code: ABC-123-DEF
-  Verification URL: https://developer.api.autodesk.com/authentication/v2/device
 
-Please visit the URL above and enter the user code.
+Device Authorization
+──────────────────────────────────────────────────
+  Go to: https://rapscli.xyz/device
+  Enter code: ABCD-1234
+──────────────────────────────────────────────────
 Waiting for authorization...
-✓ Authorization successful!
+OK Authorization successful!
 ```
+
+Open `rapscli.xyz/device` on any device (phone, laptop, another machine), enter the short code, and authorize with your Autodesk account. The CLI polls automatically and completes login once you approve. No local browser required — works in SSH sessions, containers, and MCP servers.
 
 **Preset scopes (v4.6+):**
 

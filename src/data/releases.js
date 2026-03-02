@@ -11,9 +11,32 @@ export const releases = [
   {
     version: '5.1.0',
     date: '2026-03-02',
+    highlights: ['Device Code Auth', 'Headless OAuth', 'Auth Proxy Worker', 'Non-Interactive PKCE'],
+    description: 'GitHub-style device code authentication for headless environments. Enter a short code at rapscli.xyz/device from any browser — no local browser required. Cloudflare Worker proxy preserves PKCE security end-to-end.',
+    type: 'minor',
+    changes: {
+      added: [
+        'Device code auth flow via Cloudflare Worker proxy at rapscli.xyz/device with short user codes (XXXX-XXXX)',
+        'DeviceSession Durable Object with state machine (pending → authorized → consumed) and 5-minute TTL cleanup',
+        'Landing page at rapscli.xyz/device for entering device codes from any browser on any device',
+        'Automatic headless detection switches to device code flow with descriptive UX messaging',
+        'MCP auth guidance updated with device flow instructions for headless/MCP environments',
+      ],
+      changed: [
+        'Device code flow no longer requires interactive stdin — works in fully non-interactive environments',
+        'Headless detection message describes new "enter code at URL" experience instead of manual URL paste',
+      ],
+      fixed: [
+        'Removed interactive-mode guard from device code flow that incorrectly blocked headless usage',
+      ],
+    },
+  },
+  {
+    version: '5.0.0',
+    date: '2026-03-02',
     highlights: ['Redis Distributed Cache', 'Serverless Dispatch', 'Webhook Gateway', 'CI/CD Pipelines'],
     description: 'Phase 2 distributed orchestration: Redis-backed cache and job queue, Fly.io serverless dispatch, Cloudflare Workers webhook gateway, and CI/CD pipeline examples.',
-    type: 'minor',
+    type: 'major',
     changes: {
       added: [
         'CacheBackend trait abstraction with MemoryBackend and feature-gated RedisBackend (deadpool connection pool)',
