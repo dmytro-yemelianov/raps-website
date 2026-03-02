@@ -1,0 +1,197 @@
+---
+title: "Distributed Orchestration"
+description: "Redis-backed cache and job queue, Fly.io serverless dispatch, Cloudflare Workers webhook gateway, and Docker deployment for RAPS."
+section: "guides"
+order: 15
+icon: "🌐"
+---
+
+# Distributed Orchestration
+
+RAPS v5.1 adds a distribution layer for swarm orchestration: Redis-backed caching and job queues, Fly.io serverless dispatch, a Cloudflare Workers webhook gateway, and Docker Compose deployment.
+
+## Architecture
+
+```
+raps CLI
+  ├─ translate --serverless ──► ServerlessDispatchAgent ──► Fly.io Machines
+  ├─ swarm worker start ──► JobConsumer (Redis Streams) ──► process_job()
+  └─ webhook drain ──► GET /events ──► Cloudflare Worker (Durable Objects)
+```
+
+## Redis Backend
+
+Enable the `redis` feature to use Redis as the cache and job queue backend:
+
+```bash
+# Build with Redis support
+cargo build --release -p raps-cli --features redis
+```
+
+### Cache Backend
+
+RAPS provides a `CacheBackend` trait with two implementations:
+
+- **MemoryBackend** (default) — in-process HashMap with TTL expiry
+- **RedisBackend** (feature-gated) — distributed cache via Redis with deadpool connection pooling
+
+Configure Redis via environment variable:
+
+```bash
+export RAPS_REDIS_URL="redis://localhost:6379"
+```
+
+### Job Queue
+
+The job queue uses Redis Streams with three priority levels:
+
+| Priority | Stream | Use Case |
+|----------|--------|----------|
+| Critical | `raps:queue:critical` | Time-sensitive translations |
+| Normal | `raps:queue:normal` | Standard batch jobs |
+| Background | `raps:queue:background` | Low-priority maintenance |
+
+Failed jobs are moved to a dead-letter queue (`raps:queue:dlq`) after max retry attempts.
+
+## Worker Command
+
+Start distributed workers that consume from the Redis job queue:
+
+```bash
+raps swarm worker start \
+  --redis-url redis://localhost:6379 \
+  --concurrency 4 \
+  --heartbeat-secs 30
+```
+
+Workers support:
+- Semaphore-based concurrency limiting
+- Periodic heartbeat for health monitoring
+- SIGTERM graceful shutdown (drains in-flight jobs)
+- Consumer group coordination (multiple workers, exactly-once processing)
+
+## Serverless Dispatch
+
+Dispatch translation jobs to Fly.io ephemeral machines instead of local workers:
+
+```bash
+raps translate start "urn:adsk..." \
+  --format svf2 \
+  --serverless \
+  --notify \
+  --wait
+```
+
+Configure serverless dispatch in `~/.config/raps/swarm.toml`:
+
+```toml
+[serverless]
+fly_app = "raps-translation-orchestrator"
+fly_token = "fo1_..."
+preferred_region = "iad"
+machine_size = "shared-cpu-2x"
+max_machines = 10
+idle_timeout_secs = 300
+```
+
+### Job Management
+
+```bash
+# Check job status
+raps job status <machine-id> --wait
+
+# List all jobs
+raps job list --state running
+
+# Cancel a job
+raps job cancel <machine-id>
+```
+
+## Webhook Gateway
+
+A Cloudflare Worker receives APS webhook events, validates HMAC signatures, stores them in a Durable Object, and optionally relays to a callback URL.
+
+### Deploy
+
+```bash
+raps webhook serve --serverless \
+  --account-id <cloudflare-account-id> \
+  --webhook-secret <secret> \
+  --relay-url https://your-app.com/callback
+```
+
+### Drain Events
+
+```bash
+raps webhook drain \
+  --gateway-url https://raps-webhook-gateway.your-workers.dev \
+  --api-key <key> \
+  --limit 50 \
+  --out-file events.json
+```
+
+## Docker Deployment
+
+Deploy the full stack with Docker Compose:
+
+```bash
+cd deploy/
+cp .env.example .env
+# Edit .env with your credentials
+docker compose up -d
+```
+
+Services:
+- **redis** — Redis 7 Alpine with AOF persistence (256MB limit)
+- **raps-worker** — 4 worker replicas consuming from Redis Streams
+- **raps-proxy** — Reverse proxy
+- **raps-webhook** — Webhook ingress
+- **raps-dashboard** — Monitoring dashboard
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+- name: Translate (serverless)
+  env:
+    FLY_API_TOKEN: $&#123;&#123; secrets.FLY_API_TOKEN &#125;&#125;
+    FLY_APP: $&#123;&#123; secrets.FLY_APP &#125;&#125;
+  run: |
+    raps translate start "$URN" \
+      --format svf2 \
+      --serverless \
+      --wait \
+      --output json
+```
+
+### GitLab CI
+
+```yaml
+translate:
+  stage: translate
+  script:
+    - |
+      raps translate start "$MODEL_URN" \
+        --format svf2 \
+        --serverless \
+        --wait \
+        --output json
+```
+
+See `deploy/examples/` for complete workflow files.
+
+## Pipeline Creation
+
+Create reusable pipelines with cron or webhook triggers:
+
+```bash
+raps pipeline create my-nightly-translate \
+  --source "urn:adsk..." \
+  --cron "0 2 * * *" \
+  --action translate \
+  --notify slack \
+  --serverless
+```
+
+This generates a `.pipeline.yaml` configuration file that can be version-controlled and executed via `raps pipeline run`.

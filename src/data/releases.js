@@ -9,6 +9,38 @@
 
 export const releases = [
   {
+    version: '5.1.0',
+    date: '2026-03-02',
+    highlights: ['Redis Distributed Cache', 'Serverless Dispatch', 'Webhook Gateway', 'CI/CD Pipelines'],
+    description: 'Phase 2 distributed orchestration: Redis-backed cache and job queue, Fly.io serverless dispatch, Cloudflare Workers webhook gateway, and CI/CD pipeline examples.',
+    type: 'minor',
+    changes: {
+      added: [
+        'CacheBackend trait abstraction with MemoryBackend and feature-gated RedisBackend (deadpool connection pool)',
+        'Job queue via Redis Streams with 3 priority levels (critical/normal/background) and dead-letter queue',
+        '`raps swarm worker start` command with semaphore-based concurrency, heartbeat, and SIGTERM graceful shutdown',
+        'Docker Compose deployment stack (Redis, worker replicas, proxy, webhook gateway, dashboard)',
+        'ServerlessDispatchAgent for Fly.io Machines API with scale-to-zero',
+        '`--serverless` and `--notify` flags on `raps translate start`',
+        '`raps job` command (status, list, cancel) for managing Fly.io machine jobs',
+        '`raps pipeline create` with cron/webhook triggers and `.pipeline.yaml` output',
+        'Cloudflare Worker webhook gateway with Durable Objects event backlog (HMAC-SHA256 validation)',
+        '`raps webhook serve --serverless` for deploying webhook gateway via wrangler',
+        '`raps webhook drain` for authenticated event retrieval from gateway',
+        'GitHub Actions workflow example for serverless model translation',
+        'GitLab CI pipeline example with setup/translate/verify stages',
+        'Fly.io configuration with scale-to-zero and shared-cpu-2x sizing',
+      ],
+      changed: [
+        '`raps swarm` command now supports `worker` subcommand (feature-gated behind `redis`)',
+        'Translate command accepts `--serverless` flag for Fly.io dispatch instead of local processing',
+      ],
+      fixed: [
+        'MCP TOOLS constant synced with get_tools() (added workflow_compare_versions, workflow_setup_project)',
+      ],
+    },
+  },
+  {
     version: '5.0.0',
     date: '2026-03-01',
     highlights: ['Swarm Orchestration', 'HTTP/2 Multiplexing', 'TUI Swarm Dashboard', 'ASVS L2 100%'],
