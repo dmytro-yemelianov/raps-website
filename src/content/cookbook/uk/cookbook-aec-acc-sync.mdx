@@ -87,8 +87,8 @@ icon: "☁️"
 # Вхід через 3-legged OAuth (відкриє браузер)
 raps auth login
 
-# Або використання існуючого refresh-токена
-raps auth refresh
+# Або для CI/headless із попередньо виданими токенами
+raps auth login --token "$APS_ACCESS_TOKEN" --refresh-token "$APS_REFRESH_TOKEN" --non-interactive
 ```
 
 ### Крок 2: Навігація ієрархією проєкту
@@ -172,9 +172,10 @@ jobs:
         env:
           APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
           APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
+          APS_ACCESS_TOKEN: ${{ secrets.APS_ACCESS_TOKEN }}
           APS_REFRESH_TOKEN: ${{ secrets.APS_REFRESH_TOKEN }}
         run: |
-          raps auth refresh
+          raps auth login --token "$APS_ACCESS_TOKEN" --refresh-token "$APS_REFRESH_TOKEN" --non-interactive
 
       - name: Sync models from ACC
         env:

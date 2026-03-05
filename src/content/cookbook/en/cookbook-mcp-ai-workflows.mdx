@@ -8,7 +8,7 @@ icon: "🤖"
 
 # MCP & AI Workflows
 
-The RAPS MCP (Model Context Protocol) server exposes 105 tools across 12 modules, letting AI assistants like Claude Desktop, Cursor, and VS Code Copilot interact with the Autodesk Platform Services APIs through natural language. Instead of memorizing CLI flags or API endpoints, you describe what you want and the AI calls the right RAPS tools automatically.
+The RAPS MCP (Model Context Protocol) server exposes 111 tools across core APS domains, letting AI assistants like Claude Desktop, Cursor, and VS Code Copilot interact with Autodesk Platform Services through natural language. Instead of memorizing CLI flags or API endpoints, you describe what you want and the AI calls the right RAPS tools automatically.
 
 ## Architecture Overview
 
@@ -23,7 +23,7 @@ The RAPS MCP (Model Context Protocol) server exposes 105 tools across 12 modules
     <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 text-center">
       <div className="text-2xl mb-2">🔌</div>
       <div className="font-semibold">RAPS MCP Server</div>
-      <div className="text-sm text-gray-400">105 Tools / 12 Modules</div>
+      <div className="text-sm text-gray-400">111 Tools</div>
     </div>
     <div className="text-2xl text-gray-500">&#8596;</div>
     <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-4 text-center">
@@ -36,22 +36,20 @@ The RAPS MCP (Model Context Protocol) server exposes 105 tools across 12 modules
 
 ---
 
-## Available MCP Modules
+## Available MCP Domains
 
-| Module | Tools | Description |
-|--------|-------|-------------|
-| `auth` | 4 | Token management, status, scopes |
-| `oss` | 8 | Bucket and object operations |
-| `dm` | 10 | Data Management hubs, projects, folders |
-| `translate` | 6 | Model Derivative translations |
-| `derivative` | 7 | Metadata, viewables, thumbnails |
-| `acc` | 18 | ACC projects, issues, RFIs, forms |
-| `admin` | 12 | Account admin, users, companies |
-| `pipeline` | 6 | Pipeline execution and status |
-| `webhook` | 5 | Webhook management |
-| `reality` | 4 | Reality capture photo scenes |
-| `cost` | 8 | Cost management budgets, contracts |
-| `mock` | 17 | Local mock server for testing |
+| Domain | Description |
+|--------|-------------|
+| `auth` | Authentication status and login guidance |
+| `oss` | Bucket and object operations |
+| `data-management` | Hubs, projects, folders, and items |
+| `derivative` | Translation, manifest, metadata, and properties workflows |
+| `acc` | Issues, RFIs, assets, submittals, and checklists |
+| `admin` | Account and project user administration workflows |
+| `webhook` | Webhook subscriptions and diagnostics |
+| `design-automation` | Engine, activity, and workitem workflows |
+| `reality-capture` | Photoscene creation and processing |
+| `pipeline` | Pipeline validation and execution workflows |
 
 ---
 
@@ -62,7 +60,7 @@ The RAPS MCP (Model Context Protocol) server exposes 105 tools across 12 modules
 Start the MCP server directly from the command line:
 
 ```bash
-raps mcp start
+raps mcp
 ```
 
 The server starts on `stdio` by default, ready for any MCP-compatible client to connect.
@@ -76,7 +74,7 @@ Add RAPS as an MCP server in your Claude Desktop configuration file:
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["mcp", "start"],
+      "args": ["mcp"],
       "env": {
         "APS_CLIENT_ID": "your-client-id",
         "APS_CLIENT_SECRET": "your-client-secret"
@@ -97,7 +95,7 @@ Add RAPS to your Cursor MCP settings in `.cursor/mcp.json`:
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["mcp", "start"],
+      "args": ["mcp"],
       "env": {
         "APS_CLIENT_ID": "your-client-id",
         "APS_CLIENT_SECRET": "your-client-secret"
@@ -116,7 +114,7 @@ Configure RAPS in your VS Code settings for Claude Code:
   "claude-code.mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["mcp", "start"],
+      "args": ["mcp"],
       "env": {
         "APS_CLIENT_ID": "your-client-id",
         "APS_CLIENT_SECRET": "your-client-secret"
@@ -134,7 +132,7 @@ After configuring your AI assistant, verify the MCP server is available:
 User: "List all available RAPS tools"
 ```
 
-The AI should respond with the full list of 105 tools grouped by module. If it reports that the RAPS server is not connected, check your configuration paths and ensure the `raps` binary is on your system PATH.
+The AI should respond with the full list of 111 tools grouped by domain. If it reports that the RAPS server is not connected, check your configuration paths and ensure the `raps` binary is on your system PATH.
 
 ---
 

@@ -29,14 +29,14 @@ This session explores a future that's already here: AI assistants that don't jus
 Think of MCP as a universal adapter between AI assistants and external tools. Without MCP, when you ask Claude about your APS buckets, it can only give you generic information from its training data. With MCP, Claude can actually call the OSS API and tell you *your specific buckets, right now*.
 
 The protocol is simple:
-1. You start an MCP server (in our case, `raps serve`)
+1. You start an MCP server (in our case, `raps mcp`)
 2. The AI assistant connects to it
 3. The server exposes "tools"—functions the AI can call
 4. When you ask a question that requires live data, the AI uses the appropriate tool
 
 ## The 101 Tools We've Built
 
-The raps MCP server exposes **101 tools** covering comprehensive APS operations:
+The raps MCP server exposes **111 tools** covering comprehensive APS operations:
 
 **Authentication:**
 ```
@@ -150,7 +150,7 @@ The answer to "Is this the end of scripts?" is no. But it might be the end of *s
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"],
+      "args": ["mcp"],
       "env": {
         "APS_CLIENT_ID": "your_client_id",
         "APS_CLIENT_SECRET": "your_client_secret"
@@ -169,7 +169,7 @@ Add `.cursor/mcp.json` to your project:
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"]
+      "args": ["mcp"]
     }
   }
 }
