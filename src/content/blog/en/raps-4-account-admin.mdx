@@ -15,11 +15,11 @@ RAPS 4.0 introduces a major new capability: **bulk account administration** for 
 Now you can do it in a single command.
 
 ```bash
-# Add user to all projects
-raps admin user add "$ACCOUNT_ID" "new.hire@company.com" --role project_admin
+# Add user to all active projects
+raps admin user add-to-all-projects "new.hire@company.com" --account "$ACCOUNT_ID"
 
 # Remove departing employee from all projects
-raps admin user remove "$ACCOUNT_ID" "former@company.com"
+raps admin user remove "former@company.com" --account "$ACCOUNT_ID"
 ```
 
 ## The Problem We're Solving
@@ -40,9 +40,10 @@ That's roughly **3-5 minutes per project**, or **6-10 hours** of clicking. And i
 With RAPS 4.0:
 
 ```bash
-raps admin user add "$ACCOUNT_ID" "new.bim.manager@company.com" \
-  --role project_admin \
-  --filter "^Active-" \
+raps admin user add "new.bim.manager@company.com" \
+  --account "$ACCOUNT_ID" \
+  --role "Project Admin" \
+  --filter "name:^Active-" \
   --dry-run  # Preview first!
 ```
 
@@ -91,8 +92,8 @@ raps admin operation resume
 Preview exactly what will happen before executing:
 
 ```bash
-raps admin user add "$ACCOUNT_ID" "user@company.com" \
-  --role viewer --dry-run
+raps admin user add "user@company.com" \
+  --account "$ACCOUNT_ID" --role "Viewer" --dry-run
 
 Dry run results:
 ┌─────────────────────────────┬────────────┐
@@ -110,12 +111,12 @@ Target specific projects with regex patterns:
 
 ```bash
 # Only 2024 projects
-raps admin user add "$ACCOUNT_ID" "user@company.com" \
-  --role viewer --filter "^2024-"
+raps admin user add "user@company.com" \
+  --account "$ACCOUNT_ID" --role "Viewer" --filter "name:^2024-"
 
 # Multiple patterns
-raps admin user add "$ACCOUNT_ID" "user@company.com" \
-  --role viewer --filter "Downtown|Hospital|University"
+raps admin user add "user@company.com" \
+  --account "$ACCOUNT_ID" --role "Viewer" --filter "name:Downtown|Hospital|University"
 ```
 
 ## New Commands
@@ -124,9 +125,10 @@ raps admin user add "$ACCOUNT_ID" "user@company.com" \
 
 | Command | Description |
 |---------|-------------|
-| `raps admin user add` | Add user to multiple projects |
+| `raps admin user add` | Add user to filtered projects with a role |
+| `raps admin user add-to-all-projects` | Add user to all active projects |
 | `raps admin user remove` | Remove user from projects |
-| `raps admin user update-role` | Change user role across projects |
+| `raps admin user update` | Update user role and/or company across projects |
 
 ### Folder Permissions
 
@@ -150,7 +152,7 @@ Supported folder types: `project_files`, `plans`, or custom folder URN
 ### Project Listing
 
 ```bash
-raps admin project list "$ACCOUNT_ID" --status active --platform acc
+raps admin project list --account "$ACCOUNT_ID" --status active --platform acc
 ```
 
 ## Real-World Workflows
@@ -166,15 +168,15 @@ EMAIL="contractor@partner.com"
 PROJECT_FILTER="^2024-Active"
 
 # 1. Add to filtered projects as viewer
-raps admin user add "$ACCOUNT_ID" "$EMAIL" \
-  --role viewer --filter "$PROJECT_FILTER"
+raps admin user add "$EMAIL" \
+  --account "$ACCOUNT_ID" --role "Viewer" --filter "$PROJECT_FILTER"
 
 # 2. Grant edit access to Project Files
-raps admin folder rights "$ACCOUNT_ID" "$EMAIL" \
-  --permission edit --folder project_files \
+raps admin folder rights "$EMAIL" \
+  --account "$ACCOUNT_ID" --permission edit --folder project_files \
   --filter "$PROJECT_FILTER"
 
-echo "Contractor onboarded to $(raps admin project list "$ACCOUNT_ID" --filter "$PROJECT_FILTER" | wc -l) projects"
+echo "Contractor onboarded to $(raps admin project list --account "$ACCOUNT_ID" --filter "$PROJECT_FILTER" | wc -l) projects"
 ```
 
 ### Monthly Access Review
@@ -221,8 +223,8 @@ jobs:
           APS_CLIENT_ID: ${{ secrets.APS_CLIENT_ID }}
           APS_CLIENT_SECRET: ${{ secrets.APS_CLIENT_SECRET }}
         run: |
-          raps admin user remove "${{ secrets.ACCOUNT_ID }}" \
-            "${{ github.event.inputs.email }}" \
+          raps admin user remove "${{ github.event.inputs.email }}" \
+            --account "${{ secrets.ACCOUNT_ID }}" \
             --output json > result.json
 
       - name: Upload audit log
