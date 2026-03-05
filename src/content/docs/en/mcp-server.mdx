@@ -8,7 +8,7 @@ icon: "🤖"
 
 # MCP Server: Talk to Your Model
 
-The `raps serve` command starts a Model Context Protocol (MCP) server, enabling AI assistants to interact with Autodesk Platform Services through natural language.
+The `raps mcp` command starts a Model Context Protocol (MCP) server, enabling AI assistants to interact with Autodesk Platform Services through natural language.
 
 ![RAPS MCP server demo](/terminal/mcp-demo.gif)
 
@@ -18,6 +18,7 @@ The `raps serve` command starts a Model Context Protocol (MCP) server, enabling 
 > **Enhanced in v4.4.0** — Now with 51 tools including folder permissions, operation lifecycle, and full CRUD for ACC modules.
 > **Expanded in v4.5.0** — Now with 72 tools: custom API calls, portfolio reports, templates, webhooks, Design Automation, Reality Capture, and more.
 > **Expanded in v4.11.0** — Now with 101 tools: project CRUD (update, archive), user management (remove, update), template convert, and comprehensive coverage of all APS APIs.
+> **Expanded in v5.1.0** — Now with 111 tools for broader APS and orchestration coverage.
 
 ## From "Chat with PDF" to "Chat with Tools"
 
@@ -50,7 +51,7 @@ This bridges the gap between the rigid, complex data structures of BIM and the n
 
 ```bash
 # Start the MCP server
-raps serve
+raps mcp
 ```
 
 The server runs in stdio mode, listening for MCP requests from AI assistants.
@@ -74,7 +75,7 @@ Add to your Claude configuration file:
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"]
+      "args": ["mcp"]
     }
   }
 }
@@ -89,7 +90,7 @@ After adding this, restart Claude and ask "What's my auth status?" — RAPS will
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"],
+      "args": ["mcp"],
       "env": {
         "APS_CLIENT_ID": "your_client_id",
         "APS_CLIENT_SECRET": "your_client_secret"
@@ -108,7 +109,7 @@ Add to `.cursor/mcp.json` in your project:
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"]
+      "args": ["mcp"]
     }
   }
 }
@@ -118,7 +119,7 @@ Add to `.cursor/mcp.json` in your project:
 
 ## Available Tools
 
-The RAPS MCP server exposes **101 tools** organized by functionality:
+The RAPS MCP server exposes **111 tools** organized by functionality:
 
 ### Authentication
 
@@ -344,7 +345,7 @@ You don't need to write SQL or complex filter queries. You just ask. The AI tran
 >   "mcpServers": {
 >     "raps": {
 >       "command": "raps",
->       "args": ["serve"],
+>       "args": ["mcp"],
 >       "env": {
 >         "APS_CLIENT_ID": "your_client_id",
 >         "APS_CLIENT_SECRET": "your_client_secret"
@@ -463,7 +464,7 @@ The MCP server reuses all existing RAPS API clients:
 ```
 ┌─────────────────┐     ┌──────────────────┐
 │   AI Assistant  │────▶│  RAPS MCP Server │
-│  (Claude, etc.) │◀────│   raps serve     │
+│  (Claude, etc.) │◀────│   raps mcp       │
 └─────────────────┘     └────────┬─────────┘
                                  │
      ┌───────────┬───────────┬───┴───┬───────────┬───────────┐
@@ -493,17 +494,16 @@ The Admin and ACC clients are created on-demand for each request to support bulk
 Enable verbose logging:
 
 ```bash
-RUST_LOG=debug raps serve
+RUST_LOG=debug raps mcp
 ```
 
 Check server connectivity:
 
 ```bash
-echo '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}' | raps serve
+echo '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}' | raps mcp
 ```
 
 ## Next Steps
 
 - [Examples](/docs/examples) — Common workflows
 - [Pipelines](/docs/pipelines) — Batch automation
-

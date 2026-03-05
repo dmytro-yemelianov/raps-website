@@ -8,7 +8,7 @@ icon: "🤖"
 
 # MCP Server: поговоріть зі своєю моделлю
 
-Команда `raps serve` запускає сервер Model Context Protocol (MCP), що дозволяє ШІ-помічникам взаємодіяти з Autodesk Platform Services природною мовою.
+Команда `raps mcp` запускає сервер Model Context Protocol (MCP), що дозволяє ШІ-помічникам взаємодіяти з Autodesk Platform Services природною мовою.
 
 ![Демонстрація MCP-сервера RAPS](/terminal/mcp-demo.gif)
 
@@ -49,7 +49,7 @@ icon: "🤖"
 
 ```bash
 # Запуск MCP-сервера
-raps serve
+raps mcp
 ```
 
 Сервер працює в режимі stdio, очікуючи MCP-запити від ШІ-помічників.
@@ -73,7 +73,7 @@ raps serve
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"]
+      "args": ["mcp"]
     }
   }
 }
@@ -88,7 +88,7 @@ raps serve
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"],
+      "args": ["mcp"],
       "env": {
         "APS_CLIENT_ID": "your_client_id",
         "APS_CLIENT_SECRET": "your_client_secret"
@@ -107,7 +107,7 @@ raps serve
   "mcpServers": {
     "raps": {
       "command": "raps",
-      "args": ["serve"]
+      "args": ["mcp"]
     }
   }
 }
@@ -333,7 +333,7 @@ MCP-сервер RAPS надає **72 інструменти**, організо
 >   "mcpServers": {
 >     "raps": {
 >       "command": "raps",
->       "args": ["serve"],
+>       "args": ["mcp"],
 >       "env": {
 >         "APS_CLIENT_ID": "your_client_id",
 >         "APS_CLIENT_SECRET": "your_client_secret"
@@ -452,7 +452,7 @@ MCP-сервер повторно використовує всі наявні A
 ```
 ┌─────────────────┐     ┌──────────────────┐
 │   AI Assistant  │────▶│  RAPS MCP Server │
-│  (Claude, etc.) │◀────│   raps serve     │
+│  (Claude, etc.) │◀────│   raps mcp       │
 └─────────────────┘     └────────┬─────────┘
                                  │
      ┌───────────┬───────────┬───┴───┬───────────┬───────────┐
@@ -482,13 +482,13 @@ MCP-сервер повторно використовує всі наявні A
 Увімкніть детальне журналювання:
 
 ```bash
-RUST_LOG=debug raps serve
+RUST_LOG=debug raps mcp
 ```
 
 Перевірте з'єднання з сервером:
 
 ```bash
-echo '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}' | raps serve
+echo '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}' | raps mcp
 ```
 
 ## Наступні кроки

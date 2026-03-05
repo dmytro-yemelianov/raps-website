@@ -104,7 +104,7 @@ const searchTypeLabels = {
   const searchIndex = [
     // Core docs - Getting Started
     { title: 'Introduction', type: 'docs', url: '/docs/introduction', content: 'Learn what RAPS is and what it can do', tags: ['overview', 'about'] },
-    { title: 'Getting Started', type: 'docs', url: '/docs/getting-started', content: 'Start using RAPS CLI quickly', tags: ['start', 'guide', 'beginner'] },
+    { title: 'Getting Started', type: 'docs', url: '/quickstart', content: 'Start using RAPS CLI quickly', tags: ['start', 'guide', 'beginner'] },
     { title: 'Installation', type: 'docs', url: '/docs/installation', content: 'Install RAPS via Cargo, Homebrew, Scoop, or Docker', tags: ['install', 'setup', 'cargo', 'homebrew', 'scoop', 'docker'] },
     { title: 'Configuration', type: 'docs', url: '/docs/configuration', content: 'Setup APS credentials and config profiles', tags: ['config', 'auth', 'credentials', 'env'] },
     { title: 'Authentication', type: 'docs', url: '/docs/auth', content: 'OAuth 2.0 flows and token management', tags: ['oauth', 'token', 'login'] },
@@ -113,7 +113,7 @@ const searchTypeLabels = {
 
     // Docs - Commands
     { title: 'Translation', type: 'docs', url: '/docs/translation', content: 'Convert and translate CAD/BIM files via Model Derivative', tags: ['convert', 'cad', 'model derivative', 'translate'] },
-    { title: 'Object Storage (OSS)', type: 'docs', url: '/docs/oss', content: 'Upload, download, and manage files in OSS buckets', tags: ['oss', 'bucket', 'upload', 'download', 'storage'] },
+    { title: 'Object Storage (OSS)', type: 'docs', url: '/docs/objects', content: 'Upload, download, and manage files in OSS buckets', tags: ['oss', 'bucket', 'upload', 'download', 'storage'] },
     { title: 'Data Management', type: 'docs', url: '/docs/data-management', content: 'Manage hubs, projects, folders, and items', tags: ['hubs', 'projects', 'folders', 'bim360', 'acc'] },
     { title: 'Design Automation', type: 'docs', url: '/docs/design-automation', content: 'Run automated design tasks with Design Automation API', tags: ['automation', 'revit', 'inventor', 'appbundle'] },
     { title: 'Webhooks', type: 'docs', url: '/docs/webhooks', content: 'Subscribe to APS events and notifications', tags: ['webhooks', 'events', 'subscribe'] },
@@ -121,8 +121,8 @@ const searchTypeLabels = {
     // Docs - Modes
     { title: 'GitHub Actions', type: 'docs', url: '/docs/mode-github-actions', content: 'CI/CD integration with GitHub Actions workflows', tags: ['ci', 'pipeline', 'github', 'actions', 'workflow'] },
     { title: 'Docker Mode', type: 'docs', url: '/docs/mode-docker', content: 'Run RAPS in Docker containers', tags: ['docker', 'container', 'ci'] },
-    { title: 'Shell Mode', type: 'docs', url: '/docs/mode-shell', content: 'Interactive shell for APS operations', tags: ['shell', 'interactive', 'repl'] },
-    { title: 'MCP Server Mode', type: 'docs', url: '/docs/mode-mcp', content: 'Model Context Protocol server for AI agents', tags: ['mcp', 'ai', 'llm', 'agent'] },
+    { title: 'Shell Mode', type: 'docs', url: '/docs/interactive-shell', content: 'Interactive shell for APS operations', tags: ['shell', 'interactive', 'repl'] },
+    { title: 'MCP Server Mode', type: 'docs', url: '/docs/mcp-server', content: 'Model Context Protocol server for AI agents', tags: ['mcp', 'ai', 'llm', 'agent'] },
     
     // Tools
     { title: 'OAuth Scope Builder', type: 'tool', url: '/tools/scope-builder', content: 'Build APS OAuth scopes visually', tags: ['oauth', 'scope', 'permissions'] },
@@ -183,7 +183,7 @@ const searchTypeLabels = {
   }
   
   // Perform search
-  function performSearch(query: string) {
+  function performSearch(query) {
     if (!query || !resultsContainer) {
       if (resultsContainer) {
         resultsContainer.innerHTML = '';
@@ -220,7 +220,7 @@ const searchTypeLabels = {
   }
   
   // Display search results
-  function displayResults(results: typeof searchIndex) {
+  function displayResults(results) {
     initialState?.classList.add('hidden');
 
     if (results.length === 0) {
@@ -280,7 +280,7 @@ const searchTypeLabels = {
   }
   
   // Keyboard navigation
-  function navigateResults(direction: 'up' | 'down') {
+  function navigateResults(direction) {
     if (!resultsContainer) return;
     const results = resultsContainer.querySelectorAll('.search-result');
     if (results.length === 0) return;
@@ -332,7 +332,7 @@ const searchTypeLabels = {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
-    const query = (e.target as HTMLInputElement).value;
+    const query = e.target && 'value' in e.target ? e.target.value : '';
     searchTimeout = setTimeout(() => {
       performSearch(query);
     }, 150);
@@ -362,7 +362,7 @@ const searchTypeLabels = {
       } else if (e.key === 'Enter' && selectedIndex >= 0) {
         e.preventDefault();
         const results = resultsContainer?.querySelectorAll('.search-result');
-        (results?.[selectedIndex] as HTMLElement)?.click();
+        results?.[selectedIndex]?.click();
       }
     }
   });

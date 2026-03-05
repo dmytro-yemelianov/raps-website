@@ -249,7 +249,7 @@ export const ui = {
     'quickstart.step4.description': 'Upload a model and translate it',
     'quickstart.step5.title': 'MCP Server (Optional)',
     'quickstart.step5.description': 'Enable AI assistants like Claude and Cursor to interact with APS',
-    'quickstart.step5.intro': 'RAPS includes an MCP server with 101 tools for natural language APS operations.',
+    'quickstart.step5.intro': 'RAPS includes an MCP server with 111 tools for natural language APS operations.',
     'quickstart.step5.claude_desktop': 'Claude Desktop',
     'quickstart.step5.cursor_ide': 'Cursor IDE',
     'quickstart.step5.after_config': 'After configuration, ask your AI assistant: "Show me all my APS buckets"',
