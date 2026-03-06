@@ -9,6 +9,53 @@
 
 export const releases = [
   {
+    version: '5.3.0',
+    date: '2026-03-06',
+    highlights: ['Test Coverage Suite', 'Coverage Dashboard', 'RFI Scenario Tests', 'DA/Admin Mock Coverage'],
+    description: 'Comprehensive test coverage expansion: 25+ new scenario tests across RFI, DA, admin operations, and object commands using raps-mock. Interactive HTML coverage dashboard with animated gauges and per-module drill-down.',
+    type: 'minor',
+    changes: {
+      added: [
+        'Interactive HTML test coverage dashboard (`docs/coverage-report.html`) with animated SVG gauges, tier filtering, search, and per-module collapsible sections',
+        'RFI CRUD scenario tests (81% line coverage): list/get/create/update/delete with JSON, table, filter, CSV import, and error path coverage',
+        'Admin operations scenario tests (53% line coverage): list/status/resume/cancel with isolated HOME tempdir (no APS credentials needed)',
+        'DA activities scenario tests: list/create/delete with JSON file, missing-field validation, alias-error paths',
+        'DA appbundles scenario tests: list/create/delete round-trips',
+        'DA workitems scenario tests: list, run qualified/unqualified, status, input/output args',
+        'Object copy scenario tests (40% line coverage): batch-copy empty bucket, batch-rename no matches, arg-validation, error paths',
+        'Config context scenario tests: show/set/clear round-trips, env var source, unknown key errors',
+        'WORKFLOW.md coverage policy: 10-file priority list, 40% threshold, 5-step agent workflow',
+      ],
+      changed: [
+        'TEST_COVERAGE_MATRIX.md updated with per-file coverage percentages across all command modules',
+      ],
+    },
+  },
+  {
+    version: '5.2.0',
+    date: '2026-03-06',
+    highlights: ['Init Wizard', 'Status Dashboard', 'Account Context Banner', 'rapscli-api Worker'],
+    description: 'Interactive init wizard for first-time setup, raps status context dashboard, account context banners in admin/hub commands, and rapscli-api Cloudflare Worker with version API, URN decoder, and APS status endpoint.',
+    type: 'minor',
+    changes: {
+      added: [
+        '`raps init` 6-step wizard: credential setup, 2-legged auth test, login, hub discovery, enterprise context, and summary',
+        '`raps status` command shows full context dashboard: auth state, hub tier, account, connected projects',
+        'Account context banner shown inline in `raps hub list` and all admin commands with HubTier classification (Personal/BIM360/ACC/Enterprise)',
+        '`admin user add-to-all-projects` command for bulk user provisioning',
+        'rapscli-api Cloudflare Worker: install script endpoint, version API (shields.io badges), URN decoder, APS status, URL shortener',
+      ],
+      changed: [
+        'Admin commands auto-resolve `--account` flag via hub list when omitted',
+        'Device code verification URL now includes `?code=XXXX-XXXX` query parameter for pre-fill',
+        'Device auth provides fallback plain URL when ANSI rendering is not supported',
+      ],
+      fixed: [
+        'Standardized exit codes across all CLI commands and SDK crates (0=success, 1=general error, 2=usage error, etc.)',
+      ],
+    },
+  },
+  {
     version: '5.1.0',
     date: '2026-03-02',
     highlights: ['Device Code Auth', 'Headless OAuth', 'Auth Proxy Worker', 'Non-Interactive PKCE'],
