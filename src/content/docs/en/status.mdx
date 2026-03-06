@@ -1,0 +1,90 @@
+---
+title: "raps status"
+description: "Display a full context dashboard showing your current authentication state, hub tier, account, and connected projects."
+section: "commands"
+order: 3
+icon: "📊"
+---
+
+# raps status
+
+`raps status` prints a full context dashboard showing your current RAPS configuration and authentication state at a glance.
+
+```bash
+raps status
+```
+
+## What It Shows
+
+| Field | Description |
+|-------|-------------|
+| **2-Legged Auth** | Whether client credentials are configured and valid |
+| **3-Legged Auth** | Whether you are logged in as a named user, with expiry |
+| **Hub Tier** | Classification of your primary hub (Personal / BIM360 / ACC / Enterprise) |
+| **Account** | The default account ID (from `APS_ACCOUNT_ID` or hub discovery) |
+| **Projects** | Number of active projects accessible in the current account |
+
+## Example Output
+
+```
+RAPS Context
+────────────────────────────────────────────────────────
+  2-Legged Auth    ✓ Configured (expires in 3598s)
+  3-Legged Auth    ✓ Logged in as user@example.com
+                     Token expires in 1h 12m
+
+  Hub Tier         ACC
+  Account          b.XXXXXXXXXXXXXXXXXXXXXXXX  Acme Corp
+  Projects         47 active project(s)
+────────────────────────────────────────────────────────
+Run `raps init` to reconfigure or `raps auth login` to refresh your session.
+```
+
+If authentication is missing or expired, the affected fields are marked with a warning:
+
+```
+RAPS Context
+────────────────────────────────────────────────────────
+  2-Legged Auth    ✓ Configured (expires in 3412s)
+  3-Legged Auth    ✗ Not logged in
+
+  Hub Tier         —
+  Account          —
+  Projects         —
+────────────────────────────────────────────────────────
+Run `raps auth login` to enable hub and project access.
+```
+
+## Account Context Banner
+
+The same context information appears as an inline banner in `raps hub list` and all admin commands. This banner is shown automatically — you do not need to run `raps status` separately when using those commands.
+
+```
+$ raps hub list
+
+Account Context
+┌──────────────────────────────────────────────────────┐
+│  Hub Tier   ACC                                      │
+│  Account    b.XXXXXXXXXXXXXXXXXXXXXXXX  Acme Corp    │
+│  Projects   47 active                                │
+└──────────────────────────────────────────────────────┘
+
+Hubs:
+  b.XXXXXXXXXXXXXXXXXXXXXXXX  Acme Corp ACC  (ACC)
+```
+
+The banner classifies your hub into one of four tiers:
+
+| Tier | Description |
+|------|-------------|
+| **Personal** | Individual Autodesk account with no team hub |
+| **BIM360** | Legacy BIM 360 account |
+| **ACC** | Autodesk Construction Cloud account |
+| **Enterprise** | Multi-hub enterprise account |
+
+## Related Commands
+
+- [`raps init`](/docs/init) — First-time setup wizard that configures all context fields
+- [`raps auth status`](/docs/auth) — Authentication-only status (subset of `raps status`)
+- [`raps hub list`](/docs/data-management) — List hubs; also shows the account context banner
+- [Admin Commands](/docs/admin) — All admin commands display the account context banner inline

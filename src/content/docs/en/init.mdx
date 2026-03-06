@@ -1,0 +1,132 @@
+---
+title: "raps init"
+description: "Interactive setup wizard for first-time RAPS configuration — credentials, authentication, hub discovery, and enterprise context."
+section: "commands"
+order: 2
+icon: "🚀"
+---
+
+# raps init
+
+`raps init` is a 6-step interactive wizard that walks you through complete RAPS configuration from scratch. It is the recommended starting point for new installs and fresh environments.
+
+```bash
+raps init
+```
+
+## When to Use
+
+Run `raps init` when:
+
+- You have just installed RAPS and haven't configured credentials yet
+- You are setting up RAPS in a new environment (new machine, container, CI agent)
+- You want to verify and refresh your full configuration in one pass
+
+If you only need to update credentials or re-authenticate, you can use the individual commands (`raps auth test`, `raps auth login`, etc.) directly. `raps init` is the all-in-one onboarding flow.
+
+## The 6-Step Wizard
+
+### Step 1 — Credential Setup
+
+The wizard prompts you to enter your APS Client ID and Client Secret. These are saved to the RAPS configuration file and exported as environment variables for the current session.
+
+```
+Step 1/6 — Credentials
+─────────────────────────────────────────
+  APS Client ID:     ░░░░░░░░░░░░░░░░░░
+  APS Client Secret: ░░░░░░░░░░░░░░░░░░
+─────────────────────────────────────────
+✓ Credentials saved
+```
+
+If `APS_CLIENT_ID` and `APS_CLIENT_SECRET` are already set in your environment, the wizard detects them and asks whether to keep or replace them.
+
+### Step 2 — 2-Legged Auth Test
+
+Immediately after saving credentials, the wizard calls `raps auth test` to verify they work.
+
+```
+Step 2/6 — Testing 2-Legged Auth
+─────────────────────────────────────────
+  Testing client credentials...
+✓ Authentication successful (expires in 3599s)
+```
+
+If authentication fails, the wizard reports the error and lets you correct your credentials before continuing.
+
+### Step 3 — Login (3-Legged OAuth)
+
+The wizard launches the interactive 3-legged OAuth login flow so you can authenticate as a named user. This enables hub and project access in later steps.
+
+In headless environments (SSH sessions, containers, CI agents) the wizard automatically uses device code flow — no local browser required.
+
+```
+Step 3/6 — Login
+
+Device Authorization
+──────────────────────────────────────────────────
+  Go to: https://rapscli.xyz/device?code=ABCD-1234
+  Enter code: ABCD-1234
+──────────────────────────────────────────────────
+Waiting for authorization... ✓ Logged in as user@example.com
+```
+
+### Step 4 — Hub Discovery
+
+With 3-legged auth established, the wizard calls `raps hub list` to discover the hubs (ACC/BIM360 accounts) your user has access to.
+
+```
+Step 4/6 — Hub Discovery
+─────────────────────────────────────────
+  Found 2 hub(s):
+    • b.XXXXXXXXXXXXXXXXXXXXXXXX  Acme Corp ACC  (ACC)
+    • b.YYYYYYYYYYYYYYYYYYYYYYYY  Legacy BIM360  (BIM360)
+─────────────────────────────────────────
+✓ Hub discovery complete
+```
+
+The discovered hubs are shown with their tier classification (Personal, BIM360, ACC, or Enterprise).
+
+### Step 5 — Enterprise Context Setup
+
+If ACC or BIM360 hubs are found, the wizard prompts you to select a default account and saves the Account ID to your configuration. This becomes the default for all admin commands.
+
+```
+Step 5/6 — Enterprise Context
+─────────────────────────────────────────
+  Select default account:
+  > Acme Corp ACC  (b.XXXXXXXXXXXXXXXXXXXXXXXX)
+    Legacy BIM360  (b.YYYYYYYYYYYYYYYYYYYYYYYY)
+─────────────────────────────────────────
+✓ Account context saved: APS_ACCOUNT_ID=b.XXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+If you only have a personal hub, this step is skipped automatically.
+
+### Step 6 — Summary
+
+The wizard displays a final summary of your configuration and confirms everything is ready.
+
+```
+Step 6/6 — Summary
+─────────────────────────────────────────
+  ✓ Credentials    APS_CLIENT_ID configured
+  ✓ 2-Legged Auth  Client credentials verified
+  ✓ 3-Legged Auth  Logged in as user@example.com
+  ✓ Hub Discovery  2 hub(s) found
+  ✓ Account        Acme Corp ACC
+
+  RAPS is ready. Run `raps status` to see your context at any time.
+─────────────────────────────────────────
+```
+
+## Headless Environments
+
+In SSH sessions, containers, and other environments without a local browser, Step 3 automatically switches to device code flow. Open the displayed URL on any device (phone, another laptop, etc.), enter the short code, and authorize with your Autodesk account. The wizard polls for completion and continues automatically.
+
+## Related Commands
+
+- [`raps status`](/docs/status) — View your full context dashboard at any time after setup
+- [`raps auth test`](/docs/auth) — Test 2-legged credentials independently
+- [`raps auth login`](/docs/auth) — Re-authenticate without running the full wizard
+- [`raps hub list`](/docs/data-management) — List hubs and see account context banners
