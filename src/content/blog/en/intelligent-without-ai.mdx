@@ -1,0 +1,193 @@
+---
+title: "Intelligent Without AI: How RAPS 5.3 Thinks for You"
+description: "A deep dive into the 25+ intelligence features shipped in RAPS 5.x — from fuzzy command corrections and rate-limit awareness to pipeline idempotency and archive inspection via Range requests."
+pubDate: 2026-03-07
+author: "RAPS Team"
+tags: ["cli", "aps", "productivity", "release", "automation", "devops"]
+featured: true
+draft: false
+---
+
+import { Code } from 'astro:components';
+
+RAPS has always been fast and scriptable. Starting with 5.1, it's also **aware** — of your mistakes, your bandwidth, your API quota, your prior runs, and what's actually inside that archive you're about to download. None of it requires an LLM. All of it is built from deterministic algorithms running locally.
+
+This post walks through the features that make RAPS 5.x feel like it knows what you're doing.
+
+## Fuzzy command corrections
+
+Typos happen. RAPS now catches them:
+
+```bash
+$ raps translte status
+error: unknown subcommand 'translte'
+
+Did you mean 'translate'?
+```
+
+Levenshtein edit distance, computed at startup against the full subcommand list. Zero latency, zero network.
+
+## Rate-limit awareness
+
+APS APIs return `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. RAPS now reads them on every response. When remaining quota drops below 10%, it auto-sleeps until the reset window:
+
+```
+[ratelimit] quota at 4% — sleeping 3.2s until reset
+```
+
+No more 429s in your CI pipelines.
+
+## Per-endpoint adaptive backoff
+
+Each APS endpoint gets its own failure-rate counter. If `/oss/v2/buckets` starts returning 503s, RAPS doubles the backoff multiplier for that endpoint (1× → 2× → 4×) without affecting other endpoints. Recovery is automatic as success rate climbs back.
+
+## Transparent token refresh
+
+401 responses now trigger a silent token refresh and retry — no user interaction required. A pre-check on expiry time avoids the round trip entirely when the token is still fresh.
+
+```bash
+$ raps object list my-bucket
+# token expires mid-session → refreshed transparently → list succeeds
+```
+
+## TTL response cache
+
+Read-only GET endpoints are cached to disk with per-endpoint TTLs:
+
+| Endpoint type | TTL |
+|---|---|
+| OSS bucket list | 60s |
+| Hub/project list | 120s |
+| DA engine list | 3600s |
+
+`--no-cache` bypasses it. `raps cache clear` wipes it. The cache lives at `~/.cache/raps/response_cache/`.
+
+## Secret scanning before upload
+
+Before any file is uploaded to OSS, RAPS scans it for six credential patterns — APS client secrets, AWS keys, GitHub tokens, Stripe keys, generic API keys, and private key headers:
+
+```bash
+$ raps object upload credentials.json my-bucket/creds.json
+error: secret detected in credentials.json (line 3): aps_client_secret pattern
+
+Use --allow-secrets to bypass this check.
+```
+
+Binary files are skipped (null byte probe). Only the first 100 KB is scanned for large text files.
+
+## Adaptive multipart chunk sizing
+
+RAPS measures your actual upload throughput and picks the chunk size accordingly:
+
+| Throughput | Chunk size |
+|---|---|
+| < 10 MB/s | 5 MB |
+| 10–50 MB/s | 10 MB |
+| > 50 MB/s | 25 MB |
+
+The 10-second rolling average is cached to `~/.cache/raps/throughput_cache.json` and reused across sessions, so the first chunk of your next upload already uses the right size.
+
+## Pipeline idempotency
+
+Long pipelines fail. Now you can resume them:
+
+```bash
+# First run — fails at step 5 of 12
+$ raps pipeline run build.yaml
+
+# Fix the issue, resume from where it stopped
+$ raps pipeline run build.yaml --resume
+
+# Or restart from a specific step
+$ raps pipeline run build.yaml --reset-from deploy
+```
+
+State is persisted to `~/.cache/raps/pipeline_runs/<name>.json`, keyed by a hash of the pipeline file. Changing the pipeline invalidates the saved state automatically.
+
+## `raps sync` — directory-to-bucket sync
+
+```bash
+$ raps sync ./dist my-bucket --delete --dry-run
+→ would upload: 14 files (2.3 MB)
+→ would delete: 2 stale objects
+→ unchanged: 47 files
+
+$ raps sync ./dist my-bucket --delete
+✓ uploaded 14, deleted 2, skipped 47
+```
+
+Checksum comparison (`--checksum`) uses SHA-1 so identical files are never re-uploaded.
+
+## `raps watch` — auto-upload on file change
+
+```bash
+$ raps watch ./renders --bucket project-renders --filter "*.png"
+Watching ./renders — press Ctrl+C to stop
+✓ uploaded render_001.png (2.1 MB)
+✓ uploaded render_002.png (2.3 MB)
+```
+
+Powered by the `notify` crate with a 500ms debounce to coalesce rapid saves.
+
+## `raps object diff` — compare objects without downloading both
+
+```bash
+# Unified diff between two OSS objects
+$ raps object diff project/config-v1.json project/config-v2.json
+
+# Compare OSS object against local file
+$ raps object diff project/config.json ./local-config.json
+
+# Binary files — hash and size comparison
+$ raps object diff assets/model-v1.rvt assets/model-v2.rvt
+SHA-1: differs
+  remote: 3d4a8f... (148.2 MB)
+  local:  7c91b2... (149.0 MB)
+```
+
+Exits with code 1 when files differ, matching standard `diff(1)` behavior for use in scripts.
+
+## `raps object download-bulk` — parallel downloads
+
+```bash
+$ raps object download-bulk renders/ --output-dir ./local-renders --concurrency 8
+Downloading 24 objects (4.7 GB)
+  [=========>    ] renders/render_001.png  (2.1 MB/s)
+  [=====>        ] renders/render_002.png  (1.8 MB/s)
+  ...
+✓ 24 downloaded, 0 skipped, 0 failed  (4.7 GB in 38s)
+```
+
+## `raps object inspect` — peek inside archives via Range requests
+
+Listing a 500 MB ZIP without downloading it:
+
+```bash
+$ raps object inspect my-bucket archive.zip
+NAME                      SIZE      COMPRESSED   RATIO
+models/foundation.rvt    148.2 MB   142.1 MB     4.1%
+drawings/sheet-A1.pdf     12.4 MB    11.9 MB     3.8%
+...
+23 files, 487.3 MB total
+
+# Extract a single file
+$ raps object inspect my-bucket archive.zip --extract models/foundation.rvt
+```
+
+For ZIP files only the end-of-central-directory and central directory blocks are fetched — typically a few KB regardless of archive size.
+
+## HTTP/2 multiplexing
+
+All APS API calls now use HTTP/2 adaptive window by default, multiplexing concurrent requests over a single connection. Disable with `RAPS_HTTP2=0` if needed.
+
+For swarm deployments, build with the `h3` feature for HTTP/3 QUIC transport:
+
+```bash
+$ raps swarm worker start --quic
+```
+
+## What's next
+
+These features were all built without a single call to an LLM. The next frontier is better local analysis: dependency graph visualization for pipelines, diff-based sync conflict resolution, and predictive prefetch for manifest-heavy Design Automation workflows.
+
+RAPS 5.3.3 is available now via the [install script](https://raps.dev/install) and all package managers.
