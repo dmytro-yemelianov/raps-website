@@ -105,15 +105,15 @@ raps admin user update "user@company.com" --account "$ACCOUNT_ID" \
 
 ```bash
 # Grant edit access to Project Files folder
-raps admin folder rights "contractor@partner.com" --account "$ACCOUNT_ID" \
+raps admin folder set-permissions "contractor@partner.com" --account "$ACCOUNT_ID" \
   --level view-download-upload-edit --folder project-files
 
 # Grant view access to Plans folder
-raps admin folder rights "reviewer@client.com" --account "$ACCOUNT_ID" \
+raps admin folder set-permissions "reviewer@client.com" --account "$ACCOUNT_ID" \
   --level view-download --folder plans
 
 # Custom folder by ID
-raps admin folder rights "user@company.com" --account "$ACCOUNT_ID" \
+raps admin folder set-permissions "user@company.com" --account "$ACCOUNT_ID" \
   --level folder-control --folder "urn:adsk.wipprod:fs.folder:abc123"
 ```
 

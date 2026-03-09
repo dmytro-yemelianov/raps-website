@@ -19,7 +19,7 @@ icon: "👥"
 | `raps admin user add` | Додати користувача до кількох проєктів |
 | `raps admin user remove` | Видалити користувача з проєктів |
 | `raps admin user update-role` | Оновити роль користувача в проєктах |
-| `raps admin folder rights` | Оновити права доступу до папок |
+| `raps admin folder set-permissions` | Оновити права доступу до папок |
 | `raps admin project list` | Показати список проєктів з фільтрацією |
 | `raps admin operation status` | Переглянути прогрес операції |
 | `raps admin operation resume` | Відновити перервану операцію |
@@ -182,12 +182,12 @@ $ raps admin user import --project "proj-123" --from-csv users.csv
 
 ## Команди папок
 
-### raps admin folder rights
+### raps admin folder set-permissions
 
 Оновлення прав доступу до папок для користувача в кількох проєктах.
 
 ```bash
-raps admin folder rights <ACCOUNT_ID> <EMAIL> --permission <LEVEL> --folder <TYPE> [OPTIONS]
+raps admin folder set-permissions <ACCOUNT_ID> <EMAIL> --permission <LEVEL> --folder <TYPE> [OPTIONS]
 ```
 
 **Аргументи:**
@@ -206,7 +206,7 @@ raps admin folder rights <ACCOUNT_ID> <EMAIL> --permission <LEVEL> --folder <TYP
 **Приклад:**
 
 ```bash
-$ raps admin folder rights "acc-123" "contractor@partner.com" \
+$ raps admin folder set-permissions "acc-123" "contractor@partner.com" \
     --permission edit --folder project_files
 Updating folder permissions...
 [████████████████████████████████████████] 75/75
@@ -460,7 +460,7 @@ raps admin user add "$ACCOUNT_ID" "new@company.com" \
   --role project_admin
 
 # 3. Надати права доступу до папок
-raps admin folder rights "$ACCOUNT_ID" "new@company.com" \
+raps admin folder set-permissions "$ACCOUNT_ID" "new@company.com" \
   --permission edit --folder project_files
 ```
 

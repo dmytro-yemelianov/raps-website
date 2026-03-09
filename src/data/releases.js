@@ -9,6 +9,37 @@
 
 export const releases = [
   {
+    version: '5.4.8',
+    date: '2026-03-09',
+    highlights: ['Command UX Clarity', 'BIM 360 Auto-Routing', 'Marketplace Plugin System', 'URL Shortener Worker'],
+    description: 'Eliminates command confusion: raps project list auto-detects BIM 360 vs ACC hubs, folder/admin commands renamed for clarity, bulk vs single operations clearly labeled. Plus marketplace plugin distribution and go.rapscli.xyz URL shortener.',
+    type: 'minor',
+    changes: {
+      added: [
+        '`raps project list` auto-routes to Admin API for BIM 360 hubs (prefix `b.`) — no need to use `raps admin project list` separately',
+        'Marketplace plugin system: install, search, list, and uninstall plugins with Ed25519 signature verification',
+        '`go.rapscli.xyz` URL shortener Cloudflare Worker with admin UI, collision retry, and KV storage',
+        '`raps object audit`, `raps object tag`, `raps lint` commands',
+        '`raps config wizard`, `raps snapshot create/diff/list` commands',
+        '`--delay-ms` flag on `raps admin user add/remove/update` for rate limiting',
+      ],
+      changed: [
+        '`raps folder rights` renamed to `raps folder permissions` (alias `rights` preserved)',
+        '`raps admin folder rights` renamed to `raps admin folder set-permissions` (alias `rights` preserved)',
+        'Bulk user commands (`add`, `remove`, `update`) now show `[bulk]` tag in help with cross-references to single-project equivalents',
+        '`raps admin --help` now states Account Administrator role requirement',
+      ],
+      fixed: [
+        'BIM 360 HQ v2 add-user corrected to use `/users/import` endpoint',
+        'Invite emails suppressed during bulk add operations',
+        'Silent skip on email lookup miss now properly reported',
+        '`--role` flag added to `add-to-project` (was missing)',
+        'ANSI logo suppressed on terminals without escape sequence support',
+        'Clap flag conflicts resolved for snapshot/pipeline commands',
+      ],
+    },
+  },
+  {
     version: '5.3.0',
     date: '2026-03-06',
     highlights: ['Test Coverage Suite', 'Coverage Dashboard', 'RFI Scenario Tests', 'DA/Admin Mock Coverage'],
