@@ -58,6 +58,22 @@ This is required for RAPS to:
 
 Click **Save** (or **Confirm**). The app is now authorized to make account-level API calls.
 
+## Finding Your Account ID
+
+After registering, copy the **Account ID** shown on the Custom Integrations page — it's the UUID listed next to your account name (e.g. `01fb1602-2ec0-4b05-bf6e-39dc70b3ae05`).
+
+Add it to your `.env` file so RAPS admin commands work without `--account` every time:
+
+```ini
+APS_ACCOUNT_ID=01fb1602-2ec0-4b05-bf6e-39dc70b3ae05
+```
+
+You can also retrieve it programmatically once you have admin access:
+
+```bash
+raps admin project list --limit 1 --output json | jq -r '.[0].relationships.hub.data.id'
+```
+
 ## Verifying the Setup
 
 Run `raps init` or `raps status` after registering:

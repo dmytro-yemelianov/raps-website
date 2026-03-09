@@ -46,11 +46,12 @@ export APS_CLIENT_SECRET="your_client_secret_here"
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `APS_ACCOUNT_ID` | ACC account ID — enables `raps admin` commands without `--account` flag. Find it in [ACC Custom Integrations](https://acc.autodesk.com/account-admin/custom-integrations/) or via `raps hub list`. | - |
 | `APS_CALLBACK_URL` | Callback URL for 3-legged OAuth | `http://localhost:8080/callback` |
 | `APS_DA_NICKNAME` | Design Automation nickname | - |
 | `RAPS_TIMEOUT` | Request timeout in seconds | `120` |
 | `RAPS_CONCURRENCY` | Max parallel operations | `5` |
-| `RAPS_USE_FILE_STORAGE` | Use plaintext file storage (insecure) | `false` |
+| `RAPS_USE_FILE_STORAGE` | Use plaintext file storage instead of OS keychain — recommended for headless servers and CI/CD | `false` |
 
 ## Using .env File
 
@@ -60,6 +61,13 @@ Create a `.env` file in your working directory:
 APS_CLIENT_ID=your_client_id_here
 APS_CLIENT_SECRET=your_client_secret_here
 APS_CALLBACK_URL=http://localhost:8080/callback
+
+# Required for raps admin commands (ACC account admin)
+# Find this in ACC → Account Admin → Custom Integrations, or copy from raps hub list
+APS_ACCOUNT_ID=your_account_id_here
+
+# Recommended on headless servers (no OS keychain available)
+RAPS_USE_FILE_STORAGE=true
 ```
 
 RAPS automatically loads from `.env` files in current and parent directories.

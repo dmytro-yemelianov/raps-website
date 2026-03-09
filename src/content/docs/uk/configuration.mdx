@@ -46,11 +46,12 @@ export APS_CLIENT_SECRET="your_client_secret_here"
 
 | Змінна | Опис | За замовчуванням |
 |--------|------|------------------|
+| `APS_ACCOUNT_ID` | ID облікового запису ACC — дозволяє використовувати команди `raps admin` без прапорця `--account`. Знайдіть у [ACC Custom Integrations](https://acc.autodesk.com/account-admin/custom-integrations/) або через `raps hub list`. | - |
 | `APS_CALLBACK_URL` | URL зворотного виклику для 3-legged OAuth | `http://localhost:8080/callback` |
 | `APS_DA_NICKNAME` | Нікнейм Design Automation | - |
 | `RAPS_TIMEOUT` | Тайм-аут запиту в секундах | `120` |
 | `RAPS_CONCURRENCY` | Максимальна кількість паралельних операцій | `5` |
-| `RAPS_USE_FILE_STORAGE` | Використовувати файлове сховище (небезпечно) | `false` |
+| `RAPS_USE_FILE_STORAGE` | Використовувати файлове сховище замість системного ключовика — рекомендовано для серверів і CI/CD | `false` |
 
 ## Використання файлу .env
 
@@ -60,6 +61,13 @@ export APS_CLIENT_SECRET="your_client_secret_here"
 APS_CLIENT_ID=your_client_id_here
 APS_CLIENT_SECRET=your_client_secret_here
 APS_CALLBACK_URL=http://localhost:8080/callback
+
+# Необхідно для команд raps admin (адміністрування облікового запису ACC)
+# Знайдіть в ACC → Account Admin → Custom Integrations або скопіюйте з raps hub list
+APS_ACCOUNT_ID=your_account_id_here
+
+# Рекомендовано на серверах без системного ключовика
+RAPS_USE_FILE_STORAGE=true
 ```
 
 RAPS автоматично завантажує дані з файлів `.env` у поточній та батьківських директоріях.

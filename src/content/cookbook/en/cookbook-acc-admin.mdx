@@ -59,75 +59,78 @@ Manage users across multiple ACC/BIM 360 projects with bulk operations, resumabl
 ### Add User to Multiple Projects
 
 ```bash
+# Get your account ID first
+raps hub list
+
 ACCOUNT_ID="your-account-id"
 EMAIL="newuser@company.com"
 
 # Add user to all projects
-raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin
+raps admin user add "$EMAIL" --account "$ACCOUNT_ID" --role "Project Admin"
 
-# Add user to specific projects (regex filter)
-raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin \
-  --filter "^Downtown|^Hospital"
+# Add user to specific projects (name filter)
+raps admin user add "$EMAIL" --account "$ACCOUNT_ID" --role "Project Admin" \
+  --filter "name:*Downtown*"
 
 # Preview changes with dry-run
-raps admin user add "$ACCOUNT_ID" "$EMAIL" --role project_admin --dry-run
+raps admin user add "$EMAIL" --account "$ACCOUNT_ID" --role "Project Admin" --dry-run
 ```
 
 ### Remove User from Projects
 
 ```bash
 # Remove user from all projects
-raps admin user remove "$ACCOUNT_ID" "departed@company.com"
+raps admin user remove "departed@company.com" --account "$ACCOUNT_ID"
 
 # Remove from specific projects
-raps admin user remove "$ACCOUNT_ID" "departed@company.com" \
-  --filter "^2024-.*"
+raps admin user remove "departed@company.com" --account "$ACCOUNT_ID" \
+  --filter "name:2024-*"
 
 # Dry-run to preview
-raps admin user remove "$ACCOUNT_ID" "departed@company.com" --dry-run
+raps admin user remove "departed@company.com" --account "$ACCOUNT_ID" --dry-run
 ```
 
 ### Update User Roles
 
 ```bash
 # Promote user across all projects
-raps admin user update-role "$ACCOUNT_ID" "user@company.com" --role project_admin
+raps admin user update "user@company.com" --account "$ACCOUNT_ID" --role "Project Admin"
 
 # Update role in filtered projects
-raps admin user update-role "$ACCOUNT_ID" "user@company.com" \
-  --role viewer --filter "^Archive-"
+raps admin user update "user@company.com" --account "$ACCOUNT_ID" \
+  --role "Project Viewer" --filter "name:Archive-*"
 ```
 
 ### Manage Folder Permissions
 
 ```bash
-# Grant access to Project Files folder
-raps admin folder rights "$ACCOUNT_ID" "contractor@partner.com" \
-  --permission edit --folder project_files
+# Grant edit access to Project Files folder
+raps admin folder rights "contractor@partner.com" --account "$ACCOUNT_ID" \
+  --level view-download-upload-edit --folder project-files
 
-# Grant access to Plans folder
-raps admin folder rights "$ACCOUNT_ID" "reviewer@client.com" \
-  --permission view --folder plans
+# Grant view access to Plans folder
+raps admin folder rights "reviewer@client.com" --account "$ACCOUNT_ID" \
+  --level view-download --folder plans
 
 # Custom folder by ID
-raps admin folder rights "$ACCOUNT_ID" "user@company.com" \
-  --permission control --folder "urn:adsk.wipprod:fs.folder:abc123"
+raps admin folder rights "user@company.com" --account "$ACCOUNT_ID" \
+  --level folder-control --folder "urn:adsk.wipprod:fs.folder:abc123"
 ```
 
 ### List and Filter Projects
 
 ```bash
 # List all projects
-raps admin project list "$ACCOUNT_ID"
+raps admin project list --account "$ACCOUNT_ID"
 
 # Filter by name pattern
-raps admin project list "$ACCOUNT_ID" --filter "Downtown"
+raps admin project list --account "$ACCOUNT_ID" --filter "name:*Downtown*"
 
 # Filter by status and platform
-raps admin project list "$ACCOUNT_ID" --status active --platform acc
+raps admin project list --account "$ACCOUNT_ID" --status active --platform acc
 
 # Limit results
-raps admin project list "$ACCOUNT_ID" --limit 10 --output json
+raps admin project list --account "$ACCOUNT_ID" --limit 10 --output json
 ```
 
 ---
@@ -187,12 +190,12 @@ on:
       role:
         description: 'Role to assign'
         required: true
-        default: 'project_admin'
+        default: 'Project Admin'
         type: choice
         options:
-          - project_admin
-          - project_manager
-          - viewer
+          - Project Admin
+          - Project Manager
+          - Project Viewer
       filter:
         description: 'Project filter regex (optional)'
         required: false
@@ -225,8 +228,9 @@ jobs:
             FILTER_ARG="--filter ${{ github.event.inputs.filter }}"
           fi
 
-          raps admin user add "$ACCOUNT_ID" "${{ github.event.inputs.email }}" \
-            --role ${{ github.event.inputs.role }} \
+          raps admin user add "${{ github.event.inputs.email }}" \
+            --account "$ACCOUNT_ID" \
+            --role "${{ github.event.inputs.role }}" \
             $FILTER_ARG \
             --output json > result.json
 
@@ -316,7 +320,7 @@ echo "================================"
 
 # Step 1: Preview changes
 echo "Step 1: Preview removal..."
-raps admin user remove "$ACCOUNT_ID" "$EMAIL" --dry-run
+raps admin user remove "$EMAIL" --account "$ACCOUNT_ID" --dry-run
 
 read -p "Proceed with removal? (y/N) " confirm
 if [ "$confirm" != "y" ]; then
@@ -326,7 +330,7 @@ fi
 
 # Step 2: Remove user from all projects
 echo "Step 2: Removing user from projects..."
-raps admin user remove "$ACCOUNT_ID" "$EMAIL" --output json > removal-result.json
+raps admin user remove "$EMAIL" --account "$ACCOUNT_ID" --output json > removal-result.json
 
 # Step 3: Generate report
 echo "Step 3: Generating report..."
@@ -356,7 +360,7 @@ echo "Full results saved to: removal-result.json"
 # batch-onboard.sh
 
 ACCOUNT_ID="your-account-id"
-ROLE="project_admin"
+ROLE="Project Admin"
 
 # Users to onboard (one per line)
 USERS=(
@@ -367,7 +371,7 @@ USERS=(
 
 for email in "${USERS[@]}"; do
   echo "Onboarding: $email"
-  raps admin user add "$ACCOUNT_ID" "$email" --role "$ROLE" \
+  raps admin user add "$email" --account "$ACCOUNT_ID" --role "$ROLE" \
     --output json >> onboarding-results.jsonl
   echo "---"
 done
@@ -382,12 +386,12 @@ echo "Batch onboarding complete. Results in onboarding-results.jsonl"
 # migrate-roles.sh - Migrate users from one role to another
 
 ACCOUNT_ID="your-account-id"
-OLD_ROLE="viewer"
-NEW_ROLE="project_admin"
-PROJECT_FILTER="^2024-Active"
+OLD_ROLE="Project Viewer"
+NEW_ROLE="Project Admin"
+PROJECT_FILTER="name:2024-Active*"
 
 # Get users with old role
-raps admin project list "$ACCOUNT_ID" --filter "$PROJECT_FILTER" --output json |
+raps admin project list --account "$ACCOUNT_ID" --filter "$PROJECT_FILTER" --output json |
   jq -r '.[].id' | while read project_id; do
     raps acc project-user list "$project_id" --output json |
       jq -r --arg role "$OLD_ROLE" '.[] | select(.role == $role) | .email'
@@ -398,7 +402,7 @@ echo "Found $(wc -l < users-to-migrate.txt) users to migrate"
 # Migrate each user
 while read email; do
   echo "Migrating: $email"
-  raps admin user update-role "$ACCOUNT_ID" "$email" \
+  raps admin user update "$email" --account "$ACCOUNT_ID" \
     --role "$NEW_ROLE" --filter "$PROJECT_FILTER"
 done < users-to-migrate.txt
 ```
@@ -409,11 +413,12 @@ done < users-to-migrate.txt
 
 | Level | Actions | Use Case |
 |-------|---------|----------|
-| `view` | View files | Read-only access |
-| `view_download` | View + download | Reviewers, clients |
-| `upload` | View + download + upload | Contributors |
-| `edit` | Full edit access | Team members |
-| `control` | Full control + permissions | Administrators |
+| `view-only` | View files | Read-only access |
+| `view-download` | View + download | Reviewers, clients |
+| `upload-only` | Upload only | Submitters |
+| `view-download-upload` | View + download + upload | Contributors |
+| `view-download-upload-edit` | Full edit access | Team members |
+| `folder-control` | Full control + permissions | Administrators |
 
 ---
 
