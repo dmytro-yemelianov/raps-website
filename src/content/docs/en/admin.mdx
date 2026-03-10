@@ -25,6 +25,7 @@ Perform bulk user management operations across ACC/BIM 360 accounts. These comma
 | `raps admin folder set-permissions` | Set folder permissions across projects |
 | `raps admin project list` | List projects with filtering |
 | `raps admin project create` | Create a new project |
+| `raps admin project create-batch` | [bulk] Create multiple projects in parallel |
 | `raps admin project update` | Update project settings |
 | `raps admin project archive` | Archive a project |
 | `raps admin company-list` | List companies in an account |
@@ -342,6 +343,32 @@ raps admin project create [OPTIONS]
 
 ```bash
 $ raps admin project create --account "acc-123" --name "New Hospital Wing" --classification production
+```
+
+### raps admin project create-batch
+
+Create multiple projects in parallel with sequential naming.
+
+```bash
+raps admin project create-batch [OPTIONS] --prefix <PREFIX> --count <COUNT>
+```
+
+**Options:**
+- `--account, -a` - Account ID (defaults to `APS_ACCOUNT_ID` env var)
+- `--prefix, -p` - Name prefix for projects (e.g., "Test-Project" produces "Test-Project-001", "Test-Project-002", ...)
+- `--count, -c` - Number of projects to create
+- `--start` - Starting number (default: 1)
+- `--concurrency` - Max concurrent requests (default: 20)
+- `--no-wait` - Don't wait for project activation (fire-and-forget)
+
+**Example:**
+
+```bash
+# Create 50 test projects with concurrency 20
+$ raps admin project create-batch --account "acc-123" --prefix "Phase2-Building" --count 50
+
+# Start numbering from 100, don't wait for activation
+$ raps admin project create-batch --prefix "Wing" --count 10 --start 100 --no-wait
 ```
 
 ### raps admin project update

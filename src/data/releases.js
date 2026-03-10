@@ -9,6 +9,32 @@
 
 export const releases = [
   {
+    version: '5.6.0',
+    date: '2026-03-10',
+    highlights: ['Bulk Add 130x Faster', 'BIM 360 Instant Fallback', 'Smart Circuit Breakers', 'Batch Project Create'],
+    description: 'Bulk user add optimized from 65s to 0.5s per project (130x speedup). ACC→BIM 360 instant fallback with learned flag, endpoint-aware circuit breakers, connection pool scaling, and new batch project create command.',
+    type: 'minor',
+    changes: {
+      added: [
+        'BIM 360 fallback for project creation — `raps admin project create` now works on both ACC and BIM 360 accounts',
+        '`raps admin project batch-create` command for bulk project provisioning from CSV/JSON',
+        'Learned BIM 360 flag: after first ACC probe failure, all subsequent calls skip the probe entirely',
+        'Endpoint-aware circuit breakers: `/construction/` URLs now classified as `account-admin` with bulk-tuned thresholds',
+        'Connection pool scaling: `pool_max_idle_per_host` now scales with concurrency level',
+      ],
+      changed: [
+        'MCP bulk concurrency raised from 10 to 20 for faster MCP-driven bulk operations',
+        'ACC→BIM 360 fallback uses single probe (no retry) — instant detection instead of 3 retries with backoff',
+        'Circuit breaker threshold for bulk operations dynamically set to `(total / 4).max(20)` to prevent false trips under load',
+      ],
+      fixed: [
+        'Bulk user add no longer wastes 60+ seconds per project on BIM 360 accounts retrying the ACC endpoint',
+        'Circuit breaker no longer blocks all bulk requests by misclassifying `/construction/` URLs as generic "other" endpoint',
+        'Rate budget registry now includes `account-admin` known limit (100 req/min) for accurate throttling',
+      ],
+    },
+  },
+  {
     version: '5.4.8',
     date: '2026-03-09',
     highlights: ['Command UX Clarity', 'BIM 360 Auto-Routing', 'Marketplace Plugin System', 'URL Shortener Worker'],
