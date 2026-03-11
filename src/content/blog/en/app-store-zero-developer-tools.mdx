@@ -1,0 +1,344 @@
+---
+title: "4,078 Apps and Zero Developer Tools: The Autodesk App Store Gap"
+description: "We audited every app on the Autodesk App Store. Zero CLI tools. Zero auth helpers. Zero MCP integrations. Here's the full analysis."
+pubDate: 2026-03-18
+author: "RAPS Team"
+tags: ["autodesk", "app-store", "developer-experience", "research", "data-analysis"]
+series: "Cross-Platform Pain"
+seriesOrder: 3
+featured: true
+draft: false
+---
+
+**TL;DR:** We audited all 4,078 apps on the Autodesk App Store. We searched for CLI tools. Authentication helpers. Translation debugging utilities. MCP integrations. Developer productivity tools of any kind. The result: zero. Across every category.
+
+---
+
+## The Data At a Glance
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-5 gap-4">
+  <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">4,078</div>
+    <div class="text-blue-200 text-sm mt-1">Apps Audited</div>
+  </div>
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">0</div>
+    <div class="text-red-200 text-sm mt-1">CLI Tools</div>
+  </div>
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">0</div>
+    <div class="text-red-200 text-sm mt-1">Auth Helpers</div>
+  </div>
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">0</div>
+    <div class="text-red-200 text-sm mt-1">MCP Integrations</div>
+  </div>
+  <div class="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">1</div>
+    <div class="text-amber-200 text-sm mt-1">ACC Admin (Web Only)</div>
+  </div>
+</div>
+
+4,078 apps. Not a single command-line tool. Not a single authentication helper. Not a single MCP integration. One ACC admin tool exists -- IMAGINiT ACCelerate -- and it is a web UI with no CLI, no scripting capability, and no API access.
+
+---
+
+## Category Gap Analysis
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6 text-center">Developer Tool Categories: App Store vs. Reality</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-700">
+            <th class="text-left text-slate-400 font-semibold py-3 px-4">Category</th>
+            <th class="text-center text-slate-400 font-semibold py-3 px-4">Existing Apps</th>
+            <th class="text-left text-slate-400 font-semibold py-3 px-4">What Developers Need</th>
+            <th class="text-left text-slate-400 font-semibold py-3 px-4">RAPS Coverage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+            <td class="py-4 px-4 text-white font-medium">Design Automation CLI</td>
+            <td class="py-4 px-4 text-center">
+              <span class="inline-block px-3 py-1 bg-red-900/50 text-red-400 rounded-full font-bold">0</span>
+            </td>
+            <td class="py-4 px-4 text-slate-300">Command-line DA job management</td>
+            <td class="py-4 px-4">
+              <span class="inline-block px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full font-bold">230+ commands</span>
+            </td>
+          </tr>
+          <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+            <td class="py-4 px-4 text-white font-medium">Authentication Helpers</td>
+            <td class="py-4 px-4 text-center">
+              <span class="inline-block px-3 py-1 bg-red-900/50 text-red-400 rounded-full font-bold">0</span>
+            </td>
+            <td class="py-4 px-4 text-slate-300">Token management, refresh, storage</td>
+            <td class="py-4 px-4">
+              <span class="inline-block px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full font-bold">Built-in auth system</span>
+            </td>
+          </tr>
+          <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+            <td class="py-4 px-4 text-white font-medium">Translation Debugging</td>
+            <td class="py-4 px-4 text-center">
+              <span class="inline-block px-3 py-1 bg-red-900/50 text-red-400 rounded-full font-bold">0</span>
+            </td>
+            <td class="py-4 px-4 text-slate-300">Error diagnosis, retry, status tracking</td>
+            <td class="py-4 px-4">
+              <span class="inline-block px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full font-bold">translate start/status</span>
+            </td>
+          </tr>
+          <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+            <td class="py-4 px-4 text-white font-medium">ACC Admin Automation</td>
+            <td class="py-4 px-4 text-center">
+              <span class="inline-block px-3 py-1 bg-amber-900/50 text-amber-400 rounded-full font-bold">1 (web only)</span>
+            </td>
+            <td class="py-4 px-4 text-slate-300">CLI + scriptable bulk operations</td>
+            <td class="py-4 px-4">
+              <span class="inline-block px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full font-bold">admin user add/remove/update</span>
+            </td>
+          </tr>
+          <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+            <td class="py-4 px-4 text-white font-medium">Cross-Platform CLI</td>
+            <td class="py-4 px-4 text-center">
+              <span class="inline-block px-3 py-1 bg-red-900/50 text-red-400 rounded-full font-bold">0</span>
+            </td>
+            <td class="py-4 px-4 text-slate-300">Unified interface across APIs</td>
+            <td class="py-4 px-4">
+              <span class="inline-block px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full font-bold">16 APIs unified</span>
+            </td>
+          </tr>
+          <tr class="hover:bg-slate-800/50 transition-colors">
+            <td class="py-4 px-4 text-white font-medium">MCP/AI Integration</td>
+            <td class="py-4 px-4 text-center">
+              <span class="inline-block px-3 py-1 bg-red-900/50 text-red-400 rounded-full font-bold">0</span>
+            </td>
+            <td class="py-4 px-4 text-slate-300">AI assistant tooling for APS</td>
+            <td class="py-4 px-4">
+              <span class="inline-block px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full font-bold">114 MCP tools</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-slate-500 text-xs mt-6 text-center">Audit conducted March 2026. "Existing Apps" counts apps on apps.autodesk.com matching each category.</p>
+  </div>
+</div>
+
+Six categories. Five have zero apps. One has a single web-only tool. That is the state of developer infrastructure on the Autodesk App Store.
+
+---
+
+## What IS on the App Store
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6">App Store Composition: 4,078 Apps by Type</h3>
+    <div class="space-y-4">
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-slate-300 text-sm font-medium">Revit Plugins</span>
+          <span class="text-slate-400 text-sm">Dominant category</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-4">
+          <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full" style="width: 38%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-slate-300 text-sm font-medium">AutoCAD Add-ons</span>
+          <span class="text-slate-400 text-sm">Second largest</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-4">
+          <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-4 rounded-full" style="width: 28%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-slate-300 text-sm font-medium">Viewer Extensions</span>
+          <span class="text-slate-400 text-sm">Growing segment</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-4">
+          <div class="bg-gradient-to-r from-cyan-500 to-cyan-600 h-4 rounded-full" style="width: 15%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-slate-300 text-sm font-medium">Desktop Design Tools</span>
+          <span class="text-slate-400 text-sm">Various CAD tools</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-4">
+          <div class="bg-gradient-to-r from-amber-500 to-amber-600 h-4 rounded-full" style="width: 12%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-slate-300 text-sm font-medium">Other (Data, Civil 3D, etc.)</span>
+          <span class="text-slate-400 text-sm">Long tail</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-4">
+          <div class="bg-gradient-to-r from-slate-500 to-slate-600 h-4 rounded-full" style="width: 7%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+      <p class="text-slate-400 text-sm"><span class="text-white font-semibold">Pattern:</span> All GUI-based. All end-user facing. Zero developer infrastructure. The entire marketplace is built for architects and engineers who click, not developers who script.</p>
+    </div>
+  </div>
+</div>
+
+---
+
+## Why the Gap Exists
+
+<div class="not-prose my-8 space-y-4">
+  <div class="bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-xl p-6 border-l-4 border-blue-500">
+    <h4 class="text-white font-bold mb-2">The store was designed for end users</h4>
+    <p class="text-slate-400 text-sm">The Autodesk App Store was built for architects, engineers, and construction managers. The submission process, categories, and discovery all optimize for desktop plugin distribution. A CLI tool does not fit this model.</p>
+  </div>
+  <div class="bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-xl p-6 border-l-4 border-purple-500">
+    <h4 class="text-white font-bold mb-2">No category for developer tools</h4>
+    <p class="text-slate-400 text-sm">The taxonomy itself excludes developer infrastructure. Categories include "Architecture," "Structure," "MEP," "Construction" -- but nothing for "Developer Tools," "API Utilities," or "Automation." If there is no shelf, there is no product.</p>
+  </div>
+  <div class="bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-xl p-6 border-l-4 border-amber-500">
+    <h4 class="text-white font-bold mb-2">Separate developer ecosystem</h4>
+    <p class="text-slate-400 text-sm">Autodesk's developer community (ADN) is entirely separate from the App Store ecosystem. ADN developers share code on GitHub and Forge blogs. The App Store serves a different audience. The two worlds do not overlap.</p>
+  </div>
+  <div class="bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-xl p-6 border-l-4 border-red-500">
+    <h4 class="text-white font-bold mb-2">Result: a structural blind spot</h4>
+    <p class="text-slate-400 text-sm">4,078 apps serving one audience. Zero apps serving the people who build integrations, manage infrastructure, and automate workflows against APS APIs. Not a gap in execution -- a gap in the platform's design.</p>
+  </div>
+</div>
+
+---
+
+## The Competitive Vacuum
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6 text-center">Competitive Landscape: Developer Tools for APS</h3>
+    <div class="space-y-3">
+      <div class="flex items-center justify-between p-4 bg-amber-900/20 rounded-xl border border-amber-700/30">
+        <div class="flex-1">
+          <div class="text-white font-medium">IMAGINiT ACCelerate</div>
+          <div class="text-slate-400 text-sm mt-1">Web UI only. No CLI. No scripting. No API.</div>
+        </div>
+        <span class="inline-block px-3 py-1 bg-amber-900/50 text-amber-400 rounded-full text-xs font-bold">Web Only</span>
+      </div>
+      <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+        <div class="flex-1">
+          <div class="text-white font-medium">BIM load</div>
+          <div class="text-slate-400 text-sm mt-1">Approximately 5% of RAPS scope. Project setup only.</div>
+        </div>
+        <span class="inline-block px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-xs font-bold">Narrow Scope</span>
+      </div>
+      <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+        <div class="flex-1">
+          <div class="text-white font-medium">Petr Broz (Community Expert)</div>
+          <div class="text-slate-400 text-sm mt-1">Basic MCP server. Educational. Not production tooling.</div>
+        </div>
+        <span class="inline-block px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-xs font-bold">Community</span>
+      </div>
+      <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+        <div class="flex-1">
+          <div class="text-white font-medium">Generic Consultancies</div>
+          <div class="text-slate-400 text-sm mt-1">Custom development. No reusable tooling. No domain expertise.</div>
+        </div>
+        <span class="inline-block px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-xs font-bold">Services</span>
+      </div>
+    </div>
+    <div class="mt-6 grid grid-cols-3 gap-4">
+      <div class="bg-red-900/30 rounded-xl p-4 text-center border border-red-800/50">
+        <div class="text-3xl font-black text-red-400">5 of 6</div>
+        <div class="text-slate-400 text-sm mt-1">Categories with zero competition</div>
+      </div>
+      <div class="bg-emerald-900/30 rounded-xl p-4 text-center border border-emerald-800/50">
+        <div class="text-3xl font-black text-emerald-400">114</div>
+        <div class="text-slate-400 text-sm mt-1">RAPS MCP tools vs. 0 alternatives</div>
+      </div>
+      <div class="bg-blue-900/30 rounded-xl p-4 text-center border border-blue-800/50">
+        <div class="text-3xl font-black text-blue-400">16</div>
+        <div class="text-slate-400 text-sm mt-1">APIs unified in RAPS vs. 0 elsewhere</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## What RAPS Fills
+
+Each of the following categories has zero representation on the Autodesk App Store. RAPS covers all of them from a single binary.
+
+### Auth Helpers (0 apps exist)
+
+```bash
+# Login with all required scopes in one command
+raps auth login --preset all
+
+# Check token status, expiry, and active scopes
+raps auth status
+```
+
+### Translation Debugging (0 apps exist)
+
+```bash
+# Start a model translation with explicit output format
+raps translate start "urn:..." --output svf2
+
+# Poll translation status with error details
+raps translate status "urn:..."
+```
+
+### Bulk Admin Operations (1 web-only app exists)
+
+```bash
+# Add a user to all projects matching a filter
+raps admin user add "$ACCOUNT" "user@company.com" --filter "^2024"
+
+# Remove a departing employee from the entire account
+raps admin user remove "$ACCOUNT" "departing@company.com"
+```
+
+### MCP/AI Integration (0 apps exist)
+
+```bash
+# Expose 114 tools to AI assistants via Model Context Protocol
+raps mcp serve
+```
+
+<div class="not-prose my-8 bg-gradient-to-br from-emerald-900/30 to-slate-900/50 rounded-xl p-6 border border-emerald-800/50 relative overflow-hidden">
+  <div class="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl"></div>
+  <div class="relative">
+    <h3 class="text-xl font-bold text-white">One binary. Six empty categories filled.</h3>
+    <p class="text-slate-400 text-sm mt-2">RAPS ships as a single Rust binary with no runtime dependencies. It covers authentication, data management, design automation, model translation, account administration, and MCP integration -- every category the App Store does not serve.</p>
+  </div>
+</div>
+
+---
+
+## Methodology
+
+**Scope:** All apps listed on apps.autodesk.com as of March 2026.
+
+**Search terms:** CLI, command-line, terminal, authentication, OAuth, token, MCP, Model Context Protocol, developer tools, API helper, translation debug, bulk admin, scripting, automation SDK.
+
+**Classification:** Each app was checked for (a) command-line interface, (b) scriptability, (c) developer-facing functionality. Apps were classified as "developer tools" only if they met at least one of these criteria.
+
+**Limitations:** This audit covers the public App Store only. Internal Autodesk tools and private enterprise solutions are not included.
+
+---
+
+## What Comes Next
+
+The data makes the case: 4,078 apps and not one of them serves the developer who builds on APS. The App Store has a structural blind spot, and the competitive landscape is empty.
+
+Next in this series: **"The API User Advocate: A Role That Doesn't Exist Yet"** -- why every platform needs someone whose job is to feel the developer's pain.
+
+---
+
+**Related:**
+- [Authentication Chaos Across CAD Platforms](/blog/authentication-chaos-across-cad-platforms)
+- [4,295 Feature Requests, 60 Delivered](/blog/acc-forum-analysis)
+- [RAPS Documentation](/docs/introduction)

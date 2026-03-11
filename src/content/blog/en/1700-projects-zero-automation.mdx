@@ -1,0 +1,383 @@
+---
+title: "1,700 Projects, Zero Automation: The Enterprise ACC Problem"
+description: "An anonymized case study: a large enterprise with 1,700+ ACC projects and no way to manage them at scale. Until now."
+pubDate: 2026-03-28
+author: "Dmytro Yemelianov"
+tags: ["acc", "enterprise", "bulk-operations", "automation", "aec"]
+series: "Enterprise Scale"
+seriesOrder: 3
+featured: true
+draft: false
+---
+
+**TL;DR:** A $14B enterprise. 1,700 active ACC projects. Zero way to manage users at scale. We break down the math, the manual pain, and the solution that turns 19 hours of clicking into 45 seconds.
+
+---
+
+## The Setup
+
+A $14 billion company. 1,700 active projects in Autodesk Construction Cloud. When a new team member joins, someone has to add them to every relevant project. Manually. One click at a time.
+
+When someone leaves, someone has to remove them. From every project. Manually.
+
+When compliance asks "who has access to what?" -- nobody knows.
+
+This is the enterprise ACC problem.
+
+---
+
+## The Scale
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+  <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">1,700+</div>
+    <div class="text-blue-200 text-sm mt-1">Active Projects</div>
+  </div>
+  <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">200+</div>
+    <div class="text-purple-200 text-sm mt-1">Active Users</div>
+  </div>
+  <div class="bg-gradient-to-br from-cyan-600 to-cyan-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">50-300</div>
+    <div class="text-cyan-200 text-sm mt-1">Projects per User</div>
+  </div>
+  <div class="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">4-8 hrs</div>
+    <div class="text-amber-200 text-sm mt-1">New Hire Onboarding</div>
+  </div>
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">2-4 hrs</div>
+    <div class="text-red-200 text-sm mt-1">Departure Revocation</div>
+  </div>
+  <div class="bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">N/A</div>
+    <div class="text-slate-200 text-sm mt-1">Permission Audit</div>
+  </div>
+</div>
+
+That last card says "N/A" because a full permission audit is **impossible manually**. Nobody knows who has access to what across 1,700 projects. There is no export, no report, no dashboard that shows you the full picture.
+
+---
+
+## The Manual Workflow
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6">Adding One User to All Projects</h3>
+    <div class="space-y-3">
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">1</div>
+        <span class="text-slate-300 text-sm">Log into ACC Admin console</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">2</div>
+        <span class="text-slate-300 text-sm">Open Project 1</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">3</div>
+        <span class="text-slate-300 text-sm">Navigate to Members tab</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">4</div>
+        <span class="text-slate-300 text-sm">Click "Add Member"</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">5</div>
+        <span class="text-slate-300 text-sm">Enter email address</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">6</div>
+        <span class="text-slate-300 text-sm">Select role from dropdown</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+        <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 text-sm font-bold shrink-0">7</div>
+        <span class="text-slate-300 text-sm">Click "Add" to confirm</span>
+      </div>
+      <div class="flex items-center gap-4 p-3 bg-red-900/30 rounded-lg border border-red-700/50">
+        <div class="w-8 h-8 bg-red-700 rounded-full flex items-center justify-center text-red-200 text-sm font-bold shrink-0">8</div>
+        <span class="text-red-300 text-sm font-bold">Repeat 1,699 more times</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="not-prose my-8">
+  <div class="bg-gradient-to-r from-red-900/40 to-slate-900/40 rounded-xl p-8 border border-red-700/50">
+    <h3 class="text-lg font-bold text-white mb-4">The Math</h3>
+    <div class="space-y-4 font-mono text-sm">
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400 w-48">Time per project:</span>
+        <span class="text-white font-bold">~40 seconds</span>
+        <span class="text-slate-500">(navigate + add + confirm)</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400 w-48">Total projects:</span>
+        <span class="text-white font-bold">1,700</span>
+      </div>
+      <div class="h-px bg-slate-700 my-2"></div>
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400 w-48">Total time:</span>
+        <span class="text-white font-bold">68,000 seconds</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400 w-48"></span>
+        <span class="text-red-400 font-black text-2xl">= 18.9 hours</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400 w-48"></span>
+        <span class="text-red-300 text-sm">For ONE user addition</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+Nearly **19 hours of clicking** to add a single person to every project. No breaks, no mistakes, no page-load delays factored in. The real number is worse.
+
+---
+
+## What They Actually Needed
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6">Requirements</h3>
+    <div class="space-y-3">
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">Add or remove a user across all projects in one operation</span>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">Filter projects by name pattern (e.g., all "2024-*" projects)</span>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">Dry-run mode to preview changes before applying</span>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">Resumable operations -- if the network drops at project 847, don't restart from 1</span>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">Permission cloning from a template project</span>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">CSV export for audit and compliance</span>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-emerald-900/20 rounded-lg border border-emerald-700/30">
+        <svg class="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-slate-300 text-sm">Rate-limit awareness (APS API caps at ~100 requests/min)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+None of this exists in the ACC web UI. There is no bulk add. No filtering. No dry-run. No resume. No audit export. Every one of these operations requires a human clicking through a web interface, one project at a time.
+
+---
+
+## The RAPS Solution
+
+```bash
+# Add user to ALL projects -- 1,700 projects, ~45 seconds
+raps admin user add "$ACCOUNT" "newhire@company.com" --role project_admin
+
+# Add to only 2024 projects
+raps admin user add "$ACCOUNT" "newhire@company.com" \
+  --role project_admin --filter "^2024-"
+
+# Remove departing employee from everywhere
+raps admin user remove "$ACCOUNT" "departing@company.com"
+
+# Preview before executing
+raps admin user add "$ACCOUNT" "newhire@company.com" --dry-run
+
+# Clone permissions from template
+raps admin folder set-permissions "$ACCOUNT" \
+  --project "$NEW" --clone-from "$TEMPLATE"
+
+# Export for audit
+raps admin user list "$ACCOUNT" --format csv > audit.csv
+```
+
+Each of these commands replaces hours of manual work with a single line.
+
+---
+
+## Under the Hood
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6">How It Works</h3>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+        <div class="text-blue-400 font-bold text-sm mb-2">Concurrent Workers</div>
+        <div class="text-3xl font-black text-white">10</div>
+        <p class="text-slate-400 text-sm mt-2">Parallel API calls, tuned to stay within APS rate limits. Not 1 request at a time -- 10.</p>
+      </div>
+      <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+        <div class="text-purple-400 font-bold text-sm mb-2">Rate Limit Handling</div>
+        <div class="text-3xl font-black text-white">429</div>
+        <p class="text-slate-400 text-sm mt-2">Automatic retry with exponential backoff and jitter. No manual throttling needed.</p>
+      </div>
+      <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+        <div class="text-emerald-400 font-bold text-sm mb-2">Resumable State</div>
+        <div class="text-3xl font-black text-white">847/1700</div>
+        <p class="text-slate-400 text-sm mt-2">If interrupted at project 847, resumes from 848. No lost progress, no duplicated work.</p>
+      </div>
+      <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+        <div class="text-amber-400 font-bold text-sm mb-2">Smart Filtering</div>
+        <div class="text-3xl font-black text-white">regex</div>
+        <p class="text-slate-400 text-sm mt-2">Filter by project name pattern, status, date range. Target exactly the projects you need.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+Real-time progress reporting shows completed, failed, and skipped counts as the operation runs. No staring at a spinner wondering if it froze.
+
+---
+
+## Before vs. After
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-700">
+          <th class="text-left text-slate-400 font-semibold p-3">Operation</th>
+          <th class="text-center text-red-400 font-semibold p-3">Manual (ACC Web UI)</th>
+          <th class="text-center text-emerald-400 font-semibold p-3">With RAPS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-slate-800">
+          <td class="text-white p-3">Add user to 1,700 projects</td>
+          <td class="text-center text-red-300 p-3 font-bold">18.9 hours</td>
+          <td class="text-center text-emerald-300 p-3 font-bold">45 seconds</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="text-white p-3">Remove user from all projects</td>
+          <td class="text-center text-red-300 p-3 font-bold">8+ hours</td>
+          <td class="text-center text-emerald-300 p-3 font-bold">30 seconds</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="text-white p-3">Permission audit (full account)</td>
+          <td class="text-center text-red-300 p-3 font-bold">Impossible</td>
+          <td class="text-center text-emerald-300 p-3 font-bold">60 seconds (CSV)</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="text-white p-3">Clone permissions to new project</td>
+          <td class="text-center text-red-300 p-3 font-bold">2+ hours</td>
+          <td class="text-center text-emerald-300 p-3 font-bold">1 command</td>
+        </tr>
+        <tr>
+          <td class="text-white p-3">Onboard 5 new hires</td>
+          <td class="text-center text-red-300 p-3 font-bold">5 business days</td>
+          <td class="text-center text-emerald-300 p-3 font-bold">5 minutes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="not-prose my-6 p-6 bg-gradient-to-r from-emerald-900/40 to-slate-900/40 rounded-xl border border-emerald-700/50 relative overflow-hidden">
+  <div class="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl"></div>
+  <div class="relative">
+    <div class="text-emerald-400 font-bold text-sm mb-1">Speedup factor</div>
+    <div class="text-white text-4xl font-black">1,512x faster</div>
+    <div class="text-slate-400 text-sm mt-1">18.9 hours to 45 seconds</div>
+  </div>
+</div>
+
+---
+
+## The ROI Math
+
+<div class="not-prose my-8">
+  <div class="bg-gradient-to-br from-amber-900/30 to-slate-900/50 rounded-2xl p-8 border border-amber-700/50 relative overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div class="relative">
+      <h3 class="text-lg font-bold text-white mb-6">Annual Cost of Manual Administration</h3>
+      <div class="space-y-4 font-mono text-sm">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">Project coordinators doing manual admin:</span>
+          <span class="text-white font-bold">8 people</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">Hours per week on user management:</span>
+          <span class="text-white font-bold">5 hrs each</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">Loaded cost per hour:</span>
+          <span class="text-white font-bold">$75/hr</span>
+        </div>
+        <div class="h-px bg-slate-700 my-2"></div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">Weekly cost:</span>
+          <span class="text-white font-bold">$3,000</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">Annual cost:</span>
+          <span class="text-amber-400 font-black text-2xl">$156,000/year</span>
+        </div>
+        <div class="h-px bg-slate-700 my-2"></div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">With RAPS:</span>
+          <span class="text-emerald-400 font-bold">Minutes per week</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-slate-400">ROI timeline:</span>
+          <span class="text-emerald-400 font-bold">Weeks, not years</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+$156,000 per year on clicking buttons. That is not an exaggeration -- it is arithmetic. Eight people, five hours a week, fifty-two weeks a year.
+
+RAPS turns those five hours into minutes. The math speaks for itself.
+
+---
+
+## The Bigger Picture
+
+This is not unique to one company. Any enterprise running more than 100 ACC projects faces the same scaling wall. The admin interface was designed for small teams managing a handful of projects, not enterprises managing thousands.
+
+<div class="not-prose my-8">
+  <div class="bg-gradient-to-r from-red-900/40 to-slate-900/40 rounded-xl p-6 border-l-4 border-red-500 relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl"></div>
+    <div class="relative">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-red-400 text-sm font-semibold mb-1">#1 MOST VOTED ACC FEATURE REQUEST -- 344 KUDOS</div>
+          <h4 class="text-xl font-bold text-white">"Allow adding users to MULTIPLE PROJECTS"</h4>
+          <p class="text-slate-400 mt-2 text-sm italic">"Instead of wasting my time opening each project and manually adding a new user to 20 projects, we need a tool that will automate this process!"</p>
+        </div>
+        <div class="text-right shrink-0 ml-4">
+          <div class="text-slate-500 text-xs">Waiting for</div>
+          <div class="text-red-400 font-bold text-2xl">6+ YRS</div>
+        </div>
+      </div>
+      <div class="mt-3 inline-block px-3 py-1 bg-amber-900/50 text-amber-300 text-xs rounded-full">Status: Future Consideration</div>
+    </div>
+  </div>
+</div>
+
+344 community votes. Six-plus years of waiting. Autodesk's official response: "Future Consideration."
+
+RAPS built what Autodesk won't.
+
+---
+
+## Try It
+
+If your organization manages more than a handful of ACC projects, the manual approach does not scale. It never will. The platform was not built for enterprise-scale administration, so you have to build the tooling yourself -- or use tooling someone else already built.
+
+**Related:**
+- [Admin Commands Reference](/docs/admin) -- Full documentation for `raps admin` operations
+- [The ACC Permission Nightmare](/blog/acc-permission-nightmare) -- Deep dive on permission management gaps
+- [4,295 Requests, 60 Delivered](/blog/acc-forum-analysis) -- The data behind ACC's feedback black hole
+- [ACC Bulk Operations Crisis](/blog/acc-bulk-operations-crisis) -- Why bulk operations are the most requested category

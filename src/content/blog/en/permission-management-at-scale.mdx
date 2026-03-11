@@ -1,0 +1,324 @@
+---
+title: "Permission Management at Scale: Clone, Export, Audit"
+description: "How to clone permissions across ACC projects, bulk export to CSV, and audit user access — the features Autodesk should have built."
+pubDate: 2026-03-26
+author: "Dmytro Yemelianov"
+tags: ["acc", "permissions", "enterprise", "tutorial", "bulk-operations"]
+series: "Enterprise Scale"
+seriesOrder: 2
+featured: false
+draft: false
+---
+
+You have 200 projects in ACC. A new team member needs the same folder permissions as an existing team member -- across all 200 projects. In the ACC web UI, that is 200 projects times roughly 10 clicks each. **Two thousand clicks.** Or one RAPS command.
+
+This post covers three operations that ACC administrators need daily and ACC does not provide: cloning permissions between projects, exporting permissions to CSV for audit, and importing modified permissions back. Every command here is copy-paste ready.
+
+---
+
+## The Permission Problem at Enterprise Scale
+
+ACC has a two-layer permission model: **project-level roles** (Project Admin, Project Member) and **folder-level permissions** (View, Upload, Edit, Control). In theory, this is flexible. In practice, it breaks at scale because there is no way to:
+
+- **Clone permissions** from one project to another
+- **Export all permissions** for audit or compliance
+- **Bulk-modify folder permissions** across projects
+- **Override inherited permissions** on subfolders
+
+That last one -- inheritance override -- is the [#5 most-voted ACC feature request](/blog/acc-forum-analysis) with 175 kudos, still marked "Future Consideration" after years.
+
+For enterprise teams managing 100+ projects, permission management is a full-time job done entirely through mouse clicks.
+
+---
+
+## Clone Permissions Between Projects
+
+When you stand up a new project, it should match your template project's permission structure. RAPS reads all folder permissions from a source project and applies them to the target.
+
+### Preview First with Dry-Run
+
+Always preview before applying:
+
+```bash
+# See what would change without modifying anything
+raps admin folder set-permissions "$ACCOUNT_ID" \
+  --project "$NEW_PROJECT" \
+  --clone-from "$TEMPLATE_PROJECT" \
+  --dry-run
+```
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">Dry-run output:</div>
+  <div class="text-white">Cloning permissions from "Hospital Wing A" to "Hospital Wing B"</div>
+  <div class="text-slate-400 mt-2">Folder mappings:</div>
+  <table class="w-full text-left mt-2">
+    <thead class="text-slate-500 border-b border-slate-700">
+      <tr><th class="py-2">Folder</th><th>Users</th><th>Action</th></tr>
+    </thead>
+    <tbody class="text-slate-300">
+      <tr><td class="py-1">Project Files</td><td>12</td><td class="text-emerald-400">Would apply</td></tr>
+      <tr><td class="py-1">Project Files/Plans</td><td>8</td><td class="text-emerald-400">Would apply</td></tr>
+      <tr><td class="py-1">Project Files/Specs</td><td>6</td><td class="text-emerald-400">Would apply</td></tr>
+      <tr><td class="py-1">Project Files/Bids</td><td>3</td><td class="text-amber-400">Would apply (2 users not in target)</td></tr>
+    </tbody>
+  </table>
+  <div class="text-slate-400 mt-3">Total: 29 permission assignments across 4 folders</div>
+</div>
+
+### Apply the Clone
+
+```bash
+# Clone folder permissions from a template project to a new project
+raps admin folder set-permissions "$ACCOUNT_ID" \
+  --project "$NEW_PROJECT" \
+  --clone-from "$TEMPLATE_PROJECT"
+```
+
+What this does under the hood:
+
+- Reads all folder permissions from the source project
+- Maps users and roles to the target project
+- Applies permissions in bulk with rate-limit awareness
+- Reports any mismatches (users not in target project, role differences)
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-emerald-400">Cloning permissions...</div>
+  <div class="flex items-center gap-2 my-2">
+    <div class="flex-1 bg-slate-700 rounded-full h-3 overflow-hidden">
+      <div class="bg-emerald-500 h-full rounded-full" style="width: 100%"></div>
+    </div>
+    <span class="text-white">29/29</span>
+  </div>
+  <div class="text-white mt-1">Done in 8 seconds</div>
+  <div class="text-amber-400 mt-1">Warning: 2 users from source not found in target project (skipped)</div>
+</div>
+
+---
+
+## Export Permissions to CSV
+
+Quarterly audits, compliance reporting, onboarding verification -- they all need the same thing: a flat file showing who has access to what.
+
+```bash
+# Export all folder permissions for a project
+raps admin folder set-permissions "$ACCOUNT_ID" \
+  --project "$PROJECT_ID" \
+  --export permissions.csv
+```
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">permissions.csv:</div>
+  <div class="text-slate-300 overflow-x-auto">
+    <pre class="text-xs">project_id,project_name,folder_path,user_email,role,permission_level
+b.abc123,Hospital Wing B,Project Files,alice@company.com,Project Admin,control
+b.abc123,Hospital Wing B,Project Files,bob@contractor.com,Project Member,edit
+b.abc123,Hospital Wing B,Project Files/Plans,alice@company.com,Project Admin,control
+b.abc123,Hospital Wing B,Project Files/Plans,charlie@subcontractor.com,Project Member,view
+b.abc123,Hospital Wing B,Project Files/Bids,alice@company.com,Project Admin,control</pre>
+  </div>
+</div>
+
+### Use Cases for CSV Export
+
+- **Quarterly permission audits** -- who has access to what, documented for compliance
+- **Compliance reporting** -- produce evidence of access controls for ISO 27001, SOC 2, or owner requirements
+- **Migration planning** -- export from BIM 360, review structure, then import to ACC
+- **Onboarding verification** -- confirm that the new hire received the correct access across all relevant folders
+
+---
+
+## Import Permissions from CSV
+
+The real power is the round-trip: export, modify in Excel or Google Sheets, import back.
+
+```bash
+# Import permissions from a modified CSV
+raps admin folder set-permissions "$ACCOUNT_ID" \
+  --project "$PROJECT_ID" \
+  --import updated-permissions.csv
+```
+
+### The Spreadsheet Workflow
+
+```text
+1. Export current permissions to CSV
+2. Open in Excel / Google Sheets
+3. Filter, sort, review
+4. Modify permission_level column as needed
+5. Remove rows for users who should lose access
+6. Add rows for new users
+7. Import the modified CSV back
+```
+
+This is how permission management should work: data in, data out, version-controlled, auditable.
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-emerald-400">Importing permissions from updated-permissions.csv...</div>
+  <div class="text-white mt-2">Changes detected:</div>
+  <table class="w-full text-left mt-2">
+    <thead class="text-slate-500 border-b border-slate-700">
+      <tr><th class="py-2">User</th><th>Folder</th><th>Change</th></tr>
+    </thead>
+    <tbody class="text-slate-300">
+      <tr><td class="py-1">bob@contractor.com</td><td>Project Files</td><td class="text-amber-400">edit -&gt; view</td></tr>
+      <tr><td class="py-1">dave@newpartner.com</td><td>Project Files</td><td class="text-emerald-400">added (edit)</td></tr>
+      <tr><td class="py-1">charlie@subcontractor.com</td><td>Project Files/Bids</td><td class="text-red-400">removed</td></tr>
+    </tbody>
+  </table>
+  <div class="text-white mt-3">Applied 3 changes in 4 seconds</div>
+</div>
+
+---
+
+## Bulk User Permission Audit
+
+Beyond folder-level permissions, you often need to answer a broader question: what does a specific user have access to across all projects?
+
+```bash
+# See what a specific user has access to across all projects
+raps project users list --hub-id "b.$ACCOUNT_ID" --format table \
+  | grep "user@company.com"
+```
+
+```bash
+# Export complete user-project matrix for the entire account
+raps admin user list "$ACCOUNT_ID" --format csv > user-matrix.csv
+```
+
+<div class="not-prose my-4 bg-slate-800 rounded-lg p-4 font-mono text-sm">
+  <div class="text-slate-400 mb-2">user-matrix.csv (excerpt):</div>
+  <div class="text-slate-300 overflow-x-auto">
+    <pre class="text-xs">email,project_name,role,status
+alice@company.com,Hospital Wing A,Project Admin,active
+alice@company.com,Hospital Wing B,Project Admin,active
+alice@company.com,Downtown Tower,Project Admin,active
+bob@contractor.com,Hospital Wing A,Project Member,active
+bob@contractor.com,Downtown Tower,Project Member,active</pre>
+  </div>
+</div>
+
+This gives you a flat, searchable matrix of every user across every project in your account. Filter it, pivot it, share it with stakeholders.
+
+---
+
+## Real-World Scenarios
+
+<div class="not-prose my-8 space-y-6">
+  <div class="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-700/30">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 text-xl font-bold">1</div>
+      <div>
+        <h4 class="text-lg font-bold text-white">Scenario: New Hire Onboarding</h4>
+        <p class="text-slate-400 text-sm">A structural engineer joins the team and needs the same access as the existing structural lead.</p>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="bg-red-900/20 rounded-lg p-4 border border-red-700/30">
+        <div class="text-red-400 text-sm font-bold mb-2">Without RAPS</div>
+        <p class="text-slate-300 text-sm">Open each project. Navigate to Members. Add user. Set role. Configure folder permissions for each folder. Repeat for 50 projects.</p>
+        <div class="text-red-400 font-bold mt-2">~45 minutes</div>
+      </div>
+      <div class="bg-emerald-900/20 rounded-lg p-4 border border-emerald-700/30">
+        <div class="text-emerald-400 text-sm font-bold mb-2">With RAPS</div>
+        <div class="bg-slate-800 rounded p-2 font-mono text-xs text-slate-300 mt-1">raps admin folder set-permissions "$ACCOUNT" \<br/>  --project "$PROJECT" \<br/>  --clone-from "$TEMPLATE" </div>
+        <div class="text-emerald-400 font-bold mt-2">~30 seconds</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-amber-900/20 rounded-2xl p-6 border border-amber-700/30">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 text-xl font-bold">2</div>
+      <div>
+        <h4 class="text-lg font-bold text-white">Scenario: Employee Departure</h4>
+        <p class="text-slate-400 text-sm">A project manager leaves the company. Remove their access from every project immediately.</p>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="bg-red-900/20 rounded-lg p-4 border border-red-700/30">
+        <div class="text-red-400 text-sm font-bold mb-2">Without RAPS</div>
+        <p class="text-slate-300 text-sm">Check every project manually. Open Members panel. Find user. Remove. Hope you did not miss one. No audit trail to confirm.</p>
+        <div class="text-red-400 font-bold mt-2">~2 hours (and you might miss some)</div>
+      </div>
+      <div class="bg-emerald-900/20 rounded-lg p-4 border border-emerald-700/30">
+        <div class="text-emerald-400 text-sm font-bold mb-2">With RAPS</div>
+        <div class="bg-slate-800 rounded p-2 font-mono text-xs text-slate-300 mt-1">raps admin user remove "$ACCOUNT" \<br/>  "departing@company.com"</div>
+        <div class="text-emerald-400 font-bold mt-2">~45 seconds, all projects, guaranteed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-blue-900/20 rounded-2xl p-6 border border-blue-700/30">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 text-xl font-bold">3</div>
+      <div>
+        <h4 class="text-lg font-bold text-white">Scenario: Annual Security Audit</h4>
+        <p class="text-slate-400 text-sm">The owner's compliance team asks: "Who has access to what? Provide documentation."</p>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="bg-red-900/20 rounded-lg p-4 border border-red-700/30">
+        <div class="text-red-400 text-sm font-bold mb-2">Without RAPS</div>
+        <p class="text-slate-300 text-sm">Screenshot each project's permission page. Compile into a spreadsheet manually. Pray nothing changed while you were documenting.</p>
+        <div class="text-red-400 font-bold mt-2">~1-2 days of tedious work</div>
+      </div>
+      <div class="bg-emerald-900/20 rounded-lg p-4 border border-emerald-700/30">
+        <div class="text-emerald-400 text-sm font-bold mb-2">With RAPS</div>
+        <div class="bg-slate-800 rounded p-2 font-mono text-xs text-slate-300 mt-1">raps admin folder set-permissions "$ACCOUNT" \<br/>  --project "$PROJECT" --export audit.csv<br/>raps admin user list "$ACCOUNT" --format csv &gt; users.csv</div>
+        <div class="text-emerald-400 font-bold mt-2">~60 seconds, complete and accurate</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Quick Reference
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-4">Permission Management Commands</h3>
+    <div class="space-y-3">
+      <div class="p-3 bg-slate-800/50 rounded-lg">
+        <code class="text-emerald-400 text-sm">raps admin folder set-permissions $ACCOUNT --project $P --clone-from $SRC</code>
+        <div class="text-slate-400 text-xs mt-1">Clone all folder permissions from one project to another</div>
+      </div>
+      <div class="p-3 bg-slate-800/50 rounded-lg">
+        <code class="text-emerald-400 text-sm">raps admin folder set-permissions $ACCOUNT --project $P --clone-from $SRC --dry-run</code>
+        <div class="text-slate-400 text-xs mt-1">Preview permission clone without applying changes</div>
+      </div>
+      <div class="p-3 bg-slate-800/50 rounded-lg">
+        <code class="text-emerald-400 text-sm">raps admin folder set-permissions $ACCOUNT --project $P --export file.csv</code>
+        <div class="text-slate-400 text-xs mt-1">Export all folder permissions to CSV</div>
+      </div>
+      <div class="p-3 bg-slate-800/50 rounded-lg">
+        <code class="text-emerald-400 text-sm">raps admin folder set-permissions $ACCOUNT --project $P --import file.csv</code>
+        <div class="text-slate-400 text-xs mt-1">Import permissions from a modified CSV</div>
+      </div>
+      <div class="p-3 bg-slate-800/50 rounded-lg">
+        <code class="text-emerald-400 text-sm">raps admin user list $ACCOUNT --format csv</code>
+        <div class="text-slate-400 text-xs mt-1">Export complete user-project matrix</div>
+      </div>
+      <div class="p-3 bg-slate-800/50 rounded-lg">
+        <code class="text-emerald-400 text-sm">raps admin user remove $ACCOUNT "user@company.com"</code>
+        <div class="text-slate-400 text-xs mt-1">Remove a user from all projects in the account</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## What Comes Next
+
+This post covered permission operations for individual projects and users. But what happens when you have 1,700 projects and need to enforce a permission policy across all of them? That is a different problem -- one that requires pipelines, not commands.
+
+**Next in the Enterprise Scale series:** "1,700 Projects, Zero Automation" -- what permission management looks like at true enterprise scale, and how to build pipelines that enforce access policies automatically.
+
+---
+
+**Related:**
+- [The Permission Problem: When Basic Access Controls Are Missing](/blog/acc-permission-nightmare)
+- [The Bulk Operations Crisis](/blog/acc-bulk-operations-crisis)
+- [Admin Commands Reference](/docs/admin)
+- [Account Admin Cookbook](/docs/cookbook-acc-admin)

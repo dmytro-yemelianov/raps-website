@@ -1,0 +1,365 @@
+---
+title: "Same Bug, Four Vendors: Auth Failures Across CAD/PLM Platforms"
+description: "OAuth implementation nightmares repeat identically across Autodesk, PTC, Dassault, and Siemens. We mapped the pattern."
+pubDate: 2026-03-14
+author: "Dmytro Yemelianov"
+tags: ["authentication", "oauth", "cross-platform", "cad", "api", "research"]
+series: "Cross-Platform Pain"
+seriesOrder: 1
+featured: true
+draft: false
+---
+
+Four companies. Combined market cap north of $200 billion. Four completely different codebases, written in different languages, by different teams, on different continents. And yet when you sit down to authenticate against their APIs, you hit the exact same bugs.
+
+Not similar bugs. The *same* bugs. Token refresh race conditions. Scope confusion. Session expiry mid-operation. Undocumented CSRF requirements. The kind of problems that make you wonder whether there is a single cursed OAuth tutorial that every enterprise CAD company forked in 2014 and never updated.
+
+We spent weeks collecting developer complaints, forum posts, and Stack Overflow threads across Autodesk APS, PTC Onshape, Dassault 3DEXPERIENCE, and Siemens Teamcenter. The results are damning --- and they reveal something important about why these problems persist.
+
+<div class="not-prose my-8 p-6 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+  <p class="text-sm text-amber-800 dark:text-amber-200">
+    <strong>Related:</strong> This post extends our earlier
+    <a href="/blog/authentication-chaos-across-cad-platforms" class="underline ml-1">Authentication Chaos</a>
+    article with structured cross-vendor comparison data.
+  </p>
+</div>
+
+## The Four-Vendor Breakdown
+
+### Autodesk APS
+
+The most common question in the APS developer forums is not about modeling, rendering, or data management. It is: "Do I need 2-legged or 3-legged auth?"
+
+The confusion is structural. Two-legged tokens act on behalf of the application. Three-legged tokens act on behalf of a user. The API surface is the same, but the permissions model is completely different, and the documentation does not make it obvious which endpoints require which flow. Developers routinely burn hours testing one flow, getting 403s, switching to the other, getting different 403s, and eventually discovering they need a specific scope they did not know existed.
+
+<div class="not-prose my-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+  <div class="bg-red-600 text-white px-4 py-2 font-semibold text-sm">Autodesk APS --- Authentication Pain Points</div>
+  <div class="bg-white dark:bg-slate-800 p-4 space-y-3">
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-center text-sm font-bold leading-6 flex-shrink-0">1</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">2-Legged vs 3-Legged Confusion</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">The single most asked question in APS forums. Same endpoints, different auth flows, no clear guidance on which to use when.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-center text-sm font-bold leading-6 flex-shrink-0">2</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Token Refresh Race Conditions</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Concurrent requests trigger simultaneous refresh attempts. The first one wins; the rest get invalidated tokens. Classic TOCTOU bug at the API layer.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-center text-sm font-bold leading-6 flex-shrink-0">3</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Scope Explosion</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Over 40 scopes. No single reference for which endpoints require which scopes. Trial and error is the de facto documentation.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-center text-sm font-bold leading-6 flex-shrink-0">4</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Inconsistent Rate Limiting</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Official limit is 100 req/min, but there is no standardized 429 response across APIs. Some return 429, some return 503, some just hang.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+The race condition problem deserves special attention. When you have a long-running automation --- say, translating 200 models overnight --- your token will expire mid-run. If two threads notice the expiry at the same moment and both attempt to refresh, the second refresh invalidates the token the first one just obtained. In RAPS, we solve this with a `Mutex + Notify` pattern in `raps-kernel`: a single refresh is allowed at a time, and all waiting threads receive the fresh token once it arrives.
+
+### PTC Onshape
+
+Onshape gets credit for being cloud-native from day one. That does not save it from OAuth sins.
+
+<div class="not-prose my-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+  <div class="bg-blue-600 text-white px-4 py-2 font-semibold text-sm">PTC Onshape --- Authentication Pain Points</div>
+  <div class="bg-white dark:bg-slate-800 p-4 space-y-3">
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 text-center text-sm font-bold leading-6 flex-shrink-0">1</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Trailing = in Client Secrets Breaks URL Encoding</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Base64-encoded secrets frequently end with <code>=</code> or <code>==</code>. If you do not URL-encode them, the OAuth token exchange silently fails with an unhelpful error.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 text-center text-sm font-bold leading-6 flex-shrink-0">2</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Encoding Ambiguity</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">No clear documentation on whether to use form encoding, query-string encoding, or Base64 for different auth parameters. Developers discover the answer by trial and error.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 text-center text-sm font-bold leading-6 flex-shrink-0">3</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Deprecated API Keys Still in Docs</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">API key authentication is deprecated but still present in official documentation and tutorials. New developers follow deprecated guides, then have to start over.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 text-center text-sm font-bold leading-6 flex-shrink-0">4</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Session Memory Leaks</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Long-running automations that maintain OAuth sessions leak memory. Session management was designed for interactive browser use, not headless pipelines.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+The trailing `=` problem is almost comical. A developer shared this on the Onshape forums: *"The body of the form needs to contain the client ID, client secret, authorization_code... Each parameter needs to be URL encoded --- especially important for the Client ID and secret since either or both may contain multiple trailing '=' characters."* The fix is one line of code. Finding it costs an afternoon.
+
+### Dassault 3DEXPERIENCE
+
+If Autodesk's auth is confusing and Onshape's is finicky, Dassault's is an endurance test.
+
+<div class="not-prose my-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+  <div class="bg-purple-600 text-white px-4 py-2 font-semibold text-sm">Dassault 3DEXPERIENCE --- Authentication Pain Points</div>
+  <div class="bg-white dark:bg-slate-800 p-4 space-y-3">
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 text-center text-sm font-bold leading-6 flex-shrink-0">1</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Five Login Contexts in One Session</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">3DPassport requires separate authentication for: the partner platform, the commercial platform, the support system, your tenant, and your application. One developer reported logging in five times in a single hour.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 text-center text-sm font-bold leading-6 flex-shrink-0">2</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Undocumented CSRF Requirements</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">API calls require CSRF tokens, but this requirement is not documented in the API reference. Developers discover it when POST requests fail with opaque 403 errors.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 text-center text-sm font-bold leading-6 flex-shrink-0">3</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Session Cookies Expire Mid-Operation</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">No refresh mechanism for session cookies. Long operations simply fail partway through, with no recovery path other than re-authenticating and restarting.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 text-center text-sm font-bold leading-6 flex-shrink-0">4</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">SOLIDWORKS Crashes on Auth Failure</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">When 3DPassport authentication fails mid-save, the error cascades into SOLIDWORKS itself, crashing the desktop application. Auth failures become data-loss events.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+The SOLIDWORKS crash scenario is the most severe failure mode in this entire comparison. An authentication timeout during a cloud save can crash the desktop application. This means a back-end infrastructure issue --- an expired session cookie --- can destroy work-in-progress CAD data. Auth is not just a developer convenience problem here; it is a data integrity problem.
+
+### Siemens Teamcenter
+
+Teamcenter is the oldest platform in this comparison, and it shows. Authentication is not one system; it is at least two, running in parallel, with different rules.
+
+<div class="not-prose my-6 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+  <div class="bg-teal-600 text-white px-4 py-2 font-semibold text-sm">Siemens Teamcenter --- Authentication Pain Points</div>
+  <div class="bg-white dark:bg-slate-800 p-4 space-y-3">
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-400 text-center text-sm font-bold leading-6 flex-shrink-0">1</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">SSO Configuration Labyrinth</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Six or more parameters required: <code>tcsso.login_service.proxyURL</code>, discriminators, endpoint configs, credential managers, external IdP settings, protocol flags.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-400 text-center text-sm font-bold leading-6 flex-shrink-0">2</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">SoaRuntimeException on Login</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">This exception is so common it has its own multi-page troubleshooting guide. It is the "have you tried turning it off and on again" of Teamcenter development.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-400 text-center text-sm font-bold leading-6 flex-shrink-0">3</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">Two Parallel Auth Systems</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">REST API auth and IIOP (legacy SOA) auth are separate systems with separate configurations. Migrating between them is a project in itself.</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <span class="inline-block w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-400 text-center text-sm font-bold leading-6 flex-shrink-0">4</span>
+      <div>
+        <p class="font-medium text-slate-900 dark:text-slate-100">No Token Flow for CI/CD</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">There is no headless, token-based authentication flow suitable for CI/CD pipelines. Automation requires either interactive login or fragile session cookie management.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+The CI/CD gap is particularly painful. Modern software development assumes you can authenticate a headless process with a token or service account. Teamcenter's auth model was designed for a world where every user sits at a workstation and types a password. Adapting that to GitHub Actions or Jenkins requires workarounds that nobody wants to maintain.
+
+## The Cross-Vendor Auth Failure Matrix
+
+Every column below represents a billion-dollar software company. Every filled cell represents a problem that has persisted for years.
+
+<div class="not-prose my-8 overflow-x-auto">
+  <table class="w-full text-sm border-collapse">
+    <thead>
+      <tr class="bg-slate-100 dark:bg-slate-800">
+        <th class="text-left px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">Auth Problem</th>
+        <th class="text-center px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-red-700 dark:text-red-400">Autodesk APS</th>
+        <th class="text-center px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-blue-700 dark:text-blue-400">PTC Onshape</th>
+        <th class="text-center px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-purple-700 dark:text-purple-400">Dassault 3DX</th>
+        <th class="text-center px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-teal-700 dark:text-teal-400">Siemens TC</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Multiple auth flows with unclear guidance</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Token refresh race conditions</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Session expiry mid-operation</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Scope/permission confusion</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Undocumented auth requirements</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Deprecated auth still in docs</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Auth failure crashes desktop app</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">No headless/CI-CD auth flow</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Parallel legacy + modern auth systems</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-slate-50 dark:bg-slate-800 text-slate-400">---</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-center bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold">YES</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="not-prose my-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+  <p class="text-sm text-slate-600 dark:text-slate-400">
+    <strong>Reading the matrix:</strong> "YES" means the problem is documented in developer forums, bug reports, or official troubleshooting guides. "---" means we found no evidence of that specific failure mode for that vendor.
+  </p>
+</div>
+
+Look at the first row. Every single vendor has multiple authentication flows with unclear guidance on when to use which. Look at the third row. Every single vendor has sessions that expire mid-operation. These are not coincidences.
+
+## Why This Is Structural, Not Accidental
+
+It is tempting to blame individual engineering teams. But when four independent organizations produce the same bugs, the cause is not incompetence. It is incentive structure.
+
+**Enterprise sales drive SSO complexity.** Large customers demand SAML, OIDC, LDAP, and Active Directory integration. Each integration adds auth flows. Nobody is incentivized to remove old flows once new ones ship.
+
+**Multi-tenancy demands layered auth.** Dassault's five-login problem exists because 3DEXPERIENCE serves partners, customers, support staff, and end users from a single platform. Each audience gets its own auth context. The developer experience is collateral damage.
+
+**Legacy compatibility prevents cleanup.** Siemens cannot kill IIOP auth without breaking every Teamcenter deployment that has not migrated to REST. PTC cannot remove API keys without breaking tutorials that thousands of developers have bookmarked. The deprecated paths stay, and new developers trip over them.
+
+**Auth is nobody's product.** No CAD company has a "Developer Authentication" product manager. Auth is infrastructure --- owned by security teams who optimize for compliance, not for developer experience. The result is systems that pass security audits and fail usability tests.
+
+<div class="not-prose my-8 p-6 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700">
+  <p class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">The uncomfortable truth:</p>
+  <p class="text-slate-700 dark:text-slate-300">These are not bugs. They are the predictable outcome of organizations that sell to CIOs, not to developers. Auth will stay broken until developer experience becomes a line item in enterprise contracts.</p>
+</div>
+
+## What RAPS Does Differently
+
+RAPS cannot fix every vendor's auth. But it can demonstrate what auth *should* feel like by solving it completely for one platform.
+
+```bash
+# What takes 50+ lines of OAuth boilerplate across any platform:
+raps auth login --preset all
+
+# Token status across all flows:
+raps auth status
+
+# Automatic refresh, race condition handling, secure keyring storage
+# All handled by raps-kernel --- the same core used by CLI, MCP server, and cloud
+```
+
+Three commands. Zero boilerplate. Here is what happens under the hood:
+
+<div class="not-prose my-6 overflow-x-auto">
+  <table class="w-full text-sm border-collapse">
+    <thead>
+      <tr class="bg-slate-100 dark:bg-slate-800">
+        <th class="text-left px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">Problem</th>
+        <th class="text-left px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100">Industry Standard</th>
+        <th class="text-left px-4 py-3 border border-slate-200 dark:border-slate-700 font-semibold text-green-700 dark:text-green-400">RAPS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Token acquisition</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Base64 encode creds, POST to vendor endpoint, parse JSON, store result</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-green-700 dark:text-green-400 font-medium">raps auth login</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Token refresh</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Implement expiry checks, handle refresh tokens, manage race conditions manually</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-green-700 dark:text-green-400 font-medium">Automatic (Mutex + Notify pattern)</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Credential storage</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Build secure storage, handle OS keychain differences, encrypt at rest</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-green-700 dark:text-green-400 font-medium">Built-in keyring integration</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Scope selection</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Read docs, guess, test, fail, read forums, try again</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-green-700 dark:text-green-400 font-medium">--preset all (or granular --scopes)</td>
+      </tr>
+      <tr>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">CI/CD integration</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Custom scripts, session hacks, stored cookies</td>
+        <td class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-green-700 dark:text-green-400 font-medium">raps auth login (2-legged, headless)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+This is not a theoretical comparison. Every RAPS auth claim is tested in CI on every release. The same `raps-kernel` auth module powers the CLI, the MCP server, and the cloud service. One implementation, one set of tests, one set of race condition fixes.
+
+## What Comes Next
+
+This is the first post in the **Cross-Platform Pain** series. The auth problem is just the surface. Next, we will look at why no CAD/PLM vendor has shipped a CLI --- and what that absence costs their developer ecosystems.
+
+For a deeper dive into APS authentication specifically, see our standalone [Authentication Chaos](/blog/authentication-chaos-across-cad-platforms) article.
+
+---
+
+*This article is part of the "Cross-Platform Pain" series, documenting the patterns that repeat across every major CAD/PLM vendor and explaining why CLI tooling is the answer.*

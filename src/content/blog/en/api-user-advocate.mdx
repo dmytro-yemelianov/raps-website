@@ -1,0 +1,323 @@
+---
+title: "The API User Advocate: A Role That Doesn't Exist Yet"
+description: "Between the vendor SDK and your production app, there should be a hardened client layer. We call this the API User Advocate."
+pubDate: 2026-03-20
+author: "Dmytro Yemelianov"
+tags: ["api", "developer-experience", "advocacy", "architecture", "aec"]
+series: "The API Advocacy Pattern"
+seriesOrder: 2
+featured: true
+draft: false
+---
+
+Every team that integrates with a vendor API builds the same thing: retry logic, rate limit handling, auth token management, error translation, bulk orchestration. They build it from scratch, every time, because the vendor won't.
+
+There is a name for the missing role that should build this once: **the API User Advocate**.
+
+---
+
+## The Same Problem, Everywhere
+
+You are a developer. You need to integrate with a vendor API. The vendor gives you:
+
+- An SDK that wraps HTTP calls
+- Documentation that describes the happy path
+- A support forum where your questions go unanswered
+
+What the vendor does *not* give you:
+
+- Retry logic for transient failures
+- Graceful handling of rate limits
+- Token refresh that does not race-condition under concurrency
+- Error messages that tell you what to actually fix
+- Bulk operations that do not require N sequential API calls
+- Upload strategies that survive network interruptions
+
+So you build all of it yourself. And so does the next team. And the next.
+
+---
+
+## What the API User Advocate Is Not
+
+<div class="not-prose my-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-6 border border-slate-600">
+    <div class="text-lg font-bold text-white mb-3">Developer Relations</div>
+    <div class="text-slate-300 text-sm">Explains the API. Writes blog posts. Runs workshops. Does not fix the API's operational gaps.</div>
+  </div>
+  <div class="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-6 border border-slate-600">
+    <div class="text-lg font-bold text-white mb-3">Solutions Architect</div>
+    <div class="text-slate-300 text-sm">Designs around the API. Builds integrations. Does not harden the client layer for production use.</div>
+  </div>
+  <div class="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-6 border border-slate-600">
+    <div class="text-lg font-bold text-white mb-3">Support Engineer</div>
+    <div class="text-slate-300 text-sm">Answers tickets. Triages bugs. Does not build reusable tooling that eliminates the tickets.</div>
+  </div>
+</div>
+
+These roles matter. But none of them close the gap between what the vendor ships and what production requires.
+
+---
+
+## What the API User Advocate IS
+
+The API User Advocate is someone who:
+
+- **Builds a hardened client layer** between the vendor API and the developer
+- **Holds dual expertise**: deep knowledge of the vendor's platform AND production software engineering
+- **Translates vendor-centric APIs** into developer-friendly interfaces
+
+The output is not documentation. It is not a demo app. It is infrastructure: a layer that absorbs the API's operational complexity so that every downstream developer does not have to.
+
+---
+
+## The Advocacy Layer
+
+<div class="not-prose my-10">
+  <svg viewBox="0 0 800 520" class="w-full max-w-3xl mx-auto" role="img" aria-label="Three-layer architecture diagram showing the advocacy layer between the developer application and the vendor API">
+    <defs>
+      <linearGradient id="topGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#3b82f6"/>
+        <stop offset="100%" style="stop-color:#1d4ed8"/>
+      </linearGradient>
+      <linearGradient id="midGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#f59e0b"/>
+        <stop offset="100%" style="stop-color:#d97706"/>
+      </linearGradient>
+      <linearGradient id="botGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#64748b"/>
+        <stop offset="100%" style="stop-color:#475569"/>
+      </linearGradient>
+      <filter id="shadow">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3"/>
+      </filter>
+    </defs>
+
+    {/* Top layer: Developer's Application */}
+    <rect x="100" y="20" width="600" height="100" rx="16" fill="url(#topGrad)" filter="url(#shadow)"/>
+    <text x="400" y="62" text-anchor="middle" class="fill-white text-lg font-bold" style="font-size:20px">Your Application</text>
+    <text x="400" y="90" text-anchor="middle" class="fill-blue-200" style="font-size:14px">Business logic, UI, workflows</text>
+
+    {/* Arrow down */}
+    <line x1="400" y1="120" x2="400" y2="160" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,4"/>
+    <polygon points="392,155 400,168 408,155" fill="#94a3b8"/>
+
+    {/* Middle layer: Advocacy Layer */}
+    <rect x="50" y="170" width="700" height="200" rx="16" fill="url(#midGrad)" filter="url(#shadow)"/>
+    <text x="400" y="205" text-anchor="middle" class="fill-white font-bold" style="font-size:20px">Advocacy Layer</text>
+
+    {/* Sub-boxes inside advocacy layer */}
+    <rect x="80" y="220" width="190" height="60" rx="8" fill="#ffffff20" stroke="#ffffff40" stroke-width="1"/>
+    <text x="175" y="246" text-anchor="middle" class="fill-white" style="font-size:12px">Retry Logic</text>
+    <text x="175" y="264" text-anchor="middle" class="fill-yellow-200" style="font-size:11px">Exponential backoff</text>
+
+    <rect x="290" y="220" width="190" height="60" rx="8" fill="#ffffff20" stroke="#ffffff40" stroke-width="1"/>
+    <text x="385" y="246" text-anchor="middle" class="fill-white" style="font-size:12px">Rate Limit Handling</text>
+    <text x="385" y="264" text-anchor="middle" class="fill-yellow-200" style="font-size:11px">Quota tracking, queuing</text>
+
+    <rect x="500" y="220" width="220" height="60" rx="8" fill="#ffffff20" stroke="#ffffff40" stroke-width="1"/>
+    <text x="610" y="246" text-anchor="middle" class="fill-white" style="font-size:12px">Auth Management</text>
+    <text x="610" y="264" text-anchor="middle" class="fill-yellow-200" style="font-size:11px">Token refresh, race prevention</text>
+
+    <rect x="80" y="295" width="190" height="60" rx="8" fill="#ffffff20" stroke="#ffffff40" stroke-width="1"/>
+    <text x="175" y="321" text-anchor="middle" class="fill-white" style="font-size:12px">Failure Classification</text>
+    <text x="175" y="339" text-anchor="middle" class="fill-yellow-200" style="font-size:11px">Actionable error codes</text>
+
+    <rect x="290" y="295" width="190" height="60" rx="8" fill="#ffffff20" stroke="#ffffff40" stroke-width="1"/>
+    <text x="385" y="321" text-anchor="middle" class="fill-white" style="font-size:12px">Bulk Orchestration</text>
+    <text x="385" y="339" text-anchor="middle" class="fill-yellow-200" style="font-size:11px">Concurrency, progress</text>
+
+    <rect x="500" y="295" width="220" height="60" rx="8" fill="#ffffff20" stroke="#ffffff40" stroke-width="1"/>
+    <text x="610" y="321" text-anchor="middle" class="fill-white" style="font-size:12px">Error Translation</text>
+    <text x="610" y="339" text-anchor="middle" class="fill-yellow-200" style="font-size:11px">Vendor codes to human messages</text>
+
+    {/* Arrow down */}
+    <line x1="400" y1="370" x2="400" y2="410" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,4"/>
+    <polygon points="392,405 400,418 408,405" fill="#94a3b8"/>
+
+    {/* Bottom layer: Vendor API */}
+    <rect x="100" y="420" width="600" height="80" rx="16" fill="url(#botGrad)" filter="url(#shadow)"/>
+    <text x="400" y="457" text-anchor="middle" class="fill-white font-bold" style="font-size:20px">Vendor&#39;s Raw API</text>
+    <text x="400" y="480" text-anchor="middle" class="fill-slate-300" style="font-size:14px">HTTP endpoints, SDK, documentation</text>
+  </svg>
+</div>
+
+Without the advocacy layer, every developer team builds ad-hoc solutions for the same problems. With it, the hard problems are solved once.
+
+---
+
+## What the Advocacy Layer Handles
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl border border-slate-700 overflow-hidden">
+    <div class="grid grid-cols-3 bg-slate-800 border-b border-slate-700">
+      <div class="p-4 font-bold text-white text-sm">Problem</div>
+      <div class="p-4 font-bold text-red-400 text-sm">Vendor&#39;s API</div>
+      <div class="p-4 font-bold text-emerald-400 text-sm">Advocacy Layer</div>
+    </div>
+
+    <div class="grid grid-cols-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+      <div class="p-4 text-slate-200 text-sm font-medium">Auth token expires mid-operation</div>
+      <div class="p-4 text-sm">
+        <span class="text-red-400">401 error, operation fails</span>
+      </div>
+      <div class="p-4 text-sm">
+        <span class="text-emerald-400">Auto-refresh, race condition prevention</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+      <div class="p-4 text-slate-200 text-sm font-medium">Rate limit hit</div>
+      <div class="p-4 text-sm">
+        <span class="text-red-400">429 with unclear retry-after</span>
+      </div>
+      <div class="p-4 text-sm">
+        <span class="text-emerald-400">Intelligent backoff, request queuing</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+      <div class="p-4 text-slate-200 text-sm font-medium">Bulk operation needed</div>
+      <div class="p-4 text-sm">
+        <span class="text-red-400">N individual API calls</span>
+      </div>
+      <div class="p-4 text-sm">
+        <span class="text-emerald-400">Concurrent workers with progress tracking</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+      <div class="p-4 text-slate-200 text-sm font-medium">Cryptic error response</div>
+      <div class="p-4 text-sm">
+        <span class="text-red-400">Internal error code, no context</span>
+      </div>
+      <div class="p-4 text-sm">
+        <span class="text-emerald-400">Failure classification, actionable message</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+      <div class="p-4 text-slate-200 text-sm font-medium">Large file upload</div>
+      <div class="p-4 text-sm">
+        <span class="text-red-400">Single POST, fails over 100 MB</span>
+      </div>
+      <div class="p-4 text-sm">
+        <span class="text-emerald-400">Chunked upload, resumable, retry per chunk</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 hover:bg-slate-800/50 transition-colors">
+      <div class="p-4 text-slate-200 text-sm font-medium">API version changes</div>
+      <div class="p-4 text-sm">
+        <span class="text-red-400">Breaking change, no migration path</span>
+      </div>
+      <div class="p-4 text-sm">
+        <span class="text-emerald-400">Abstraction layer absorbs changes</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+Every row in that table represents weeks of engineering time. Multiply by the number of teams integrating with the same vendor. That is the cost of the missing advocate.
+
+---
+
+## Why This Role Barely Exists
+
+The API User Advocate requires a rare combination of skills:
+
+**1. Dual expertise is uncommon.** You need someone who understands the vendor's platform deeply -- its quirks, its undocumented behaviors, its operational limits -- AND who can write production-grade infrastructure code. Domain experts rarely write systems code. Systems engineers rarely have domain depth.
+
+**2. Vendors do not fund it.** Vendor engineering teams optimize for their own operations: uptime, throughput, feature launches. The developer's experience of consuming the API is a secondary concern, addressed by documentation and DevRel, not by code.
+
+**3. Consultancies do not build it.** System integrators bill for custom work. Building a reusable client layer that eliminates future billable hours is not in their interest.
+
+**4. Open source does not sustain it.** API-specific tooling has a narrow audience. A Rust library for retrying Autodesk API calls will never achieve the star count needed to attract sustained open source contribution. The economics do not work.
+
+**5. The gap persists.** And so every team, in every company, in every industry, builds the same retry logic, the same token refresh, the same error handling -- from scratch.
+
+<div class="not-prose my-8 bg-gradient-to-r from-amber-900/30 to-slate-900/30 rounded-2xl p-8 border border-amber-700/40">
+  <blockquote class="text-xl text-white italic border-l-4 border-amber-500 pl-4">
+    "The best code is the code you do not have to write. The second best is code someone wrote once, correctly, so you never have to think about it again."
+  </blockquote>
+  <div class="text-sm text-slate-400 mt-4">That is what the advocacy layer provides.</div>
+</div>
+
+---
+
+## RAPS as Proof of Concept
+
+We built this. Not as a thought experiment -- as a shipping product.
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div class="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">1</div>
+    <div class="text-amber-200 text-sm mt-1">Advocacy Core (raps-kernel)</div>
+  </div>
+  <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">11</div>
+    <div class="text-blue-200 text-sm mt-1">Consuming Components</div>
+  </div>
+  <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">230+</div>
+    <div class="text-emerald-200 text-sm mt-1">CLI Commands</div>
+  </div>
+  <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">114</div>
+    <div class="text-purple-200 text-sm mt-1">MCP Tools</div>
+  </div>
+</div>
+
+The architecture maps directly to the advocacy pattern:
+
+- **raps-kernel** is the advocacy core. It handles auth (2-legged, 3-legged, token caching, automatic refresh), HTTP (retry with exponential backoff, rate limit tracking, circuit breaker), and error classification (structured exit codes that distinguish auth failures from permission errors from network problems).
+
+- **11 components consume it** -- the CLI, cloud functions, Python bindings, 7 API-specific crates, and the admin module. None of them implement retry logic. None of them manage tokens. None of them handle rate limits. The kernel does.
+
+- **230+ CLI commands and 114 MCP tools** are built on top of this layer. Every one of them inherits the same production-grade HTTP behavior without a single line of retry code.
+
+The pattern works. And it is repeatable.
+
+---
+
+## Beyond AEC: The Pattern Repeats
+
+This is not an AEC problem. It is a vendor API problem. Everywhere you look, the same gap exists:
+
+<div class="not-prose my-8">
+  <div class="space-y-4">
+    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-700 hover:border-slate-500 transition-colors">
+      <div class="font-bold text-white mb-1">Shopify API</div>
+      <div class="text-slate-300 text-sm">Rate limit hell across REST and GraphQL. Webhook delivery that silently fails. Bulk operations that require polling and lack progress feedback.</div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-700 hover:border-slate-500 transition-colors">
+      <div class="font-bold text-white mb-1">Amazon SP-API</div>
+      <div class="text-slate-300 text-sm">Auth that requires rotating refresh tokens across multiple marketplaces. Report generation that needs polling loops with unpredictable wait times. Throttling that varies by endpoint with no unified strategy.</div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-700 hover:border-slate-500 transition-colors">
+      <div class="font-bold text-white mb-1">Shopee Open Platform</div>
+      <div class="text-slate-300 text-sm">Opaque error codes with no documentation. Undocumented rate limits that change without notice. Token management across shops that requires careful state coordination.</div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-700 hover:border-slate-500 transition-colors">
+      <div class="font-bold text-white mb-1">Stripe</div>
+      <div class="text-slate-300 text-sm">Even the "good" APIs benefit from an advocacy layer: idempotency key management, webhook signature verification, automatic retry with backoff, and event deduplication.</div>
+    </div>
+  </div>
+</div>
+
+Every vendor API with enough complexity eventually needs an advocate. The question is whether each consuming team builds that advocacy layer independently -- or whether someone builds it once.
+
+---
+
+## What Comes Next
+
+This post names the pattern. The next post in this series shows how we built it: **"How We Built a 230-Command Advocacy Layer in Rust"** -- covering the architecture of raps-kernel, the design decisions behind structured exit codes, and why Rust's type system makes the advocacy pattern both safer and faster than the alternatives.
+
+<div class="not-prose my-8 bg-gradient-to-r from-blue-900/40 to-slate-900/40 rounded-2xl p-8 border border-blue-700/40">
+  <div class="text-lg font-bold text-white mb-2">The API Advocacy Pattern -- Series</div>
+  <div class="text-slate-300 text-sm space-y-2">
+    <div>Part 1: The evidence (forum data, pain points, real-world failures)</div>
+    <div class="text-amber-400 font-medium">Part 2: The API User Advocate -- naming the pattern (you are here)</div>
+    <div>Part 3: How we built a 230-command advocacy layer in Rust</div>
+    <div>Part 4: Measuring the impact -- before and after metrics</div>
+  </div>
+</div>

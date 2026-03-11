@@ -1,0 +1,181 @@
+---
+title: "114 MCP Tools: What AI-Assisted AEC Engineering Looks Like Today"
+description: "RAPS exposes 114 MCP tools across 16 Autodesk APIs. No other CAD/PLM vendor has anything like it. Here's what it enables."
+pubDate: 2026-03-30
+author: "Dmytro Yemelianov"
+tags: ["mcp", "ai", "claude", "automation", "aec", "devcon"]
+featured: true
+draft: false
+---
+
+Ask an AI assistant to "add a user to all my ACC projects."
+
+With ChatGPT or Copilot, it will generate boilerplate code. You will spend hours debugging authentication flows, pagination logic, and undocumented API quirks. The assistant will hallucinate endpoints. You will fix them. It will forget your project IDs. You will paste them again.
+
+With Claude + RAPS MCP tools, it actually does it. Right now. One sentence in, users added, confirmation returned. No code generated. No code debugged. The AI calls the tools directly because RAPS exposes **114 tools** that AI assistants can invoke as native operations.
+
+This post is about what those 114 tools are, what they enable, and why no one else in CAD/PLM has anything remotely close.
+
+## What MCP Is
+
+Model Context Protocol is an open standard for connecting AI assistants to external tools. Think of it as function calling, but standardized -- any MCP-compatible assistant (Claude Desktop, Cursor, Claude Code, and others) can discover and use MCP tools without custom integration code.
+
+The protocol works in three steps:
+
+1. An MCP server starts and declares its available tools
+2. An AI assistant connects and reads the tool catalog
+3. When a conversation requires live data or real actions, the assistant calls the appropriate tool
+
+RAPS is the only production MCP server for any CAD/PLM platform. Full documentation is at [/docs/mcp-server](/docs/mcp-server). The MCP specification itself lives at [modelcontextprotocol.io](https://modelcontextprotocol.io).
+
+## The 114 Tools
+
+Every tool maps to a real APS API operation. They are organized into 16 domains:
+
+<div class="overflow-x-auto">
+
+| Domain | Tools | Examples |
+|--------|:-----:|---------|
+| **Authentication** | 4 | login, logout, status, test |
+| **Object Storage (OSS)** | 8 | upload, download, list, delete, copy, signed URL, info, URN |
+| **Buckets** | 4 | create, list, get, delete |
+| **Data Management** | 10 | hub list/info, project list/info, folder contents/create, item info/versions/create/rename |
+| **Model Derivative** | 3 | translate start, translate status, formats |
+| **Design Automation** | 5 | engines, appbundles, activities, workitem create, workitem status |
+| **ACC Issues** | 6 | list, get, create, update, comment add, comment delete |
+| **ACC RFIs** | 4 | list, get, create, update |
+| **ACC Assets** | 4 | list, get, create, update (delete) |
+| **ACC Submittals** | 3 | list, create, update |
+| **ACC Checklists** | 3 | list, create (from template), update |
+| **Account Admin** | 8 | user add/remove/update role, project list/create/update/archive, folder permissions |
+| **Webhooks** | 6 | create, list, get, update, delete, events |
+| **Reality Capture** | 6 | create, process, status, result, delete, formats |
+| **Workflows** | 6 | batch translate, compare versions, setup project, prepare for viewing, analyze model |
+| **Reports and Utilities** | varies | issues summary, RFI summary, API request, skill info, pipeline ops |
+
+</div>
+
+That is 114 tools, each with typed parameters, validation, rate-limit awareness, and error handling inherited from the same raps-kernel that powers the CLI.
+
+## What This Enables
+
+The best way to understand the impact is to see real conversations.
+
+### Example 1 -- Project Setup
+
+> **You:** Set up a new project called "Hospital Wing C", add the structural team, and create the standard folder structure.
+
+The AI calls `project_create`, then `project_user_add` five times (one per team member), then `folder_create` eight times for the standard directory tree. Total wall time: under 30 seconds. Manual equivalent: 15-20 minutes of clicking through the ACC admin UI.
+
+### Example 2 -- Issue Triage
+
+> **You:** Show me all critical issues in the Hospital project that are overdue.
+
+The AI calls `issue_list` with status and priority filters, formats the results into a table with assignees and due dates. No Postman. No GraphQL playground. No token management.
+
+### Example 3 -- Translation Pipeline
+
+> **You:** Upload this Revit file, translate it to SVF2, and tell me when it's ready.
+
+The AI calls `object_upload` to push the file to OSS, `translate_start` to kick off the Model Derivative job, then polls `translate_status` until the job completes. You get a progress update in plain language.
+
+### Example 4 -- Bulk Admin
+
+> **You:** Remove Sarah from all projects -- she is moving to a different division.
+
+The AI calls `admin_user_remove` with the account ID and Sarah's email. One sentence, one operation, applied across every project in the account. The alternative is navigating to each project individually in the web UI.
+
+### Example 5 -- Quality Check
+
+> **You:** List all open checklists for the Hospital project and summarize which ones are behind schedule.
+
+The AI calls `acc_checklists_list`, filters for open items, and presents a summary with completion percentages and overdue flags.
+
+## The Competitive Landscape
+
+Here is every known MCP integration for CAD/PLM platforms as of March 2026:
+
+| Vendor | MCP Server | Tools | Status |
+|--------|-----------|:-----:|--------|
+| **Autodesk** (official) | None | 0 | No public plans |
+| **Petr Broz** (community) | aps-mcp-server | ~15 | Basic, read-only, experimental |
+| **RAPS** | raps mcp | **114** | Production, hosted at mcp.rapscli.xyz, paid tiers |
+| **PTC Onshape** | None | 0 | -- |
+| **Dassault 3DEXPERIENCE** | None | 0 | -- |
+| **Siemens Teamcenter** | None | 0 | -- |
+| **Trimble** | None | 0 | -- |
+
+RAPS is the only production MCP integration for any CAD or PLM platform. By an order of magnitude in tool count against the nearest community alternative.
+
+## Architecture
+
+Starting the MCP server takes one command:
+
+```bash
+# Local mode — connects to your local raps installation
+raps mcp serve
+
+# Or use the hosted version
+# Configure mcp.rapscli.xyz in Claude Desktop, Cursor, or any MCP client
+```
+
+Claude Desktop configuration:
+
+```json
+&#123;
+  "mcpServers": &#123;
+    "raps": &#123;
+      "command": "raps",
+      "args": ["mcp"],
+      "env": &#123;
+        "APS_CLIENT_ID": "your_client_id",
+        "APS_CLIENT_SECRET": "your_client_secret"
+      &#125;
+    &#125;
+  &#125;
+&#125;
+```
+
+Under the hood:
+
+- **Built on rmcp 1.1** -- the Rust MCP library, compiled into the same binary as the CLI
+- **Same raps-kernel core** as the CLI -- identical auth, rate limiting, retry logic, and error handling
+- **20 concurrent operations max** -- tuned to respect APS rate limits without tripping 429s
+- **Sensitive data scrubbed** from all responses -- no tokens, secrets, or credentials leak to the AI
+- **Clients cached for performance** -- created on-demand for specialized APIs, reused across tool calls
+
+The MCP server is not a wrapper around the CLI. It shares the same Rust kernel. Every improvement to the CLI automatically improves the MCP tools, and vice versa.
+
+## Why This Matters for AEC
+
+AEC professionals are not developers. They should not need to be.
+
+The traditional path to APS automation requires learning OAuth 2.0, understanding REST API conventions, managing pagination, handling rate limits, and debugging opaque error codes. That path is a filter -- it excludes the vast majority of people who would benefit from automation.
+
+MCP tools change the economics. A project manager who can describe what they need in plain language now has access to the same automation that previously required a developer. The AI handles the API complexity. The professional handles the engineering decisions.
+
+This is not about replacing developers. Developers will still build production pipelines, CI/CD workflows, and custom integrations. But the 80% of APS interactions that are ad hoc -- checking status, pulling reports, onboarding users, triaging issues -- those can now happen through conversation.
+
+The convergence point is clear: AI assistants + domain-specific tools + production reliability = accessible automation. RAPS is where those three meet for AEC.
+
+## DevCon 2026 Session
+
+This topic is the centerpiece of our DevCon Virtual session:
+
+> **AI Pair-Assistant for APS Operators** -- 30-minute deep dive demonstrating real workflows with Claude + RAPS MCP tools. Live operations against a production ACC account. No slides, no mock data.
+
+Read the full session preview at [/blog/devcon-2026-ai-pair-assistant](/blog/devcon-2026-ai-pair-assistant).
+
+## Try It
+
+```bash
+# Install RAPS
+curl -fsSL https://rapscli.xyz/install.sh | bash
+
+# Start the MCP server
+raps mcp serve
+```
+
+Documentation: [/docs/mcp-server](/docs/mcp-server)
+
+Next post in the pipeline: **"From CLI to SaaS: How a Rust Monorepo Scales to Cloud"** -- the architecture that makes 114 tools possible from a single binary.

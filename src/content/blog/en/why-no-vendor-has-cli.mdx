@@ -1,0 +1,224 @@
+---
+title: "Why No CAD/PLM Vendor Has a CLI — And What That Tells You"
+description: "Autodesk archived theirs. PTC, Dassault, Siemens never built one. Zero CLI tools across $200B+ of market cap. The absence is the signal."
+pubDate: 2026-03-16
+author: "Dmytro Yemelianov"
+tags: ["cli", "developer-experience", "cross-platform", "cad", "aec"]
+series: "Cross-Platform Pain"
+seriesOrder: 2
+featured: false
+draft: false
+---
+
+**TL;DR:** $200 billion in combined market cap. Four of the largest engineering software companies on Earth. Not one of them ships a CLI for their platform APIs. This is not an oversight. It is a tell.
+
+---
+
+## The Landscape: Four Giants, Zero CLIs
+
+Every major platform outside of engineering software has a CLI. AWS has `aws`. Azure has `az`. Google Cloud has `gcloud`. GitHub has `gh`. Vercel, Netlify, Fly, Railway -- they all ship CLIs on day one, because they understand that developers automate things.
+
+Now look at the engineering software industry: Autodesk, PTC, Dassault, Siemens. Combined market capitalization north of $200 billion. REST APIs across the board. And not a single maintained CLI tool between them.
+
+<div class="not-prose my-10">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-slate-900 rounded-xl p-6 text-center border border-slate-700">
+      <div class="text-2xl font-black text-white mb-2">Autodesk</div>
+      <div class="text-sm text-slate-400 mb-3">$66B market cap</div>
+      <div class="text-3xl font-black text-red-500">ARCHIVED</div>
+      <div class="text-xs text-slate-500 mt-2">forge-cli, abandoned</div>
+    </div>
+    <div class="bg-slate-900 rounded-xl p-6 text-center border border-slate-700">
+      <div class="text-2xl font-black text-white mb-2">PTC</div>
+      <div class="text-sm text-slate-400 mb-3">$20B market cap</div>
+      <div class="text-3xl font-black text-red-500">NEVER BUILT</div>
+      <div class="text-xs text-slate-500 mt-2">REST API, no tooling</div>
+    </div>
+    <div class="bg-slate-900 rounded-xl p-6 text-center border border-slate-700">
+      <div class="text-2xl font-black text-white mb-2">Dassault</div>
+      <div class="text-sm text-slate-400 mb-3">$55B market cap</div>
+      <div class="text-3xl font-black text-red-500">NEVER BUILT</div>
+      <div class="text-xs text-slate-500 mt-2">"API Framework" only</div>
+    </div>
+    <div class="bg-slate-900 rounded-xl p-6 text-center border border-slate-700">
+      <div class="text-2xl font-black text-white mb-2">Siemens</div>
+      <div class="text-sm text-slate-400 mb-3">$150B+ conglomerate</div>
+      <div class="text-3xl font-black text-red-500">NEVER BUILT</div>
+      <div class="text-xs text-slate-500 mt-2">SOA/REST, GUI only</div>
+    </div>
+  </div>
+</div>
+
+Let that sink in. Every one of these companies has a REST API. Every one of them has a developer program. Not one of them ships a CLI.
+
+---
+
+## The Evidence, Vendor by Vendor
+
+### Autodesk: Built One, Then Killed It
+
+Autodesk is the most interesting case because they actually tried. `forge-cli` existed. It could scaffold projects and manage some API interactions. Then Autodesk rebranded Forge to APS (Autodesk Platform Services), and `forge-cli` was quietly archived. Last commit: years ago. README: "archived."
+
+The community tried to fill the gap. `aps-cli` prototypes appeared on GitHub. They were abandoned too. Without official backing, maintaining a CLI against a moving API surface is a losing proposition.
+
+And here is the number that should haunt every developer advocate at Autodesk: **4,078 apps on the Autodesk App Store. Zero CLI tools. Zero auth helpers. Zero MCP integrations.** We documented this in our [ACC forum analysis](/blog/acc-forum-analysis). The App Store is a graveyard of GUI plugins. Developer tooling simply does not exist in their ecosystem.
+
+### PTC Onshape: The API Without Automation
+
+Onshape has one of the more developer-friendly REST APIs in the CAD world. Full OpenAPI spec. Decent documentation. And absolutely no CLI.
+
+Developer forum requests for automation tooling go unanswered. Community Python scripts are scattered across GitHub repositories -- unmaintained, version-pinned to specific API revisions, and breaking regularly. PTC has the foundation for great developer tooling and has built none of it.
+
+### Dassault 3DEXPERIENCE: The Platform That Forgot Developers
+
+Dassault's 3DEXPERIENCE platform is web-first, which should theoretically make it more API-friendly. In practice, the "API Framework" documentation reads like an afterthought. The developer community is fractured across SOLIDWORKS, CATIA, and ENOVIA ecosystems, each with its own authentication model, its own API surface, and its own set of frustrations.
+
+A CLI that could unify these? Never considered. The mental model at Dassault is that users interact through a browser. Full stop.
+
+### Siemens Teamcenter: Java Clients or Nothing
+
+Teamcenter exposes SOA services and, more recently, REST APIs. But automation requires building custom Java or C++ SOA clients. Even basic operations -- creating a folder, uploading a file, checking user permissions -- require either a GUI or a thick client.
+
+The barrier to entry for any kind of scripting is enormous. You do not "quickly automate" anything in the Teamcenter ecosystem.
+
+---
+
+## Why This Matters: A CLI Is a Statement of Values
+
+A CLI is not just a developer tool. It is a declaration of how a company views its developer community.
+
+<div class="not-prose my-10">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-green-900/30 rounded-xl p-6 border border-green-700">
+      <div class="text-lg font-bold text-green-400 mb-4">Shipping a CLI means:</div>
+      <ul class="space-y-3 text-green-200 text-sm">
+        <li class="flex items-start gap-2"><span class="text-green-500 font-bold mt-0.5">+</span> You treat developers as first-class users</li>
+        <li class="flex items-start gap-2"><span class="text-green-500 font-bold mt-0.5">+</span> You believe in automation and scriptability</li>
+        <li class="flex items-start gap-2"><span class="text-green-500 font-bold mt-0.5">+</span> You invest in CI/CD, DevOps, and reproducible workflows</li>
+        <li class="flex items-start gap-2"><span class="text-green-500 font-bold mt-0.5">+</span> You see your API as a product, not a checkbox</li>
+        <li class="flex items-start gap-2"><span class="text-green-500 font-bold mt-0.5">+</span> You enable power users to compose, automate, and extend</li>
+      </ul>
+    </div>
+    <div class="bg-red-900/30 rounded-xl p-6 border border-red-700">
+      <div class="text-lg font-bold text-red-400 mb-4">No CLI means:</div>
+      <ul class="space-y-3 text-red-200 text-sm">
+        <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">-</span> APIs are an afterthought, not a product</li>
+        <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">-</span> You expect users to click, not code</li>
+        <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">-</span> Automation is someone else's problem</li>
+        <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">-</span> Scripting, testing, and CI/CD are unsupported use cases</li>
+        <li class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">-</span> Your developer ecosystem cannot grow</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+The absence reveals the vendor's mental model. Their users click. They do not code. And if they do code, they are on their own.
+
+---
+
+## The Deeper Signal: No CLI Means No Ecosystem
+
+Here is where the absence gets expensive. A CLI is not just convenient -- it is **foundational infrastructure** for everything else developers want to build.
+
+**CLIs enable:**
+- **CI/CD pipelines** -- upload a model, trigger translation, validate output, all in a GitHub Action
+- **Scripting and batch operations** -- rename 500 files, update permissions across 30 projects, export all RFIs
+- **Testing** -- automated integration tests against live APIs
+- **AI integration** -- MCP servers, LLM tool-calling, agent workflows
+- **Composability** -- pipe output from one command to the next, build workflows from primitives
+
+**Without a CLI, developers build throwaway scripts.** They `curl` endpoints by hand. They hardcode tokens. They write Python wrappers that break on every API change. There is no foundation to build on.
+
+The App Store gap we documented -- 4,078 apps and zero developer tools -- is not a coincidence. It is a **direct consequence** of the missing CLI. You cannot build developer tooling on a platform that does not treat developers as users. The ecosystem never forms because the foundation was never laid.
+
+<div class="not-prose my-10 bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+  <div class="text-center mb-6">
+    <div class="text-xl font-bold text-white">The Cascade of Missing Infrastructure</div>
+  </div>
+  <div class="flex flex-col items-center gap-2 text-sm">
+    <div class="bg-red-900/50 text-red-300 px-4 py-2 rounded-lg border border-red-700 w-full max-w-md text-center">No CLI shipped by vendor</div>
+    <div class="text-slate-500">&#8595;</div>
+    <div class="bg-red-900/40 text-red-300 px-4 py-2 rounded-lg border border-red-700 w-full max-w-md text-center">No scriptable interface for APIs</div>
+    <div class="text-slate-500">&#8595;</div>
+    <div class="bg-red-900/30 text-red-300 px-4 py-2 rounded-lg border border-red-700 w-full max-w-md text-center">No CI/CD integration possible</div>
+    <div class="text-slate-500">&#8595;</div>
+    <div class="bg-red-900/20 text-red-300 px-4 py-2 rounded-lg border border-red-700 w-full max-w-md text-center">No developer tools in App Store</div>
+    <div class="text-slate-500">&#8595;</div>
+    <div class="bg-red-900/10 text-red-300 px-4 py-2 rounded-lg border border-red-700 w-full max-w-md text-center">No ecosystem growth -- developers leave</div>
+  </div>
+</div>
+
+---
+
+## What RAPS Built
+
+RAPS exists because this gap is unacceptable. The CLI that Autodesk archived covered a handful of scaffolding commands. RAPS replaced it with 50x the scope.
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+  <div class="bg-blue-900/30 rounded-xl p-5 border border-blue-700 text-center">
+    <div class="text-3xl font-black text-blue-400">230+</div>
+    <div class="text-blue-200 text-sm mt-1">Commands</div>
+  </div>
+  <div class="bg-blue-900/30 rounded-xl p-5 border border-blue-700 text-center">
+    <div class="text-3xl font-black text-blue-400">16</div>
+    <div class="text-blue-200 text-sm mt-1">API Surfaces</div>
+  </div>
+  <div class="bg-blue-900/30 rounded-xl p-5 border border-blue-700 text-center">
+    <div class="text-3xl font-black text-blue-400">4</div>
+    <div class="text-blue-200 text-sm mt-1">Shell Completions</div>
+  </div>
+  <div class="bg-blue-900/30 rounded-xl p-5 border border-blue-700 text-center">
+    <div class="text-3xl font-black text-blue-400">YAML</div>
+    <div class="text-blue-200 text-sm mt-1">Pipeline System</div>
+  </div>
+  <div class="bg-blue-900/30 rounded-xl p-5 border border-blue-700 text-center">
+    <div class="text-3xl font-black text-blue-400">3</div>
+    <div class="text-blue-200 text-sm mt-1">Output Formats</div>
+  </div>
+  <div class="bg-blue-900/30 rounded-xl p-5 border border-blue-700 text-center">
+    <div class="text-3xl font-black text-blue-400">MCP</div>
+    <div class="text-blue-200 text-sm mt-1">AI Integration</div>
+  </div>
+</div>
+
+What every vendor should ship but none do:
+
+```bash
+# List your hubs
+raps hub list
+
+# List projects
+raps project list --hub-id "b.account-id"
+
+# Pipe folder contents through jq
+raps folder contents "project-id" "folder-id" --format json | jq '.data[].attributes.name'
+
+# Manage users from the command line
+raps admin user add "$ACCOUNT" "user@company.com" --role project_admin
+
+# Trigger model translation
+raps translate start "urn:..." --output svf2
+
+# Chain multi-step workflows in a single YAML file
+raps pipeline run upload-translate.yaml
+```
+
+Shell completions for bash, zsh, fish, and PowerShell. JSON, table, and CSV output for scripting. A pipeline system for multi-step workflows that would take hours of clicking through web UIs.
+
+This is not revolutionary technology. It is table stakes. Every other developer platform figured this out a decade ago. The CAD/PLM industry simply never bothered.
+
+---
+
+## The Absence Is the Signal
+
+When four companies worth a combined $200 billion all make the same decision -- no CLI, no developer tooling, no scriptable interface -- it tells you something about the industry's relationship with developers.
+
+They do not see developers as their users. They see developers as a necessary inconvenience: people who need API access occasionally, who can figure it out themselves, and who do not warrant the investment of a maintained CLI.
+
+That mental model is why the AEC tech ecosystem is a decade behind cloud infrastructure, why CI/CD for construction data is essentially nonexistent, and why the Autodesk App Store has 4,078 apps and zero developer tools.
+
+The gap is the signal. And RAPS is the response.
+
+---
+
+**Next in series:** [4,078 Apps and Zero Developer Tools](/blog/acc-forum-analysis) -- The App Store gap is even worse than the CLI gap.

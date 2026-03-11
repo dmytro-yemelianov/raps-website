@@ -1,0 +1,242 @@
+---
+title: "BIM 360 to ACC: The Migration Nobody Planned For"
+description: "Autodesk forced the BIM 360 to ACC migration with no bulk tooling. Thousands of teams were left to figure it out alone."
+pubDate: 2026-03-24
+author: "Dmytro Yemelianov"
+tags: ["acc", "bim360", "migration", "autodesk", "enterprise", "aec"]
+series: "Enterprise Scale"
+seriesOrder: 1
+featured: false
+draft: false
+---
+
+In 2023, Autodesk announced the mandatory migration from BIM 360 to Autodesk Construction Cloud. No bulk migration tooling. No permission transfer utility. No project-level export. Thousands of companies -- some with hundreds of active projects -- were told to migrate. Manually.
+
+This is the story of what that actually means for the people on the ground.
+
+---
+
+## The Scale of the Problem
+
+BIM 360 was the construction industry's default cloud platform for years. Document management, issue tracking, RFIs, submittals, model coordination -- it all lived in BIM 360. Entire enterprises built their workflows around it.
+
+Then Autodesk replaced it with ACC: a different architecture, different APIs, a different permission model. And they made migration mandatory. BIM 360 features were deprecated on a rolling basis. There was no "stay where you are" option.
+
+For a small firm with five projects, this was an inconvenience. For an enterprise customer with hundreds or thousands of projects, each containing users, permissions, folder structures, documents, issues, and RFIs -- this was a crisis.
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+  <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">1000+</div>
+    <div class="text-red-200 text-sm mt-1">Projects (large enterprises)</div>
+  </div>
+  <div class="bg-gradient-to-br from-orange-600 to-orange-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">200+</div>
+    <div class="text-orange-200 text-sm mt-1">Users per project</div>
+  </div>
+  <div class="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+    <div class="text-4xl font-black text-white">100+</div>
+    <div class="text-amber-200 text-sm mt-1">Folder structures each</div>
+  </div>
+</div>
+
+No official bulk migration path was provided.
+
+---
+
+## What Autodesk Provided
+
+Autodesk shipped a web UI that migrates one project at a time. Their documentation recommended contacting support for large migrations. That was it.
+
+Under the hood, the Admin API technically supports both platforms -- but with different endpoints, different authentication flows, and different data models. The HQ v1 API (BIM 360) and the Construction Admin v1 API (ACC) use different field names for the same concepts. Even the account ID format changed: BIM 360 used a plain UUID, ACC wraps it in a `b.` prefix with base64 encoding.
+
+<div class="not-prose my-8 bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-2xl p-6 border border-slate-700">
+  <h3 class="text-lg font-bold text-white mb-4">Two Platforms, Two APIs, Same Data</h3>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600">
+      <div class="text-sm font-mono text-blue-400 mb-2">BIM 360 HQ v1</div>
+      <code class="text-xs text-slate-300 block">GET /hq/v1/accounts/&#123;account_id&#125;/projects</code>
+      <code class="text-xs text-slate-300 block mt-1">POST /hq/v1/accounts/&#123;account_id&#125;/projects/&#123;id&#125;/users</code>
+      <div class="text-xs text-slate-500 mt-2">Field: "access_level"</div>
+    </div>
+    <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600">
+      <div class="text-sm font-mono text-emerald-400 mb-2">ACC Construction Admin v1</div>
+      <code class="text-xs text-slate-300 block">GET /construction/admin/v1/projects</code>
+      <code class="text-xs text-slate-300 block mt-1">POST /construction/admin/v1/projects/&#123;id&#125;/users</code>
+      <div class="text-xs text-slate-500 mt-2">Field: "role" (different values)</div>
+    </div>
+  </div>
+</div>
+
+For any team that had built internal tooling, scripts, or integrations against BIM 360 -- every single one broke on migration day.
+
+---
+
+## What Actually Breaks in Migration
+
+This is where the reality sets in. Migration is not just "move files from A to B." It is a cascade of incompatibilities across every layer of the platform.
+
+<div class="not-prose my-8 space-y-4">
+  <div class="bg-red-900/20 rounded-xl p-6 border border-red-700/30">
+    <h4 class="text-lg font-bold text-red-400 mb-2">User Roles</h4>
+    <p class="text-slate-300 text-sm">BIM 360 roles do not map 1:1 to ACC roles. "Project Admin" in BIM 360 becomes a different set of capabilities in ACC. Custom roles are lost entirely. Teams discover permission gaps weeks after migration when someone can no longer access a folder they need.</p>
+  </div>
+  <div class="bg-orange-900/20 rounded-xl p-6 border border-orange-700/30">
+    <h4 class="text-lg font-bold text-orange-400 mb-2">Folder Permissions</h4>
+    <p class="text-slate-300 text-sm">The permission inheritance model changed. In BIM 360, folder permissions cascaded in one way. In ACC, they work differently. Migrated folders often end up with either too much access or too little -- both dangerous on a construction project with sensitive bid documents.</p>
+  </div>
+  <div class="bg-amber-900/20 rounded-xl p-6 border border-amber-700/30">
+    <h4 class="text-lg font-bold text-amber-400 mb-2">Custom Attributes</h4>
+    <p class="text-slate-300 text-sm">Custom metadata attached to documents, issues, and submittals in BIM 360 does not transfer cleanly. Some is lost. Some arrives in the wrong format. Audit trails break.</p>
+  </div>
+  <div class="bg-yellow-900/20 rounded-xl p-6 border border-yellow-700/30">
+    <h4 class="text-lg font-bold text-yellow-400 mb-2">Integration Webhooks</h4>
+    <p class="text-slate-300 text-sm">Every webhook registered against BIM 360 endpoints needs to be re-created on ACC endpoints. Different event types, different payload structures. Automation pipelines go silent on migration day.</p>
+  </div>
+  <div class="bg-slate-800/80 rounded-xl p-6 border border-slate-600">
+    <h4 class="text-lg font-bold text-slate-300 mb-2">API Endpoints</h4>
+    <p class="text-slate-300 text-sm">Every integration pointing to BIM 360 URLs stops working. There is no redirect, no compatibility layer. If your Revit plugin, your Power BI dashboard, or your scheduling tool talked to BIM 360 -- it is broken until someone rewrites the connection.</p>
+  </div>
+  <div class="bg-purple-900/20 rounded-xl p-6 border border-purple-700/30">
+    <h4 class="text-lg font-bold text-purple-400 mb-2">Active Projects</h4>
+    <p class="text-slate-300 text-sm">You cannot pause construction to migrate. Buildings are being built. Concrete is being poured. Teams need access to their documents today, not after a migration window. The migration has to happen live, with active users depending on the data.</p>
+  </div>
+</div>
+
+---
+
+## The RCW Problem
+
+Revit Cloud Worksharing is the hardest piece of the migration puzzle. Revit models hosted in BIM 360 use cloud worksharing -- live, multi-user collaboration on a single model file. These are not static documents. They are active working files with multiple architects and engineers editing simultaneously.
+
+Migrating an RCW model means:
+
+- All active users must stop working
+- The model must be fully synchronized
+- Cloud worksharing must be re-established on the ACC side
+- All user permissions must be re-mapped
+- Worksharing bookmarks and links must be updated
+
+An Autodesk engineer identified up to 5 enterprise clients who needed bulk RCW migration. No tooling exists for it. Each client had to work with Autodesk support on a case-by-case basis.
+
+For everyone else, it was manual. Model by model. Project by project.
+
+---
+
+## How RAPS Handles Both Platforms
+
+RAPS was built for exactly this kind of problem. The `raps-acc` crate contains both the BIM 360 HQ v1 and ACC Construction Admin v1 endpoint implementations. The CLI auto-detects which platform a project lives on and uses the correct API.
+
+```bash
+# RAPS auto-detects BIM 360 vs ACC and uses the right API
+raps project list --hub-id "b.account-id"
+
+# Works for both BIM 360 HQ v1 and ACC Construction Admin v1
+raps project create --name "New Project" --hub-id "b.account-id"
+
+# Bulk user operations across mixed BIM 360 + ACC projects
+raps admin user add "$ACCOUNT" "user@company.com" --role project_admin
+
+# Export permissions from BIM 360, import to ACC
+raps admin folder set-permissions "$ACCOUNT" --project "$OLD" --export perms.csv
+raps admin folder set-permissions "$ACCOUNT" --project "$NEW" --import perms.csv
+```
+
+The key design decision: **same command interface regardless of platform version.** A script that works against BIM 360 today works against ACC tomorrow without modification.
+
+---
+
+## Backward Compatibility Architecture
+
+Under the hood, this is how RAPS handles the platform split:
+
+<div class="not-prose my-8 bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-2xl p-6 border border-slate-700">
+  <h3 class="text-lg font-bold text-white mb-4">RAPS Platform Detection Flow</h3>
+  <div class="space-y-3">
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">1</div>
+      <div class="text-slate-300 text-sm">Command issued against a hub or account ID</div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">2</div>
+      <div class="text-slate-300 text-sm">RAPS checks hub type: <code class="bg-slate-800 px-1.5 py-0.5 rounded text-xs">a.</code> prefix = ACC, <code class="bg-slate-800 px-1.5 py-0.5 rounded text-xs">b.</code> prefix = BIM 360 or ACC</div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">3</div>
+      <div class="text-slate-300 text-sm">Tries ACC Construction Admin v1 endpoint first</div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center text-white font-bold text-sm shrink-0">4</div>
+      <div class="text-slate-300 text-sm">On failure, falls back to BIM 360 HQ v1 endpoint</div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">5</div>
+      <div class="text-slate-300 text-sm">Normalizes response into a unified data model</div>
+    </div>
+  </div>
+</div>
+
+This means existing automation scripts survive the migration. No rewrites. No branching logic. No "if BIM 360 do X, else do Y" in your CI/CD pipeline.
+
+For teams running mixed environments -- some projects already on ACC, some still on BIM 360 -- RAPS handles both in the same pipeline run. The permission export/import workflow works across platforms: export from a BIM 360 project, import into an ACC project, and RAPS handles the field mapping.
+
+---
+
+## The Broader Lesson
+
+Forced migrations without tooling are vendor-centric decisions. The vendor saves development cost by not building bulk migration utilities. The customer pays for that savings in manual labor -- hundreds of hours of clicking, re-configuring, and re-testing.
+
+This is a pattern that repeats across every major platform transition:
+
+<div class="not-prose my-8">
+  <div class="bg-gradient-to-r from-slate-900/80 to-slate-800/80 rounded-2xl p-6 border border-slate-700">
+    <div class="space-y-4">
+      <div class="flex items-start gap-4">
+        <div class="text-red-400 font-bold text-lg shrink-0">1.</div>
+        <div>
+          <div class="text-white font-semibold">Vendor announces new platform</div>
+          <div class="text-slate-400 text-sm">Marketing materials emphasize new features, not migration cost</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="text-red-400 font-bold text-lg shrink-0">2.</div>
+        <div>
+          <div class="text-white font-semibold">Old platform deprecated</div>
+          <div class="text-slate-400 text-sm">Features stop receiving updates, then stop working entirely</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="text-red-400 font-bold text-lg shrink-0">3.</div>
+        <div>
+          <div class="text-white font-semibold">Migration tooling is minimal</div>
+          <div class="text-slate-400 text-sm">One-at-a-time UI, basic docs, "contact support"</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="text-red-400 font-bold text-lg shrink-0">4.</div>
+        <div>
+          <div class="text-white font-semibold">Customers absorb the cost</div>
+          <div class="text-slate-400 text-sm">Manual migration, broken integrations, lost metadata, weeks of rework</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+This is exactly the kind of gap an API User Advocate fills. The vendor will not build the migration path their enterprise customers need -- because for the vendor, the migration is a feature they can ship once and move on. For the customer, it is months of operational disruption.
+
+RAPS exists because Autodesk did not build that path.
+
+---
+
+## What Comes Next
+
+The BIM 360 to ACC migration is just the first domino. Once you have migrated your projects, you still need to manage permissions at scale, audit access across hundreds of folders, and keep user roles synchronized as your team changes.
+
+**Next in the Enterprise Scale series:** [Permission Management at Scale](/blog/acc-permission-nightmare) -- the deep-dive on clone, export, and audit features that make migration manageable.
+
+---
+
+**Related:**
+- [The Bulk Operations Crisis](/blog/acc-bulk-operations-crisis) -- Why AEC teams waste hours on clicks
+- [Admin Commands Reference](/docs/admin)
+- [Account Admin Cookbook](/docs/cookbook-acc-admin)

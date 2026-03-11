@@ -1,0 +1,493 @@
+---
+title: "How We Built a 230-Command Advocacy Layer for Autodesk in Rust"
+description: "Chunked uploads, OAuth race conditions, failure classification, circuit breakers — the engineering behind RAPS's advocacy core."
+pubDate: 2026-03-22
+author: "Dmytro Yemelianov"
+tags: ["rust", "architecture", "api", "developer-experience", "engineering"]
+series: "The API Advocacy Pattern"
+seriesOrder: 3
+featured: false
+draft: false
+---
+
+**TL;DR:** Naming a concept is easy. Building it is hard. RAPS's advocacy layer -- `raps-kernel` -- handles auth, rate limiting, circuit breaking, failure classification, and bulk orchestration for 16 Autodesk APIs. Here is what it took.
+
+---
+
+## The Gap Between Concept and Code
+
+In [part 1](/blog/vendor-api-not-your-friend), we established why vendor APIs are hostile by design. In part 2, we introduced the advocacy layer as a pattern -- an intermediary that absorbs API complexity so application code does not have to.
+
+This post is different. This is the implementation post. Five real engineering problems, five solutions, and the architectural choices that made them possible in Rust.
+
+---
+
+## Architecture: The Crate Dependency Graph
+
+RAPS is not a monolith. It is a workspace of focused crates, each owning one API domain, all sharing a common kernel.
+
+<div class="not-prose my-8">
+  <svg viewBox="0 0 820 620" class="w-full max-w-4xl mx-auto" role="img" aria-label="RAPS crate dependency graph showing raps-kernel at the core with domain crates and consumers">
+    <defs>
+      <linearGradient id="kernelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#f59e0b"/>
+        <stop offset="100%" style="stop-color:#d97706"/>
+      </linearGradient>
+      <linearGradient id="crateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#3b82f6"/>
+        <stop offset="100%" style="stop-color:#1d4ed8"/>
+      </linearGradient>
+      <linearGradient id="consumerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#22c55e"/>
+        <stop offset="100%" style="stop-color:#16a34a"/>
+      </linearGradient>
+      <linearGradient id="adminGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8b5cf6"/>
+        <stop offset="100%" style="stop-color:#7c3aed"/>
+      </linearGradient>
+    </defs>
+
+    {/* Background */}
+    <rect x="0" y="0" width="820" height="620" rx="16" fill="#0f172a"/>
+
+    {/* Section labels */}
+    <text x="410" y="35" text-anchor="middle" class="fill-slate-500 font-bold" style="font-size:12px;letter-spacing:0.1em">RAPS CRATE ARCHITECTURE</text>
+
+    {/* Kernel - center top */}
+    <rect x="280" y="55" width="260" height="55" rx="12" fill="url(#kernelGrad)" stroke="#fbbf24" stroke-width="2"/>
+    <text x="410" y="78" text-anchor="middle" class="fill-white font-bold" style="font-size:15px">raps-kernel</text>
+    <text x="410" y="98" text-anchor="middle" class="fill-amber-100" style="font-size:10px">auth | HTTP | rate limiting | circuit breaker | cache</text>
+
+    {/* Domain crates - row */}
+    <text x="410" y="140" text-anchor="middle" class="fill-slate-500 font-bold" style="font-size:11px;letter-spacing:0.05em">DOMAIN CRATES</text>
+
+    {/* Lines from kernel to domain crates */}
+    <line x1="310" y1="110" x2="95" y2="155" stroke="#475569" stroke-width="1.5"/>
+    <line x1="340" y1="110" x2="215" y2="155" stroke="#475569" stroke-width="1.5"/>
+    <line x1="380" y1="110" x2="335" y2="155" stroke="#475569" stroke-width="1.5"/>
+    <line x1="440" y1="110" x2="470" y2="155" stroke="#475569" stroke-width="1.5"/>
+    <line x1="480" y1="110" x2="600" y2="155" stroke="#475569" stroke-width="1.5"/>
+    <line x1="510" y1="110" x2="725" y2="155" stroke="#475569" stroke-width="1.5"/>
+
+    <rect x="30" y="155" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="95" y="180" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-oss</text>
+
+    <rect x="175" y="155" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="240" y="173" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-dm</text>
+    <text x="240" y="188" text-anchor="middle" class="fill-blue-200" style="font-size:9px">Data Management</text>
+
+    <rect x="320" y="155" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="385" y="173" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-derivative</text>
+    <text x="385" y="188" text-anchor="middle" class="fill-blue-200" style="font-size:9px">Model Derivative</text>
+
+    <rect x="465" y="155" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="530" y="173" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-da</text>
+    <text x="530" y="188" text-anchor="middle" class="fill-blue-200" style="font-size:9px">Design Automation</text>
+
+    <rect x="610" y="155" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="675" y="180" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-webhooks</text>
+
+    {/* Second row of domain crates */}
+    <rect x="30" y="215" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="95" y="240" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-reality</text>
+
+    <rect x="175" y="215" width="130" height="40" rx="8" fill="url(#crateGrad)"/>
+    <text x="240" y="240" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-acc</text>
+
+    {/* Line from raps-acc to raps-admin */}
+    <line x1="240" y1="255" x2="240" y2="285" stroke="#475569" stroke-width="1.5"/>
+
+    <rect x="175" y="285" width="130" height="40" rx="8" fill="url(#adminGrad)"/>
+    <text x="240" y="303" text-anchor="middle" class="fill-white font-semibold" style="font-size:12px">raps-admin</text>
+    <text x="240" y="318" text-anchor="middle" class="fill-purple-200" style="font-size:9px">Bulk Operations</text>
+
+    {/* Divider */}
+    <line x1="40" y1="360" x2="780" y2="360" stroke="#334155" stroke-width="1" stroke-dasharray="6,4"/>
+    <text x="410" y="385" text-anchor="middle" class="fill-slate-500 font-bold" style="font-size:11px;letter-spacing:0.05em">CONSUMERS</text>
+
+    {/* Consumer crates */}
+    <rect x="40" y="400" width="220" height="55" rx="10" fill="url(#consumerGrad)" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="150" y="423" text-anchor="middle" class="fill-white font-bold" style="font-size:13px">raps-cli</text>
+    <text x="150" y="442" text-anchor="middle" class="fill-emerald-100" style="font-size:10px">230+ commands | 114 MCP tools | TUI</text>
+
+    <rect x="300" y="400" width="220" height="55" rx="10" fill="url(#consumerGrad)" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="410" y="423" text-anchor="middle" class="fill-white font-bold" style="font-size:13px">raps-cloud</text>
+    <text x="410" y="442" text-anchor="middle" class="fill-emerald-100" style="font-size:10px">SaaS gateway | job runner | multi-tenant</text>
+
+    <rect x="560" y="400" width="220" height="55" rx="10" fill="url(#consumerGrad)" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="670" y="423" text-anchor="middle" class="fill-white font-bold" style="font-size:13px">python-bindings</text>
+    <text x="670" y="442" text-anchor="middle" class="fill-emerald-100" style="font-size:10px">PyO3 | data science | scripting</text>
+
+    {/* Lines from domain crates to consumers */}
+    <line x1="150" y1="340" x2="150" y2="400" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="410" y1="340" x2="410" y2="400" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="670" y1="340" x2="670" y2="400" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+
+    {/* Key insight box */}
+    <rect x="120" y="490" width="580" height="50" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="410" y="515" text-anchor="middle" class="fill-amber-400 font-semibold" style="font-size:13px">raps-kernel written once, consumed by every crate above.</text>
+    <text x="410" y="532" text-anchor="middle" class="fill-slate-400" style="font-size:11px">Same auth, same rate limiting, same circuit breaker -- no duplication, no drift.</text>
+
+    {/* Stats */}
+    <rect x="120" y="555" width="140" height="40" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="190" y="575" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">16 APIs</text>
+    <text x="190" y="590" text-anchor="middle" class="fill-slate-400" style="font-size:10px">covered</text>
+
+    <rect x="280" y="555" width="140" height="40" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="350" y="575" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">11 crates</text>
+    <text x="350" y="590" text-anchor="middle" class="fill-slate-400" style="font-size:10px">in workspace</text>
+
+    <rect x="440" y="555" width="140" height="40" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="510" y="575" text-anchor="middle" class="fill-white font-bold" style="font-size:14px">579 commits</text>
+    <text x="510" y="590" text-anchor="middle" class="fill-slate-400" style="font-size:10px">in 2 months</text>
+  </svg>
+</div>
+
+Every domain crate depends on `raps-kernel` for auth, HTTP, rate limiting, and error handling. No domain crate implements its own token refresh. No domain crate manages its own retry logic. The kernel owns all of it.
+
+This is the structural payoff: write the hard parts once, get them right once, and every API domain inherits the solution.
+
+---
+
+## Problem 1: OAuth Race Conditions
+
+### The scenario
+
+You have 10 concurrent API calls running. The access token expires. All 10 calls detect the expiry and attempt to refresh simultaneously. The first refresh succeeds. The second refresh invalidates the first token. Now 8 of your 10 calls fail with 401s, even though you just refreshed.
+
+This is not hypothetical. This is what happens in production with naive token refresh.
+
+### What the official SDKs do
+
+Nothing. They treat token refresh as a per-request concern. If two requests refresh at the same time, that is your problem.
+
+### The RAPS solution
+
+The kernel uses a `Mutex` + `tokio::sync::Notify` pattern to ensure exactly one refresh happens at a time:
+
+```rust
+// Conceptual pattern (simplified):
+//
+// 1. Caller checks token expiry
+// 2. If expired, acquires refresh lock
+// 3. First caller to acquire lock performs the refresh
+// 4. All other callers wait on Notify
+// 5. First caller stores new token, notifies all waiters
+// 6. Waiters read the fresh token and proceed
+//
+// Result: N concurrent callers, exactly 1 refresh,
+// 0 token invalidation races.
+```
+
+The key insight: token refresh is not a per-request operation. It is a shared resource that must be synchronized. The type system enforces this -- you cannot access the token without going through the guard.
+
+**Result:** Zero token invalidation under concurrent load. Every bulk operation that fires 50+ concurrent requests relies on this.
+
+---
+
+## Problem 2: Chunked Uploads
+
+### The scenario
+
+An architect needs to upload a 2GB Revit model. The official SDK does a single POST. At 1.8GB, the connection drops. The entire upload fails. Start over.
+
+For companies like QuikTrip with 1,700 projects and large Revit files, "start over" is not an option.
+
+### The RAPS solution
+
+Adaptive chunked uploads with parallel workers and resumable state:
+
+```bash
+raps object upload my-bucket large-model.rvt
+# Automatically:
+#   - Detects file size, selects chunk strategy
+#   - Splits into optimal chunks
+#   - Uploads 5 chunks concurrently
+#   - Retries failed chunks (3 attempts per chunk)
+#   - Resumes from last successful chunk on network drop
+```
+
+The implementation breaks down into four layers:
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6 text-center">Chunked Upload Pipeline</h3>
+    <div class="space-y-4">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-400 font-bold shrink-0">1</div>
+        <div class="flex-1 bg-slate-800/50 rounded-lg p-4">
+          <div class="text-white font-semibold">Size Detection</div>
+          <div class="text-slate-400 text-sm">Files under 100MB: single PUT. Over 100MB: chunked upload initiated. Chunk size adapts to file size and available bandwidth.</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-400 font-bold shrink-0">2</div>
+        <div class="flex-1 bg-slate-800/50 rounded-lg p-4">
+          <div class="text-white font-semibold">Session Init</div>
+          <div class="text-slate-400 text-sm">Creates a resumable upload session with OSS. Returns a session URI that survives connection drops.</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 font-bold shrink-0">3</div>
+        <div class="flex-1 bg-slate-800/50 rounded-lg p-4">
+          <div class="text-white font-semibold">Parallel Upload</div>
+          <div class="text-slate-400 text-sm">5 concurrent workers, each uploading one chunk. Failed chunks retry 3 times with exponential backoff. Workers pull from a shared chunk queue.</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center text-emerald-400 font-bold shrink-0">4</div>
+        <div class="flex-1 bg-slate-800/50 rounded-lg p-4">
+          <div class="text-white font-semibold">Finalization</div>
+          <div class="text-slate-400 text-sm">Commits the upload session. Verifies integrity via content hash. Reports total time and throughput.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+The critical detail: resumable state is persisted to disk. If the process crashes at chunk 47 of 100, restarting the command picks up at chunk 48. No wasted bandwidth, no re-uploading gigabytes of data.
+
+---
+
+## Problem 3: Failure Classification
+
+### The scenario
+
+An API returns HTTP 403. What does that mean?
+
+- Your token lacks the required scope? Re-auth and retry.
+- Your account does not have permission on this project? Skip this project, continue with the rest.
+- The API is misconfigured? Log and alert.
+- Rate limited with a 403 instead of 429? (Yes, some APIs do this.) Back off and retry.
+
+A single HTTP status code maps to multiple failure modes that require completely different handling strategies. If you treat them all the same, you either retry everything (wasting time on permission errors) or fail everything (stopping bulk operations on the first hiccup).
+
+### The RAPS solution
+
+The kernel classifies every API failure into one of 13 types, each with its own recovery strategy:
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6">Failure Classification Matrix</h3>
+    <div class="space-y-3">
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-red-900/30 px-3 py-1 rounded text-red-400 text-sm">Auth Expired</code>
+        </div>
+        <span class="text-slate-300 text-sm">Refresh token, retry once</span>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-amber-900/30 px-3 py-1 rounded text-amber-400 text-sm">Rate Limited</code>
+        </div>
+        <span class="text-slate-300 text-sm">Exponential backoff with jitter</span>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-orange-900/30 px-3 py-1 rounded text-orange-400 text-sm">Server Error</code>
+        </div>
+        <span class="text-slate-300 text-sm">Circuit breaker -- fail fast after threshold</span>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-purple-900/30 px-3 py-1 rounded text-purple-400 text-sm">Permission Denied</code>
+        </div>
+        <span class="text-slate-300 text-sm">Skip, log, continue (bulk ops)</span>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-blue-900/30 px-3 py-1 rounded text-blue-400 text-sm">Network Error</code>
+        </div>
+        <span class="text-slate-300 text-sm">Retry with timeout escalation</span>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-slate-700 px-3 py-1 rounded text-slate-300 text-sm">Not Found</code>
+        </div>
+        <span class="text-slate-300 text-sm">No retry -- resource does not exist</span>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+        <div class="flex items-center gap-3">
+          <code class="bg-slate-700 px-3 py-1 rounded text-slate-300 text-sm">Validation Error</code>
+        </div>
+        <span class="text-slate-300 text-sm">No retry -- caller error</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+Each failure type maps to a **backoff strategy**:
+
+1. **No backoff** -- auth refresh, immediate single retry
+2. **Exponential with jitter** -- rate limits, transient server errors
+3. **Circuit breaker** -- sustained server errors trip the breaker, all subsequent calls to that endpoint fail fast for a cooldown period
+
+The circuit breaker is especially important for bulk operations. If an API endpoint is down, you do not want 1,700 calls hammering it. You want the first 5 failures to trip the breaker, then every subsequent call fails immediately with a clear message: "endpoint circuit breaker open, retry after cooldown."
+
+---
+
+## Problem 4: Bulk Operations at Scale
+
+### The scenario
+
+A company acquires another company. 1,700 projects. Every project needs the same 50 users added with the correct roles. The Autodesk web UI lets you add users one project at a time.
+
+**1,700 projects x 50 users = 85,000 clicks.** That is not an exaggeration. That is the math.
+
+### The RAPS solution
+
+```bash
+raps admin user add "$ACCOUNT" "user@company.com" --role project_admin
+# 1,700 projects. 10 concurrent workers. Rate-limit aware. Resumable.
+# What takes 2+ hours of clicking: 45 seconds.
+```
+
+The bulk operation engine in `raps-admin` orchestrates this with four properties:
+
+<div class="not-prose my-8 grid md:grid-cols-2 gap-4">
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <div class="text-amber-400 font-bold mb-3">Concurrency Control</div>
+    <p class="text-slate-300 text-sm">10 concurrent workers by default. Each worker processes one project at a time. The worker count respects API rate limits -- the kernel throttles automatically when quota drops below 10%.</p>
+  </div>
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <div class="text-blue-400 font-bold mb-3">Resumable State</div>
+    <p class="text-slate-300 text-sm">Progress is checkpointed to disk. If the operation is interrupted at project 847 of 1,700, resuming starts at project 848. No duplicate work, no missed projects.</p>
+  </div>
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <div class="text-emerald-400 font-bold mb-3">Failure Isolation</div>
+    <p class="text-slate-300 text-sm">A permission error on project 312 does not stop the remaining 1,388 projects. Failed projects are logged and reported at the end. The operation continues.</p>
+  </div>
+  <div class="bg-slate-900/80 rounded-xl p-6 border border-slate-700">
+    <div class="text-purple-400 font-bold mb-3">Progress Tracking</div>
+    <p class="text-slate-300 text-sm">Real-time progress bar with ETA. Shows completed, failed, and remaining counts. Operation ID for status queries on long-running jobs.</p>
+  </div>
+</div>
+
+This is where every prior engineering investment pays off. Bulk operations do not implement their own auth refresh -- the kernel handles it. They do not implement their own rate limiting -- the kernel handles it. They do not implement their own retry logic -- the failure classifier handles it.
+
+The bulk engine is ~800 lines of code. Without the kernel, it would be 5,000+.
+
+---
+
+## Problem 5: Permission Clone and Export
+
+### The scenario
+
+You set up a project with a complex permission structure -- 30 folders, each with specific access levels for different roles. Now you need to replicate that structure across 50 new projects. The ACC web UI offers no "clone permissions" feature.
+
+### The RAPS solution
+
+```bash
+# Clone permission structure from one project to another
+raps admin folder set-permissions "$ACCOUNT" \
+  --project "$TARGET_PROJECT" \
+  --clone-from "$SOURCE_PROJECT"
+
+# Export permissions to CSV for audit
+raps admin folder set-permissions "$ACCOUNT" \
+  --project "$PROJECT" \
+  --export permissions.csv
+```
+
+This feature composes three capabilities:
+
+1. **Read** the complete permission tree of the source project (folder hierarchy + per-folder ACLs)
+2. **Map** the folder structure between source and target (folders may have different IDs but matching paths)
+3. **Apply** the permission set to the target, with conflict resolution and dry-run mode
+
+The export-to-CSV path exists for compliance teams who need audit trails. Every permission change is logged with timestamp, user, action, and before/after state.
+
+---
+
+## Why Rust
+
+This is not a language advocacy post. But the choice of Rust is load-bearing for this project, and here is why.
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-6 border border-slate-700">
+    <div class="space-y-6">
+      <div class="flex items-start gap-4">
+        <div class="w-24 shrink-0 text-right">
+          <span class="text-amber-400 font-bold text-sm">Memory safety</span>
+        </div>
+        <div class="flex-1 border-l-2 border-slate-700 pl-4">
+          <p class="text-slate-300 text-sm">Bulk operations run for minutes, processing thousands of API responses. In a GC language, memory pressure causes pauses. In Rust, memory is freed deterministically. No GC pauses during a 1,700-project user addition.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-24 shrink-0 text-right">
+          <span class="text-blue-400 font-bold text-sm">async/await</span>
+        </div>
+        <div class="flex-1 border-l-2 border-slate-700 pl-4">
+          <p class="text-slate-300 text-sm">tokio gives us concurrent API calls without thread-per-request overhead. 10 concurrent workers sharing a single runtime, with backpressure handled by the channel.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-24 shrink-0 text-right">
+          <span class="text-emerald-400 font-bold text-sm">Type system</span>
+        </div>
+        <div class="flex-1 border-l-2 border-slate-700 pl-4">
+          <p class="text-slate-300 text-sm">API response parsing is validated at compile time. When Autodesk changes a field from string to object (and they do), the compiler catches it before users do. 579 commits in 2 months at this velocity because the type system prevents regression.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-24 shrink-0 text-right">
+          <span class="text-purple-400 font-bold text-sm">Single binary</span>
+        </div>
+        <div class="flex-1 border-l-2 border-slate-700 pl-4">
+          <p class="text-slate-300 text-sm">No runtime dependencies. No Python version conflicts. No Node.js compatibility matrix. One binary, every platform. Users run <code class="text-xs">curl -sSL install.rapscli.xyz | sh</code> and they are done.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## The Reuse Payoff
+
+This is the core insight of the advocacy layer pattern, and it bears repeating:
+
+<div class="not-prose my-8 bg-gradient-to-r from-amber-900/30 to-slate-900/50 rounded-2xl p-8 border border-amber-700/50">
+  <h3 class="text-xl font-bold text-white mb-4 text-center">Write the kernel once. Deploy it everywhere.</h3>
+  <div class="grid md:grid-cols-2 gap-6 mt-6">
+    <div>
+      <div class="text-amber-400 font-bold text-sm mb-3">Same auth logic in:</div>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> CLI (interactive use)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> Cloud SaaS (multi-tenant API gateway)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> Python bindings (data science scripts)</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> MCP server (AI assistant integration)</li>
+      </ul>
+    </div>
+    <div>
+      <div class="text-amber-400 font-bold text-sm mb-3">Same rate limiting in:</div>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> Single-user CLI sessions</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> 50-concurrent-request bulk ops</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> Multi-tenant cloud with per-tenant quotas</li>
+        <li class="flex items-center gap-2"><span class="text-amber-400">--</span> CI/CD pipelines running unattended</li>
+      </ul>
+    </div>
+  </div>
+  <p class="text-center text-slate-400 mt-6 text-sm">No duplication. No drift. One fix in the kernel fixes every consumer.</p>
+</div>
+
+When we fixed a race condition in token refresh, it was fixed in the CLI, the cloud service, the Python bindings, and the MCP server. One commit. When we tuned the circuit breaker thresholds, every consumer got the improvement. When we added a new failure classification for a previously-unseen Autodesk error response, every API domain inherited the handling automatically.
+
+This is what makes the advocacy layer an architecture, not just a library. It is not a helper you call -- it is the substrate everything runs on.
+
+---
+
+## What Comes Next
+
+The advocacy layer enables everything else. It absorbs the complexity of 16 APIs so that higher-level features -- bulk operations, permission management, model translation, reality capture -- can focus on domain logic instead of fighting HTTP.
+
+Next in the series: the specific problems this architecture solves for real organizations -- starting with **"BIM 360 to ACC: The Migration Nobody Planned For."**
+
+---
+
+**Related:**
+- [Your Vendor's API Is Not Your Friend](/blog/vendor-api-not-your-friend) (Part 1 of this series)
+- [Intelligent Without AI: How RAPS 5.3 Thinks for You](/blog/intelligent-without-ai)
+- [Rust vs Node.js for 5GB Files](/blog/rust-vs-nodejs-5gb-files)

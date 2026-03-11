@@ -1,0 +1,380 @@
+---
+title: "From CLI to SaaS: How a Rust Monorepo Scales to Cloud"
+description: "One Rust kernel. Three application targets. 12 crates. How RAPS scaled from CLI tool to SaaS platform without rewriting anything."
+pubDate: 2026-04-01
+author: "Dmytro Yemelianov"
+tags: ["rust", "architecture", "cloud", "saas", "engineering"]
+featured: false
+draft: false
+---
+
+## One Kernel, Zero Rewrites
+
+RAPS started as a CLI tool. A way to talk to Autodesk Platform Services from the terminal without drowning in boilerplate OAuth flows and undocumented API quirks.
+
+Then it became an MCP server -- 114 tools that let AI assistants operate APS directly.
+
+Then a SaaS cloud platform -- multi-tenant, PostgreSQL-backed, with encrypted credential storage and WebSocket-driven job progress.
+
+Then a marketplace -- Cloudflare Workers, D1, R2, Stripe integration.
+
+Each new surface reused the same core. No forks. No rewrites. No "v2 from scratch." This is how a Rust monorepo scales.
+
+---
+
+## The Architecture
+
+The system has three layers. Every dependency arrow points downward. Nothing in a lower layer knows about what sits above it.
+
+<div class="not-prose my-10">
+
+<div class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-lg">
+
+{/* Layer 3: Applications */}
+<div class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white">
+  <div class="text-xs font-mono uppercase tracking-widest mb-3 opacity-80">Layer 3 -- Applications</div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+      <div class="font-bold text-lg mb-2">raps-cli</div>
+      <ul class="text-sm space-y-1 opacity-90">
+        <li>230+ commands</li>
+        <li>114 MCP tools</li>
+        <li>TUI dashboard (7 tabs, 33 views)</li>
+        <li>Plugin system</li>
+        <li>Skill system</li>
+      </ul>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+      <div class="font-bold text-lg mb-2">raps-cloud</div>
+      <ul class="text-sm space-y-1 opacity-90">
+        <li>Axum API gateway</li>
+        <li>PostgreSQL + RLS</li>
+        <li>AES-256-GCM encryption</li>
+        <li>JWT + Argon2 auth</li>
+        <li>WebSocket job progress</li>
+        <li>Background job runner</li>
+      </ul>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+      <div class="font-bold text-lg mb-2">python-bindings</div>
+      <ul class="text-sm space-y-1 opacity-90">
+        <li>PyO3 extension</li>
+        <li>Data science target</li>
+        <li>Subset: kernel, oss, dm, derivative</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{/* Arrow */}
+<div class="bg-gray-50 dark:bg-gray-800 py-2 text-center text-gray-400 dark:text-gray-500 text-2xl font-mono">
+  depends on
+</div>
+
+{/* Layer 2: API Crates */}
+<div class="bg-gradient-to-r from-sky-600 to-cyan-600 p-6 text-white">
+  <div class="text-xs font-mono uppercase tracking-widest mb-3 opacity-80">Layer 2 -- API Crates</div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-oss</div>
+      <div class="text-xs opacity-75 mt-1">Object Storage</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-dm</div>
+      <div class="text-xs opacity-75 mt-1">Data Management</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-derivative</div>
+      <div class="text-xs opacity-75 mt-1">Model Derivative</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-da</div>
+      <div class="text-xs opacity-75 mt-1">Design Automation</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-acc</div>
+      <div class="text-xs opacity-75 mt-1">ACC / BIM 360</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-webhooks</div>
+      <div class="text-xs opacity-75 mt-1">Event Subscriptions</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-reality</div>
+      <div class="text-xs opacity-75 mt-1">Photogrammetry</div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center">
+      <div class="font-bold text-sm">raps-admin</div>
+      <div class="text-xs opacity-75 mt-1">Bulk Operations</div>
+    </div>
+  </div>
+</div>
+
+{/* Arrow */}
+<div class="bg-gray-50 dark:bg-gray-800 py-2 text-center text-gray-400 dark:text-gray-500 text-2xl font-mono">
+  depends on
+</div>
+
+{/* Layer 1: Kernel */}
+<div class="bg-gradient-to-r from-amber-600 to-orange-600 p-6 text-white">
+  <div class="text-xs font-mono uppercase tracking-widest mb-3 opacity-80">Layer 1 -- Core</div>
+  <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+    <div class="font-bold text-xl mb-3">raps-kernel</div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+      <div class="bg-white/10 rounded px-3 py-2">Authentication (2-leg, 3-leg, PKCE, device code)</div>
+      <div class="bg-white/10 rounded px-3 py-2">HTTP client with retry, rate limiting, circuit breaker</div>
+      <div class="bg-white/10 rounded px-3 py-2">Token management (keyring + file storage)</div>
+      <div class="bg-white/10 rounded px-3 py-2">Configuration (env vars, .env, profiles)</div>
+      <div class="bg-white/10 rounded px-3 py-2">Metrics (Prometheus)</div>
+      <div class="bg-white/10 rounded px-3 py-2">Health endpoints</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+</div>
+
+The rule is absolute: **dependency arrows point down, never sideways, never up.** raps-kernel has zero internal dependencies. Every API crate depends only on kernel. No API crate depends on another API crate (except raps-admin, which depends on raps-acc for bulk account operations). Applications consume all crates and add no API logic of their own.
+
+---
+
+## Three Decisions That Made This Work
+
+### Decision 1: The kernel depends on nothing internal
+
+`raps-kernel` owns authentication, HTTP transport, configuration, and observability. It has zero internal crate dependencies. Every API crate imports kernel and nothing else.
+
+The consequence: adding a new API crate is an isolated operation. You create a new directory, declare `raps-kernel` as a dependency, implement your typed client, and register it in the workspace. You cannot accidentally break Object Storage by adding a Reality Capture crate. The dependency graph makes it structurally impossible.
+
+### Decision 2: API crates are thin typed clients
+
+Each API crate is a thin layer over the kernel's HTTP client. They add three things:
+
+- **Domain types** -- Rust structs for API request and response bodies
+- **Endpoint definitions** -- URL paths, HTTP methods, query parameters
+- **Response parsing** -- deserialization and error mapping
+
+They do not add auth logic. They do not add retry logic. They do not add rate limiting. All of that lives in the kernel. When Autodesk changes a rate limit, the fix lands in one place and every API crate benefits immediately.
+
+The result: consistent behavior across all 16 APIs. The same exponential backoff, the same circuit breaker thresholds, the same token refresh flow -- regardless of whether you are uploading a 5GB file to Object Storage or creating an issue in ACC.
+
+### Decision 3: Applications compose, they do not extend
+
+`raps-cli` imports all API crates and maps them to CLI commands. `raps-cloud` imports all API crates and maps them to HTTP routes and background job types. `python-bindings` imports a subset and exposes them via PyO3.
+
+No application contains API-specific logic. If a feature works in the CLI, it works in the cloud gateway. If it works in the cloud gateway, it works from Python. The application layer is purely about surface: how you invoke the operation, how you present the result, how you handle the lifecycle.
+
+---
+
+## Workspace Structure
+
+```
+raps/
+├── Cargo.toml              (workspace: 12 members + shared deps)
+├── raps-kernel/             (auth, HTTP, config -- 0 internal deps)
+├── raps-oss/                (Object Storage -- depends: kernel)
+├── raps-dm/                 (Data Management -- depends: kernel)
+├── raps-derivative/         (Model Derivative -- depends: kernel)
+├── raps-da/                 (Design Automation -- depends: kernel)
+├── raps-acc/                (ACC/BIM 360 -- depends: kernel)
+├── raps-webhooks/           (Webhooks -- depends: kernel)
+├── raps-reality/            (Reality Capture -- depends: kernel)
+├── raps-admin/              (Bulk Operations -- depends: kernel, acc)
+├── raps-cli/                (CLI + MCP + TUI -- depends: all)
+├── raps-cloud/              (SaaS Gateway -- depends: all)
+├── python-bindings/         (PyO3 -- depends: kernel, oss, dm, derivative)
+├── deploy/
+│   ├── docker/              (6 Docker images)
+│   └── helm/                (Kubernetes Helm chart)
+├── workers/
+│   ├── device-auth/         (Cloudflare Worker -- OAuth device flow)
+│   ├── rapscli-api/         (Cloudflare Worker -- API gateway)
+│   └── webhook-gateway/     (Cloudflare Worker -- event relay)
+└── npm/                     (6 npm packages for binary distribution)
+```
+
+A single `cargo build --workspace` compiles every Rust crate. A single `cargo test --workspace` runs every test. The workspace `Cargo.toml` pins shared dependency versions so all crates use the same version of `tokio`, `serde`, `reqwest`, and everything else. No version drift. No "works in this crate but not that one."
+
+---
+
+## The Distribution Matrix
+
+One repository produces artifacts for eleven distribution channels:
+
+<div class="not-prose my-8">
+<div class="overflow-x-auto">
+<table class="min-w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+<thead>
+<tr class="bg-gray-100 dark:bg-gray-800 text-left">
+<th class="px-4 py-3 font-semibold border-b border-gray-200 dark:border-gray-700">Channel</th>
+<th class="px-4 py-3 font-semibold border-b border-gray-200 dark:border-gray-700">What Ships</th>
+<th class="px-4 py-3 font-semibold border-b border-gray-200 dark:border-gray-700">Target Audience</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+<tr class="bg-white dark:bg-gray-900">
+<td class="px-4 py-3 font-mono text-xs">GitHub Releases</td>
+<td class="px-4 py-3">Binary archives (5 platforms)</td>
+<td class="px-4 py-3">Direct download</td>
+</tr>
+<tr class="bg-gray-50 dark:bg-gray-800/50">
+<td class="px-4 py-3 font-mono text-xs">crates.io</td>
+<td class="px-4 py-3">10 Rust crates</td>
+<td class="px-4 py-3">Rust ecosystem</td>
+</tr>
+<tr class="bg-white dark:bg-gray-900">
+<td class="px-4 py-3 font-mono text-xs">npm</td>
+<td class="px-4 py-3">6 packages (@dmytro-yemelianov/raps-cli-*)</td>
+<td class="px-4 py-3">Node.js ecosystem</td>
+</tr>
+<tr class="bg-gray-50 dark:bg-gray-800/50">
+<td class="px-4 py-3 font-mono text-xs">PyPI</td>
+<td class="px-4 py-3">2 packages (raps, raps-bindings)</td>
+<td class="px-4 py-3">Python ecosystem</td>
+</tr>
+<tr class="bg-white dark:bg-gray-900">
+<td class="px-4 py-3 font-mono text-xs">Homebrew</td>
+<td class="px-4 py-3">Tap formula</td>
+<td class="px-4 py-3">macOS users</td>
+</tr>
+<tr class="bg-gray-50 dark:bg-gray-800/50">
+<td class="px-4 py-3 font-mono text-xs">Scoop</td>
+<td class="px-4 py-3">Bucket manifest</td>
+<td class="px-4 py-3">Windows users</td>
+</tr>
+<tr class="bg-white dark:bg-gray-900">
+<td class="px-4 py-3 font-mono text-xs">GHCR</td>
+<td class="px-4 py-3">6 Docker images</td>
+<td class="px-4 py-3">Container deployments</td>
+</tr>
+<tr class="bg-gray-50 dark:bg-gray-800/50">
+<td class="px-4 py-3 font-mono text-xs">Helm</td>
+<td class="px-4 py-3">Chart + values</td>
+<td class="px-4 py-3">Kubernetes</td>
+</tr>
+<tr class="bg-white dark:bg-gray-900">
+<td class="px-4 py-3 font-mono text-xs">Cloudflare Workers</td>
+<td class="px-4 py-3">4 Workers</td>
+<td class="px-4 py-3">Edge computing</td>
+</tr>
+<tr class="bg-gray-50 dark:bg-gray-800/50">
+<td class="px-4 py-3 font-mono text-xs">Cloudflare Pages</td>
+<td class="px-4 py-3">2 frontends (marketplace)</td>
+<td class="px-4 py-3">Web</td>
+</tr>
+<tr class="bg-white dark:bg-gray-900">
+<td class="px-4 py-3 font-mono text-xs">GitHub Pages</td>
+<td class="px-4 py-3">2 Astro sites (docs, marketing)</td>
+<td class="px-4 py-3">Web</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+Fourteen CI/CD workflows orchestrate all of this. A version bump in `Cargo.toml` triggers a cascade: cross-compile for five architectures, publish crates, build and push Docker images, update Homebrew formula, update Scoop manifest, publish npm packages, build Python wheels, deploy Workers, deploy Pages, deploy Helm chart. One commit. Eleven channels. Fully automated.
+
+---
+
+## The Numbers
+
+<div class="not-prose my-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-700">
+    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">12</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Rust crates in workspace</div>
+  </div>
+  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-700">
+    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">579</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Commits in 2 months</div>
+  </div>
+  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-700">
+    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">14</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">CI/CD workflows</div>
+  </div>
+  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-700">
+    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">11</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Components consume raps-kernel</div>
+  </div>
+  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-700">
+    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">230+</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">CLI commands</div>
+  </div>
+  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 text-center border border-gray-200 dark:border-gray-700">
+    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">0</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Auth logic duplication</div>
+  </div>
+</div>
+
+The last number is the one that matters most. The same authentication logic -- 2-legged, 3-legged, PKCE, device code -- runs in the CLI, the cloud gateway, the Python bindings, and the MCP server. It is defined once in `raps-kernel` and consumed everywhere. When Autodesk changes their OAuth behavior (and they do), the fix is one patch in one crate.
+
+---
+
+## What Rust Gives You Here
+
+Other languages can do monorepos. Rust makes certain properties **structural** rather than conventional:
+
+**Workspace system.** Cargo workspaces are real multi-crate dependency management, not a monorepo tool bolted onto a package manager. Dependencies are resolved once across the entire workspace. There is no equivalent of `node_modules` duplication or Python virtualenv conflicts between packages.
+
+**Type safety across crate boundaries.** API response types are defined in the API crate and used directly by applications. There is no serialization boundary between crates. If `raps-acc` changes the shape of an Issue struct, every consumer gets a compile error -- not a runtime crash in production.
+
+**Single binary output.** `raps-cli` compiles to one file. No runtime. No `node_modules`. No virtualenv. No DLLs. Copy it to a server, run it. This matters enormously for CLI distribution and Docker image size.
+
+**Shared async runtime.** The same tokio runtime powers both the CLI and the cloud gateway. Code moves freely between targets. A function that downloads a file in the CLI context works identically when called from an Axum handler in the cloud context.
+
+**Feature flags.** `--features kubernetes` compiles in health endpoints and Prometheus metrics. Without the flag, that code does not exist in the binary. Feature flags let a single crate serve multiple deployment contexts without runtime overhead.
+
+**Compile-time dependency validation.** If the crate graph has a cycle, it does not compile. If a crate references a type that does not exist, it does not compile. The guarantees are not "we have a linter that warns you." They are "the build fails."
+
+---
+
+## The Decoupled Edge
+
+Not everything is Rust, and that is deliberate.
+
+The Cloudflare Workers -- device-auth, rapscli-api, webhook-gateway, and the marketplace API -- are TypeScript running on Hono. They communicate with the Rust backend via HTTP. They have no Rust dependency. They deploy independently, on a separate cadence, to edge locations worldwide.
+
+The marketplace frontend is a React admin panel and an Astro storefront. They talk to the marketplace API Worker, which talks to D1 and R2 and Stripe. None of them know Rust exists.
+
+This decoupling is intentional. Edge infrastructure and commerce logic evolve on different timelines than core platform capabilities. The device-auth Worker might get updated three times a day during an OAuth flow redesign while the Rust kernel stays untouched. The marketplace can add a new payment method without recompiling anything.
+
+The boundary is HTTP. The contract is API schemas. The deployment is independent. This is where a monorepo ends and a distributed system begins.
+
+---
+
+## Lessons for Other Projects
+
+If you are building a developer tool and wondering whether to invest in architecture upfront, here is what we learned:
+
+**Start with the kernel.** Do not bolt on shared logic after you have three applications duplicating auth code. Extract the kernel first. Make it depend on nothing internal. Every decision downstream becomes simpler.
+
+**Keep API crates thin.** They are typed HTTP clients, not business logic containers. The moment an API crate starts making decisions -- "should I retry? how long should I wait? is this token expired?" -- you have put logic in the wrong place. That belongs in the kernel.
+
+**Applications compose, they do not extend.** If you find yourself writing `if target == "cli"` inside an API crate, something has gone wrong. The API crate should not know what is consuming it. Applications import crates and map them to their surface (commands, routes, Python functions). That is all.
+
+**Distribution is a feature.** Invest in it early. If your tool is only available via `cargo install`, you have excluded 95% of your potential users. npm, PyPI, Homebrew, Scoop, Docker -- each channel opens a new audience. The CI/CD investment pays for itself in adoption.
+
+**Decouple what can be decoupled.** Edge infrastructure in TypeScript, core platform in Rust, marketplace in its own stack. Not everything needs to be in the same language or the same deployment unit. The question is: do these things change at the same rate, for the same reasons? If not, decouple them.
+
+---
+
+## Architecture Details
+
+RAPS is open source. The monorepo structure, the crate boundaries, the CI/CD workflows -- all of it is available for inspection.
+
+The advocacy layer pattern works. One kernel. Thin API crates. Composing applications. And the monorepo scales with it -- from a weekend CLI project to a multi-tenant SaaS platform, without rewriting a single line of core logic.
+
+Explore the [documentation](/docs) for architecture details, or install RAPS and see the system in action:
+
+```bash
+# npm
+npm install -g @anthropic-ai/raps-cli
+
+# Homebrew
+brew install dmytro-yemelianov/tap/raps
+
+# Cargo
+cargo install raps-cli
+
+# Or download directly from GitHub Releases
+```

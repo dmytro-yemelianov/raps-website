@@ -1,0 +1,328 @@
+---
+title: "API вашого вендора -- не ваш друг"
+description: "Вендори проєктують API для власної архітектури, а не для розробників. Структурна проблема за кожним кошмаром інтеграції."
+pubDate: 2026-03-12
+author: "Dmytro Yemelianov"
+tags: ["api", "cross-platform", "developer-experience", "cad", "aec"]
+series: "The API Advocacy Pattern"
+seriesOrder: 1
+featured: true
+draft: false
+---
+
+**TL;DR:** The API you are integrating with was not designed for you. It was designed for the vendor's internal architecture, then exposed with minimal adaptation. This is not a bug — it is a structural pattern that repeats across every major platform. Understanding this is the first step toward building something that actually works.
+
+---
+
+## The Scene
+
+You are building an integration. The documentation says to POST a JSON body to an endpoint. You do exactly that. You get a 401. No message, no hint, no breadcrumb. You check the token — it is valid. You check the scopes — they match. You check the headers — correct. You spend two hours before discovering that the endpoint requires a different auth flow than the one documented, because the docs were written for a previous version of the platform that no longer exists.
+
+This is not a skill issue. This is a design issue.
+
+You are working against an API that was built to serve the vendor's operational needs, then exposed to you as an afterthought. The documentation, the error messages, the auth flows, the rate limits — none of it was designed with your workflow in mind.
+
+---
+
+## The Structural Problem
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl p-8 border border-slate-700">
+    <h3 class="text-lg font-bold text-white mb-6 text-center">Vendor-Centric vs Developer-Centric API Design</h3>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="relative">
+        <div class="absolute inset-0 bg-red-500/5 rounded-xl"></div>
+        <div class="relative p-6">
+          <div class="text-red-400 font-bold text-sm mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            VENDOR-CENTRIC
+          </div>
+          <ul class="space-y-3 text-sm">
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Auth complexity serves <span class="text-white font-semibold">vendor security models</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Per-request architecture, <span class="text-white font-semibold">no bulk operations</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Error codes leak <span class="text-white font-semibold">internal system names</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Rate limits protect <span class="text-white font-semibold">vendor infrastructure</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Feedback forums are <span class="text-white font-semibold">decorative</span></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="absolute inset-0 bg-emerald-500/5 rounded-xl"></div>
+        <div class="relative p-6">
+          <div class="text-emerald-400 font-bold text-sm mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            DEVELOPER-CENTRIC
+          </div>
+          <ul class="space-y-3 text-sm">
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Auth is <span class="text-white font-semibold">one command, one flow</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Bulk endpoints for <span class="text-white font-semibold">real workflows</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Errors explain <span class="text-white font-semibold">what to do next</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Rate limits are <span class="text-white font-semibold">documented and predictable</span></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 mt-1 shrink-0">--</span>
+              <span class="text-slate-300">Feedback <span class="text-white font-semibold">ships as features</span></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+This is not about incompetent engineering teams. The people building these APIs are often excellent engineers solving hard problems. The issue is incentive alignment. When a vendor exposes an internal service as a public API, the priorities are clear:
+
+1. **Security** — the vendor's, not yours
+2. **Stability** — of the vendor's infrastructure, not your integration
+3. **Scalability** — of the vendor's platform, not your use case
+
+Your developer experience ranks somewhere below "updating the changelog."
+
+### Auth complexity exists because the vendor needs it
+
+Autodesk APS has two-legged and three-legged OAuth flows with different scope requirements, different token lifetimes, and different refresh behaviors. PTC Onshape requires URL-encoding client secrets that contain trailing `=` characters — an undocumented trap that burns hours. Dassault 3DEXPERIENCE requires separate authentication for each of its internal services, leading to developers logging in five times in one hour. Siemens Teamcenter SSO configuration demands understanding six or more parameters including proxy URLs, discriminators, and protocol settings.
+
+None of this complexity exists because developers need flexible security. It exists because the vendor's internal identity systems are complex, and that complexity was exposed rather than abstracted.
+
+### Bulk operations do not exist because the vendor's architecture is per-request
+
+You need to add a user to 50 projects. The API gives you an endpoint that adds a user to one project. You write a loop. The loop hits rate limits. You add backoff logic. Some requests fail silently. You add retry logic. You add error classification. You have now written an orchestration layer that the vendor should have provided.
+
+This is not an edge case. This is the most-voted feature request on [Autodesk Construction Cloud's feedback forum](/blog/acc-forum-analysis) — 344 votes, six years and counting, status: "Future Consideration."
+
+### Errors are opaque because internal system names leak through
+
+When a vendor API returns `&#123;"code": "BIM360_ERROR_0x42F1", "message": "Operation failed"&#125;`, you are looking at an internal error code that was never translated into something meaningful for an external consumer. The vendor's support team might know what `0x42F1` means. You do not. The documentation does not. The forum post from 2019 where someone else hit the same error has no response.
+
+### Feedback requests die in public forums
+
+<div class="not-prose my-6 p-6 bg-gradient-to-r from-red-900/40 to-slate-900/40 rounded-xl border border-red-700/50 relative overflow-hidden">
+  <div class="absolute -top-20 -right-20 w-40 h-40 bg-red-500/20 rounded-full blur-3xl"></div>
+  <div class="relative">
+    <div class="text-red-400 font-bold text-sm mb-2">THE FEEDBACK BLACK HOLE</div>
+    <div class="flex items-baseline gap-4">
+      <div class="text-white text-5xl font-black">4,295</div>
+      <div class="text-slate-400">feature requests submitted to ACC's forum</div>
+    </div>
+    <div class="flex items-baseline gap-4 mt-2">
+      <div class="text-red-400 text-5xl font-black">96.6%</div>
+      <div class="text-slate-400">permanently stuck in "Gathering Support"</div>
+    </div>
+    <a href="/blog/acc-forum-analysis" class="inline-block mt-4 text-sm text-blue-400 hover:text-blue-300 underline">Read the full analysis</a>
+  </div>
+</div>
+
+Vendors maintain feedback forums to create the appearance of listening. The data tells a different story. When 96.6% of requests never move past intake, the forum is not a feedback mechanism — it is a pressure valve.
+
+---
+
+## Cross-Vendor Evidence
+
+This is not an Autodesk problem. This is a vendor API problem. The same patterns repeat across every major platform in the CAD, AEC, and PLM space — and beyond.
+
+<div class="not-prose my-8 space-y-4">
+  <div class="bg-gradient-to-r from-orange-900/30 to-slate-900/40 rounded-xl p-6 border-l-4 border-orange-500">
+    <div class="text-orange-400 font-bold text-sm mb-2">AUTODESK APS</div>
+    <p class="text-slate-300 text-sm">Archived the community-built <code>forge-cli</code> with no replacement. Laid off 7% of staff in 2024, gutting developer support. Forced a BIM 360 to ACC migration with zero migration tooling for API consumers. Developers discovered breaking changes through runtime errors.</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-blue-900/30 to-slate-900/40 rounded-xl p-6 border-l-4 border-blue-500">
+    <div class="text-blue-400 font-bold text-sm mb-2">PTC ONSHAPE</div>
+    <p class="text-slate-300 text-sm">OAuth client secrets may contain trailing <code>=</code> characters that must be URL-encoded — but the documentation does not mention this. Developers discover it after hours of debugging 401 errors. The API key documentation warns about "gotchas" that are never fully enumerated.</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-purple-900/30 to-slate-900/40 rounded-xl p-6 border-l-4 border-purple-500">
+    <div class="text-purple-400 font-bold text-sm mb-2">DASSAULT 3DEXPERIENCE</div>
+    <p class="text-slate-300 text-sm">Five separate authentication endpoints across partner platform, commercial platform, support portal, and application layer. 3DPassport session failures cascade into SOLIDWORKS crashes. Developers report losing work when authentication tokens expire mid-operation with no recovery path.</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-cyan-900/30 to-slate-900/40 rounded-xl p-6 border-l-4 border-cyan-500">
+    <div class="text-cyan-400 font-bold text-sm mb-2">SIEMENS TEAMCENTER</div>
+    <p class="text-slate-300 text-sm">SSO configuration requires understanding proxy URLs, external identity providers, credential managers, discriminators, endpoint configurations, and protocol settings. <code>SoaRuntimeException</code> login failures are so common they have their own dedicated troubleshooting guide.</p>
+  </div>
+
+  <div class="bg-gradient-to-r from-pink-900/30 to-slate-900/40 rounded-xl p-6 border-l-4 border-pink-500">
+    <div class="text-pink-400 font-bold text-sm mb-2">E-COMMERCE PLATFORMS (SHOPEE, SHOPIFY, AMAZON SP-API)</div>
+    <p class="text-slate-300 text-sm">The pattern extends beyond CAD/AEC. Rate limit rules that differ per endpoint with no published schedule. Webhooks that silently stop firing. Error codes that resolve to "contact support." Token refresh flows that race against request flows. The same vendor-centric design, different industry.</p>
+  </div>
+</div>
+
+The details vary. The pattern does not.
+
+---
+
+## Naming the Pattern
+
+<div class="not-prose my-8">
+  <div class="bg-gradient-to-br from-amber-900/40 to-slate-900/60 rounded-2xl p-8 border border-amber-700/50 relative overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div class="relative">
+      <h3 class="text-2xl font-black text-white mb-4">Low-Convenience API</h3>
+      <p class="text-slate-300 text-sm leading-relaxed mb-6">
+        <span class="text-amber-400 font-semibold">noun</span> — An API that is technically functional but practically hostile. It satisfies the vendor's contractual obligation to provide programmatic access while minimizing their investment in developer experience. Characterized by: complex auth flows, absent bulk operations, opaque errors, aggressive rate limits, and unresponsive feedback channels.
+      </p>
+      <div class="border-t border-amber-700/30 pt-4">
+        <p class="text-slate-400 text-sm italic">"The endpoint works. It returns data. It is also completely unusable at scale without a 2,000-line wrapper you have to maintain yourself."</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+This is not incompetence. It is vendor-centric design. The API is optimized for the vendor's operations — their security model, their infrastructure constraints, their internal service boundaries. Your workflow, your deadlines, your error handling needs — these were never part of the requirements.
+
+The result is an API that technically works and practically punishes you for using it.
+
+---
+
+## The Anatomy of a Low-Convenience API
+
+<div class="not-prose my-8">
+  <div class="bg-slate-900/80 rounded-2xl border border-slate-700 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-700">
+          <th class="text-left p-4 text-slate-400 font-semibold">Dimension</th>
+          <th class="text-left p-4 text-red-400 font-semibold">What the Vendor Ships</th>
+          <th class="text-left p-4 text-emerald-400 font-semibold">What Developers Need</th>
+        </tr>
+      </thead>
+      <tbody class="text-slate-300">
+        <tr class="border-b border-slate-800">
+          <td class="p-4 font-medium text-white">Authentication</td>
+          <td class="p-4">Multiple flows, undocumented scope requirements, silent token expiry</td>
+          <td class="p-4">One flow, clear scopes, automatic refresh</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="p-4 font-medium text-white">Bulk Operations</td>
+          <td class="p-4">Single-resource endpoints only</td>
+          <td class="p-4">Batch endpoints with partial failure reporting</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="p-4 font-medium text-white">Error Handling</td>
+          <td class="p-4">Internal codes, generic messages, no remediation hints</td>
+          <td class="p-4">Human-readable errors with fix suggestions</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="p-4 font-medium text-white">Rate Limits</td>
+          <td class="p-4">Undocumented, inconsistent across endpoints, 429 with no Retry-After</td>
+          <td class="p-4">Published limits, consistent headers, backoff guidance</td>
+        </tr>
+        <tr class="border-b border-slate-800">
+          <td class="p-4 font-medium text-white">Pagination</td>
+          <td class="p-4">Offset-based with unstable ordering</td>
+          <td class="p-4">Cursor-based with consistent results</td>
+        </tr>
+        <tr>
+          <td class="p-4 font-medium text-white">Feedback Loop</td>
+          <td class="p-4">Forum with 96.6% abandonment rate</td>
+          <td class="p-4">Public roadmap, versioned changelog, deprecation notices</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+Every row in that table represents hours of debugging, thousands of lines of workaround code, and developer goodwill burned for no reason.
+
+---
+
+## What Is Actually Needed
+
+The vendor is not going to fix this. Their incentives do not align with your needs. The forum requests will continue gathering dust. The auth flows will remain complex. The error messages will stay opaque.
+
+What you need is a **hardened client layer** between the vendor's API and your code. One that:
+
+<div class="not-prose my-8 grid md:grid-cols-3 gap-4">
+  <div class="bg-gradient-to-br from-blue-900/40 to-slate-900/60 rounded-xl p-6 border border-blue-700/30 hover:border-blue-500/50 transition-colors">
+    <div class="text-blue-400 font-bold text-lg mb-2">Absorbs</div>
+    <p class="text-slate-400 text-sm">Auth complexity, token refresh races, scope negotiation, credential storage — handled once, correctly, so you never think about it again.</p>
+  </div>
+  <div class="bg-gradient-to-br from-emerald-900/40 to-slate-900/60 rounded-xl p-6 border border-emerald-700/30 hover:border-emerald-500/50 transition-colors">
+    <div class="text-emerald-400 font-bold text-lg mb-2">Orchestrates</div>
+    <p class="text-slate-400 text-sm">Bulk operations from single-resource endpoints, with retry logic, rate limit respect, partial failure handling, and progress reporting.</p>
+  </div>
+  <div class="bg-gradient-to-br from-amber-900/40 to-slate-900/60 rounded-xl p-6 border border-amber-700/30 hover:border-amber-500/50 transition-colors">
+    <div class="text-amber-400 font-bold text-lg mb-2">Classifies</div>
+    <p class="text-slate-400 text-sm">Failures into actionable categories — auth errors vs permission errors vs rate limits vs server errors — with structured exit codes and clear messages.</p>
+  </div>
+</div>
+
+This layer is not a "nice to have." It is the difference between a weekend proof-of-concept and a production integration that does not wake you up at 3 AM.
+
+We call this layer an **API User Advocate** — a system that stands between the developer and the vendor's API, translating vendor-centric design into developer-centric behavior. It is not a wrapper. It is not an SDK. It is a hardened operational layer that treats the vendor's API as an unreliable upstream dependency and protects you from its design choices.
+
+---
+
+## The Series Ahead
+
+<div class="not-prose my-8">
+  <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-8 border border-slate-600/50">
+    <div class="text-slate-400 text-sm font-semibold mb-4">THE API ADVOCACY PATTERN</div>
+    <div class="space-y-4">
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm">1</div>
+        <div>
+          <div class="text-white font-bold">Your Vendor's API Is Not Your Friend</div>
+          <div class="text-amber-400 text-sm">You are here</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center shrink-0 text-slate-300 font-bold text-sm">2</div>
+        <div>
+          <div class="text-slate-300 font-medium">The Pattern Repeats: Four CAD/PLM Vendors, Same Problems</div>
+          <div class="text-slate-500 text-sm">Deep evidence from Autodesk, PTC, Dassault, and Siemens</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center shrink-0 text-slate-300 font-bold text-sm">3</div>
+        <div>
+          <div class="text-slate-300 font-medium">Building the Advocacy Layer</div>
+          <div class="text-slate-500 text-sm">Architecture of a hardened client that treats vendor APIs as unreliable upstreams</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center shrink-0 text-slate-300 font-bold text-sm">4</div>
+        <div>
+          <div class="text-slate-300 font-medium">Failure Classification as a First-Class Concept</div>
+          <div class="text-slate-500 text-sm">Why exit codes, structured errors, and retry policies matter more than features</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+This is post 1 of **The API Advocacy Pattern** series. We have named the problem. Next, we prove it repeats — with detailed evidence from four major CAD/PLM vendors that share nothing in common except their disregard for the developers building on their platforms.
+
+---
+
+**Related:**
+- [ACC Forum Analysis: 4,295 Requests, 96.6% Unresolved](/blog/acc-forum-analysis)
+- [Authentication Chaos Across CAD Platforms](/blog/authentication-chaos-across-cad-platforms)
+- [The Bulk Operations Crisis](/blog/acc-bulk-operations-crisis)
+- [File Translation Disasters](/blog/file-translation-disasters)
