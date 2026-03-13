@@ -9,6 +9,36 @@
 
 export const releases = [
   {
+    version: '5.6.2',
+    date: '2026-03-13',
+    highlights: [
+      'Company CRUD commands (create, get, search, update)',
+      'Account user CRUD (create, get, update-account)',
+      'User list shows company names instead of UUIDs',
+      'Auth login expiry auto-refresh',
+    ],
+    description: 'Completes the admin management lifecycle with company and user CRUD operations, improves user list output with company name resolution, and fixes auth token expiry handling.',
+    type: 'minor',
+    changes: {
+      added: [
+        'Company management: create, get, search, update commands',
+        'User create (invite) command at account level',
+        'User get command for fetching user details',
+        'User update-account command (company, status)',
+        'Project get command for project details',
+        'Company name resolution in user list table output',
+        'Added date column in user list',
+        'Status summary in user list footer',
+      ],
+      fixed: [
+        'Auth login expiry: auto-refresh or re-login instead of "Already logged in"',
+        'BIM 360 find_user_by_email now handles array response format',
+        'add-to-project 409 Conflict shows friendly "already a member" message',
+        'UpdateAccountUserRequest serialization: company assignments now persist on BIM 360',
+      ],
+    },
+  },
+  {
     version: '5.6.0',
     date: '2026-03-10',
     highlights: ['Bulk Add 130x Faster', 'BIM 360 Instant Fallback', 'Smart Circuit Breakers', 'Batch Project Create'],

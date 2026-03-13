@@ -135,6 +135,47 @@ raps admin project list --account "$ACCOUNT_ID" --limit 10 --output json
 
 ---
 
+## Company Management
+
+### Create and Assign Companies
+
+```bash
+# List existing companies
+raps admin company list --account "$ACCOUNT_ID"
+
+# Search for a company by name
+raps admin company search "Structural" --account "$ACCOUNT_ID"
+
+# Create a new company
+raps admin company create "Structural Design Co" \
+  --trade "Structural Engineering" --city Chicago --country "United States"
+
+# Get company details
+raps admin company get "company-uuid" --account "$ACCOUNT_ID"
+
+# Update company details
+raps admin company update "company-uuid" --name "Structural Design Corp"
+
+# Assign a user to the company
+raps admin user update-account "jane@company.com" --company "company-uuid"
+```
+
+### Invite and Set Up a New User
+
+```bash
+# Create (invite) a user at the account level
+raps admin user create "newhire@company.com" \
+  --first-name Alex --last-name Johnson --company "company-uuid"
+
+# Look up user details
+raps admin user get "user-abc-123" --account "$ACCOUNT_ID"
+
+# Then add them to projects
+raps admin user add-to-all-projects "newhire@company.com" --account "$ACCOUNT_ID"
+```
+
+---
+
 ## Operation Management
 
 ### Track Operation Progress

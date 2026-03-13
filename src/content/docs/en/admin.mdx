@@ -20,15 +20,23 @@ Perform bulk user management operations across ACC/BIM 360 accounts. These comma
 | `raps admin user remove` | [bulk] Remove user from projects |
 | `raps admin user update` | [bulk] Update user role and/or company across projects |
 | `raps admin user add-to-all-projects` | Add user to all active projects with an optional role |
+| `raps admin user create` | Create (invite) a user at the account level |
+| `raps admin user get` | Get user details by user ID |
+| `raps admin user update-account` | Update a user's account-level settings (company, status) |
 | `raps admin user list` | List users in account or project |
 | `raps admin user import` | Import users to a project from CSV |
 | `raps admin folder set-permissions` | Set folder permissions across projects |
+| `raps admin project get` | Get project details by ID |
 | `raps admin project list` | List projects with filtering |
 | `raps admin project create` | Create a new project |
 | `raps admin project create-batch` | [bulk] Create multiple projects in parallel |
 | `raps admin project update` | Update project settings |
 | `raps admin project archive` | Archive a project |
-| `raps admin company-list` | List companies in an account |
+| `raps admin company list` | List companies in an account |
+| `raps admin company get` | Get company details by ID |
+| `raps admin company search` | Search companies by name |
+| `raps admin company create` | Create a new company |
+| `raps admin company update` | Update company details |
 | `raps admin operation status` | View operation progress |
 | `raps admin operation resume` | Resume interrupted operation |
 | `raps admin operation cancel` | Cancel in-progress operation |
@@ -184,6 +192,81 @@ $ raps admin user add-to-all-projects "new.hire@company.com" --dry-run
 
 > **Tip:** Use `raps acc project-roles list --project <PROJECT_ID>` to look up the role IDs available in your account.
 
+### raps admin user create
+
+Create (invite) a new user at the account level.
+
+```bash
+raps admin user create [OPTIONS] <EMAIL>
+```
+
+**Arguments:**
+- `EMAIL` - Email address for the new user
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--first-name <NAME>` - User's first name
+- `--last-name <NAME>` - User's last name
+- `--company <COMPANY>` - Company ID to assign
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin user create "jane@company.com" --account "acc-123" \
+    --first-name Jane --last-name Smith --company "company-uuid"
+User created: jane@company.com (user-id: abc-123)
+```
+
+### raps admin user get
+
+Get user details by user ID.
+
+```bash
+raps admin user get [OPTIONS] <USER_ID>
+```
+
+**Arguments:**
+- `USER_ID` - The user ID to look up
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin user get "user-abc-123" --account "acc-123"
+```
+
+### raps admin user update-account
+
+Update a user's account-level settings such as company assignment or status.
+
+```bash
+raps admin user update-account [OPTIONS] <USER_ID_OR_EMAIL>
+```
+
+**Arguments:**
+- `USER_ID_OR_EMAIL` - User ID or email address
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--company <COMPANY>` - Company ID to assign
+- `--status <STATUS>` - Account status (active, inactive)
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+# Assign user to a company
+$ raps admin user update-account "jane@company.com" --account "acc-123" \
+    --company "company-uuid"
+
+# Deactivate a user
+$ raps admin user update-account "user-abc-123" --status inactive
+```
+
 ### raps admin user list
 
 List users in an account or specific project.
@@ -267,14 +350,14 @@ Results:
 
 ---
 
-## Company Commands (New in v4.5)
+## Company Commands
 
-### raps admin company-list
+### raps admin company list
 
 List companies registered in an account.
 
 ```bash
-raps admin company-list [OPTIONS]
+raps admin company list [OPTIONS]
 ```
 
 **Options:**
@@ -283,12 +366,125 @@ raps admin company-list [OPTIONS]
 **Example:**
 
 ```bash
-$ raps admin company-list --account "acc-123"
+$ raps admin company list --account "acc-123"
+```
+
+### raps admin company get
+
+Get details for a specific company by ID.
+
+```bash
+raps admin company get [OPTIONS] <COMPANY_ID>
+```
+
+**Arguments:**
+- `COMPANY_ID` - The company ID to look up
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin company get "company-uuid" --account "acc-123"
+```
+
+### raps admin company search
+
+Search companies by name.
+
+```bash
+raps admin company search [OPTIONS] <NAME>
+```
+
+**Arguments:**
+- `NAME` - Company name (or partial name) to search for
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin company search "Structural" --account "acc-123"
+```
+
+### raps admin company create
+
+Create a new company in an account.
+
+```bash
+raps admin company create [OPTIONS] <NAME>
+```
+
+**Arguments:**
+- `NAME` - Company name
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--trade <TRADE>` - Trade/discipline (e.g., "Structural Engineering")
+- `--city <CITY>` - City
+- `--country <COUNTRY>` - Country
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin company create "Structural Design Co" --account "acc-123" \
+    --trade "Structural Engineering" --city Chicago --country "United States"
+Company created: Structural Design Co (id: company-new-uuid)
+```
+
+### raps admin company update
+
+Update an existing company's details.
+
+```bash
+raps admin company update [OPTIONS] <COMPANY_ID>
+```
+
+**Arguments:**
+- `COMPANY_ID` - The company ID to update
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--name <NAME>` - New company name
+- `--trade <TRADE>` - New trade/discipline
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin company update "company-uuid" --account "acc-123" \
+    --name "Structural Design Corp" --trade "Architecture"
 ```
 
 ---
 
 ## Project Commands
+
+### raps admin project get
+
+Get details for a specific project by ID.
+
+```bash
+raps admin project get [OPTIONS] <PROJECT_ID>
+```
+
+**Arguments:**
+- `PROJECT_ID` - The project ID to look up
+
+**Options:**
+- `-a, --account <ACCOUNT>` - Account ID (defaults to `APS_ACCOUNT_ID`)
+- `--output <FORMAT>` - Output format
+
+**Example:**
+
+```bash
+$ raps admin project get "b.proj-001" --account "acc-123"
+```
 
 ### raps admin project list
 
