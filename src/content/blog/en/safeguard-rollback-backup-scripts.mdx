@@ -1,0 +1,131 @@
+---
+title: "Safeguard: Undo Any APS Operation With Generated Rollback Scripts"
+description: "RAPS 5.7 introduces raps safeguard — automatic rollback and backup script generation for 32 destructive operations across buckets, users, webhooks, projects, and more."
+pubDate: 2026-03-14
+author: "Dmytro Yemelianov"
+tags: ["safety", "automation", "enterprise", "cli", "devops"]
+featured: true
+draft: false
+---
+
+The Autodesk Platform Services API has no undo button. Delete a bucket and its objects are gone. Remove a user from 50 projects and there is no "restore previous state." Overwrite folder permissions and the old configuration vanishes.
+
+Every team eventually learns this the hard way. RAPS 5.7 makes sure you only learn it once.
+
+---
+
+## The Problem
+
+APS operations are immediate and irreversible. The web UI sometimes has confirmation dialogs, but the API does not. When automating bulk operations — adding hundreds of users, syncing buckets, modifying permissions across projects — a single mistake can cascade across your entire account.
+
+The standard advice is "be careful." That is not engineering. Engineering means having a recovery plan before you need one.
+
+## raps safeguard
+
+RAPS 5.7 introduces `raps safeguard`, a command that generates executable shell scripts to either **back up current state** before a destructive operation or **roll back** an operation after it runs.
+
+### Backup: Capture State Before Changes
+
+Before deleting a bucket, generate a backup script:
+
+```bash
+raps safeguard backup "bucket delete my-models"
+```
+
+This produces a script that:
+
+1. Saves bucket metadata as JSON
+2. Takes a snapshot manifest (keys, sizes, SHA1 hashes)
+3. Downloads every object to a local backup directory
+
+Run the backup script first, then proceed with the delete knowing you can restore.
+
+### Rollback: Undo What Just Happened
+
+After accidentally adding a user to the wrong project:
+
+```bash
+raps safeguard rollback "admin user add --email jane@co.com --project-id wrong-project"
+```
+
+This generates a script containing the inverse operation — in this case, `raps admin user remove` with the same email and project ID.
+
+### Preview Without Writing
+
+Use `--dry-run` to print the script to stdout without creating a file:
+
+```bash
+raps safeguard rollback "webhook delete hook-abc-123" --dry-run
+```
+
+---
+
+## What Is Covered
+
+32 operations across every major APS domain:
+
+| Domain | Operations |
+|--------|-----------|
+| **Buckets** | create, delete |
+| **Objects** | upload, delete, copy |
+| **Translation** | start |
+| **Webhooks** | create, delete, update |
+| **Projects** | create, update, archive |
+| **Admin Users** | add, remove, update, import (CSV) |
+| **Folder Permissions** | set-permissions |
+| **Issues** | create, update |
+| **RFIs** | create, update |
+| **Templates** | create, update, archive |
+| **Items** | delete, rename |
+| **Design Automation** | workitem create |
+| **Reality Capture** | delete |
+| **Config** | set |
+| **Sync / Pipeline** | directory sync, pipeline run |
+
+Run `raps safeguard list` to see the full table.
+
+---
+
+## Script Quality
+
+Every generated script follows production standards:
+
+- **`set -euo pipefail`** — fails immediately on any error
+- **Inline comments** explaining each step
+- **Original command** preserved as a reference comment
+- **`chmod +x`** — executable immediately
+- **Timestamped filenames** — `rollback-bucket-delete-20260314T100000.sh`
+
+The scripts use only `raps` commands, so they work on any machine where RAPS is installed. No external dependencies.
+
+---
+
+## When to Use Safeguard
+
+**Before bulk operations:** Generate a backup script before running `admin user import`, `sync`, or `pipeline run`. If something goes wrong, you have a one-command recovery path.
+
+**In CI/CD pipelines:** Add a backup step before destructive operations in your pipeline YAML. If the pipeline fails mid-execution, the backup script restores the previous state.
+
+**For audit compliance:** Backup scripts double as documentation of what state existed before a change. Store them alongside your change management records.
+
+**During onboarding:** New team members running admin commands for the first time can generate rollback scripts as a safety net. Mistakes become recoverable instead of catastrophic.
+
+---
+
+## Try It
+
+```bash
+# Install or update
+cargo install raps
+
+# See all supported operations
+raps safeguard list
+
+# Generate a backup before a destructive operation
+raps safeguard backup "bucket delete staging-models" --out-file pre-delete-backup.sh
+
+# Preview a rollback script
+raps safeguard rollback "admin user remove --project-id abc --email user@co.com" --dry-run
+```
+
+The best time to think about rollback is before you need it.

@@ -1,0 +1,190 @@
+---
+title: "Safeguard"
+description: "Generate rollback and backup scripts for any RAPS operation"
+section: "commands"
+order: 12
+icon: "🛡️"
+---
+
+# Safeguard
+
+Generate executable rollback and backup shell scripts for destructive RAPS operations. Covers 32 operations across buckets, objects, webhooks, projects, admin users, issues, RFIs, templates, folder permissions, and more.
+
+> **Tip:** Run `raps safeguard backup` before destructive operations and `raps safeguard rollback` after mistakes. Both generate ready-to-run bash scripts.
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| `raps safeguard rollback` | Generate a script that undoes a given operation |
+| `raps safeguard backup` | Generate a script that captures current state before an operation |
+| `raps safeguard list` | List all 32 supported reversible operations |
+
+---
+
+## raps safeguard rollback
+
+Generate a script that reverses a RAPS command.
+
+```bash
+raps safeguard rollback "<command>"
+```
+
+**Options:**
+- `--out-file <PATH>` — Output file (default: `rollback-<command>-<timestamp>.sh`)
+- `--dry-run` — Print script to stdout without writing a file
+
+**Examples:**
+
+```bash
+# Undo a bucket deletion
+$ raps safeguard rollback "bucket delete my-models" --dry-run
+#!/usr/bin/env bash
+# RAPS Rollback Script
+# Original command: raps bucket delete my-models
+set -euo pipefail
+
+# Re-create the deleted bucket
+raps bucket create my-models --policy transient
+# NOTE: Objects cannot be automatically restored.
+
+# Undo adding a user to the wrong project
+$ raps safeguard rollback "admin user add --email jane@co.com --project-id wrong-proj"
+✓ Rollback script generated
+  Command: raps admin user add --email jane@co.com --project-id wrong-proj
+  File:    rollback-admin-user-add-20260314T100000.sh
+  Next:    Review the script, then: bash rollback-admin-user-add-20260314T100000.sh
+```
+
+---
+
+## raps safeguard backup
+
+Generate a script that captures current state before a destructive operation.
+
+```bash
+raps safeguard backup "<command>"
+```
+
+**Options:**
+- `--out-file <PATH>` — Output file (default: `backup-<command>-<timestamp>.sh`)
+- `--dry-run` — Print script to stdout without writing a file
+
+**Examples:**
+
+```bash
+# Back up everything before deleting a bucket
+$ raps safeguard backup "bucket delete staging-models" --dry-run
+#!/usr/bin/env bash
+# RAPS Backup Script
+# Original command: raps bucket delete staging-models
+set -euo pipefail
+
+# Save bucket metadata
+raps bucket info staging-models --output json > "backup-bucket-staging-models-info.json"
+# Take a snapshot of all objects
+raps snapshot create staging-models
+# Download all objects locally
+mkdir -p "backup-staging-models" && raps object list staging-models --output json | \
+  jq -r '.[].objectKey' | while read -r key; do
+    raps object download "staging-models/$key" "backup-staging-models/$key"
+  done
+
+# Back up user list before bulk removal
+$ raps safeguard backup "admin user remove --project-id abc --email user@co.com"
+✓ Backup script generated
+  File: backup-admin-user-remove-20260314T100000.sh
+```
+
+---
+
+## raps safeguard list
+
+Show all operations that support rollback and backup script generation.
+
+```bash
+$ raps safeguard list
+Safeguard Operations
+──────────────────────────────────────────────────────────────────────
+  Command                          Description
+──────────────────────────────────────────────────────────────────────
+  raps bucket create               Create an OSS bucket
+  raps bucket delete               Delete an OSS bucket
+  raps object upload               Upload object(s) to a bucket
+  raps object delete               Delete object(s) from a bucket
+  raps object copy                 Copy object between buckets
+  raps translate start             Start a model translation job
+  raps webhook create              Create a webhook subscription
+  raps webhook delete              Delete a webhook subscription
+  raps webhook update              Update a webhook subscription
+  raps project create              Create a new project
+  raps project update              Update project settings
+  raps project archive             Archive a project
+  raps admin user add              Add user(s) to project(s)
+  raps admin user remove           Remove user(s) from project(s)
+  raps admin user update           Update user role in project
+  raps admin user import           Bulk import users from CSV
+  ...
+──────────────────────────────────────────────────────────────────────
+```
+
+Use `--output json` for machine-readable output.
+
+---
+
+## Supported Operations
+
+| Domain | Operations |
+|--------|-----------|
+| **Buckets** | create, delete |
+| **Objects** | upload, delete, copy |
+| **Translation** | start |
+| **Webhooks** | create, delete, update |
+| **Projects** | create, update, archive |
+| **Admin Users** | add, remove, update, import |
+| **Folder Permissions** | set-permissions |
+| **Issues** | create, update |
+| **RFIs** | create, update |
+| **Templates** | create, update, archive |
+| **Folders** | create |
+| **Items** | delete, rename |
+| **Design Automation** | workitem create |
+| **Reality Capture** | delete |
+| **Config** | set |
+| **Sync** | directory sync |
+| **Pipeline** | run |
+
+---
+
+## CI/CD Integration
+
+Add safeguard steps to your pipeline for automatic backup before destructive operations:
+
+```yaml
+# .github/workflows/deploy.yml
+- name: Backup before sync
+  run: |
+    raps safeguard backup "sync ./dist my-bucket" --out-file backup.sh
+    bash backup.sh
+
+- name: Sync to bucket
+  run: raps sync ./dist my-bucket
+
+- name: Archive rollback script
+  if: failure()
+  run: raps safeguard rollback "sync ./dist my-bucket" --out-file rollback.sh
+  # Upload rollback.sh as artifact for manual recovery
+```
+
+---
+
+## Script Characteristics
+
+All generated scripts include:
+
+- `set -euo pipefail` — exits on any error
+- Inline comments explaining each step
+- Original command as a reference comment
+- Timestamped filenames for traceability
+- `chmod +x` — ready to execute immediately
+- Only `raps` commands — no external dependencies

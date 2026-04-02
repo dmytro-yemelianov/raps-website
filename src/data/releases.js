@@ -9,6 +9,29 @@
 
 export const releases = [
   {
+    version: '5.7.0',
+    date: '2026-03-14',
+    highlights: [
+      'Safeguard: rollback & backup script generators for 32 operations',
+      'Pre-operation backup scripts capture current state',
+      'Post-operation rollback scripts to undo changes',
+      'Dry-run mode for script preview',
+    ],
+    description: 'Introduces raps safeguard — generates executable backup and rollback shell scripts for any destructive RAPS operation, covering buckets, objects, webhooks, projects, admin users, issues, RFIs, templates, folder permissions, pipelines, and more.',
+    type: 'minor',
+    changes: {
+      added: [
+        '`raps safeguard rollback "<command>"` — generates a script that undoes the given operation',
+        '`raps safeguard backup "<command>"` — generates a script that captures current state before a destructive operation',
+        '`raps safeguard list` — shows all 32 supported reversible operations',
+        'Backup scripts for bucket delete: downloads all objects, saves metadata, takes snapshot manifest',
+        'Rollback scripts for admin user operations: add/remove/update with email and project-id mapping',
+        'Pipeline and sync operation backup via pre-operation snapshots',
+        'All generated scripts include set -euo pipefail, inline comments, chmod +x',
+      ],
+    },
+  },
+  {
     version: '5.6.2',
     date: '2026-03-13',
     highlights: [
