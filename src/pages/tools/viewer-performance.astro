@@ -1,0 +1,512 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="WASM Viewer Performance Lab"
+  description="Load OBJ, STL, and IFC models in the browser and inspect live parse, upload, fit, and memory timings from the RAPS WASM viewer."
+>
+  <div class="tool-container">
+    <h1 class="tool-title">🧊 WASM Viewer Performance Lab</h1>
+    <p class="tool-subtitle">
+      Profile the RAPS browser viewer with live timings for cold start, parsing, GPU upload, scene fit, and memory use.
+    </p>
+
+    <div class="raps-tip">
+      <h3>💡 Same profiler, different surface</h3>
+      <p>
+        This page uses the same load-profile event that backs the frontend checks in <code>raps-viewer-js</code>.
+        The first sample load shows cold-start cost. Every load after that shows the warm path.
+      </p>
+      <p><code>npm run test:perf</code> verifies the same metrics in Playwright.</p>
+    </div>
+
+    <div class="page-grid">
+      <section class="stage-card">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <button id="sample-obj-btn" class="tool-btn primary">Load OBJ sample</button>
+            <button id="sample-ifc-btn" class="tool-btn secondary">Load IFC sample</button>
+            <button id="sample-reload-btn" class="tool-btn ghost">Reload wedge</button>
+          </div>
+          <label class="upload-btn" for="file-input">
+            <span>Upload model</span>
+            <input type="file" id="file-input" accept=".obj,.stl,.ifc" />
+          </label>
+        </div>
+
+        <div class="status-bar">
+          <div>
+            <div class="status-label">Status</div>
+            <div id="status-text" class="status-value">Booting viewer and loading default OBJ sample...</div>
+          </div>
+          <div>
+            <div class="status-label">Selection</div>
+            <div id="selection-text" class="status-value muted">No entity selected</div>
+          </div>
+        </div>
+
+        <div class="viewer-shell">
+          <raps-viewer id="viewer" background="#0b1120"></raps-viewer>
+        </div>
+      </section>
+
+      <aside class="profile-card">
+        <div class="profile-header">
+          <div>
+            <h2>Latest Load Profile</h2>
+            <p>Refresh the page to re-measure cold start.</p>
+          </div>
+          <div class="badge-row">
+            <span id="phase-badge" class="metric-badge">Pending</span>
+            <span id="source-badge" class="metric-badge subtle">Unknown source</span>
+            <span id="ext-badge" class="metric-badge subtle">--</span>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-card emphasis">
+            <span class="metric-label">Total</span>
+            <span id="metric-total" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Kernel init</span>
+            <span id="metric-kernel" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Source read</span>
+            <span id="metric-read" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Entity scan</span>
+            <span id="metric-entities" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Parse</span>
+            <span id="metric-parse" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Buffer build</span>
+            <span id="metric-buffers" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Scene upload</span>
+            <span id="metric-upload" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Fit camera</span>
+            <span id="metric-fit" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Source bytes</span>
+            <span id="metric-bytes" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">WASM memory</span>
+            <span id="metric-memory" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Vertices</span>
+            <span id="metric-verts" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Triangles</span>
+            <span id="metric-tris" class="metric-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Entity types</span>
+            <span id="metric-entity-types" class="metric-value">--</span>
+          </div>
+        </div>
+
+        <div class="notes-card">
+          <h3>How to read it</h3>
+          <ul>
+            <li><strong>Cold start</strong> includes initial WASM compile and kernel setup.</li>
+            <li><strong>Warm path</strong> isolates model handling after the kernel is already resident.</li>
+            <li><strong>Buffer build</strong> applies to mesh formats like OBJ and STL; IFC goes through the IFC scene path instead.</li>
+            <li><strong>Reload wedge</strong> is useful for checking that a second load replaces the old scene instead of stacking meshes.</li>
+          </ul>
+        </div>
+
+        <details class="raw-profile">
+          <summary>Raw profile JSON</summary>
+          <pre id="profile-json">Waiting for the first load...</pre>
+        </details>
+      </aside>
+    </div>
+  </div>
+
+  <script type="importmap" is:inline>
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module" is:inline>
+    import '/vendor/raps-viewer.js';
+
+    const viewer = document.getElementById('viewer');
+    const fileInput = document.getElementById('file-input');
+    const statusText = document.getElementById('status-text');
+    const selectionText = document.getElementById('selection-text');
+    const phaseBadge = document.getElementById('phase-badge');
+    const sourceBadge = document.getElementById('source-badge');
+    const extBadge = document.getElementById('ext-badge');
+    const profileJson = document.getElementById('profile-json');
+
+    const metrics = {
+      total: document.getElementById('metric-total'),
+      kernel: document.getElementById('metric-kernel'),
+      read: document.getElementById('metric-read'),
+      entities: document.getElementById('metric-entities'),
+      parse: document.getElementById('metric-parse'),
+      buffers: document.getElementById('metric-buffers'),
+      upload: document.getElementById('metric-upload'),
+      fit: document.getElementById('metric-fit'),
+      bytes: document.getElementById('metric-bytes'),
+      memory: document.getElementById('metric-memory'),
+      verts: document.getElementById('metric-verts'),
+      tris: document.getElementById('metric-tris'),
+      entityTypes: document.getElementById('metric-entity-types'),
+    };
+
+    const buttons = [
+      document.getElementById('sample-obj-btn'),
+      document.getElementById('sample-ifc-btn'),
+      document.getElementById('sample-reload-btn'),
+    ];
+
+    function nextFrame() {
+      return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }
+
+    async function ensureViewerReady() {
+      await customElements.whenDefined('raps-viewer');
+
+      // The component defers renderer creation to the next animation frame.
+      await nextFrame();
+      await nextFrame();
+    }
+
+    function formatMs(value) {
+      if (value === undefined || value === null) return '--';
+      const digits = value >= 100 ? 0 : value >= 10 ? 1 : 2;
+      return `${value.toFixed(digits)} ms`;
+    }
+
+    function formatInt(value) {
+      return new Intl.NumberFormat().format(value ?? 0);
+    }
+
+    function formatBytes(value) {
+      if (value === undefined || value === null) return '--';
+      if (value < 1024) return `${value} B`;
+      if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+      return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    function setBusy(busy) {
+      for (const button of buttons) {
+        button.disabled = busy;
+      }
+      fileInput.disabled = busy;
+    }
+
+    function renderProfile(profile) {
+      phaseBadge.textContent = profile.kernelInitMs > 0 ? 'Cold start' : 'Warm path';
+      phaseBadge.classList.toggle('warm', profile.kernelInitMs === 0);
+      sourceBadge.textContent = profile.sourceKind.toUpperCase();
+      extBadge.textContent = profile.extension ? profile.extension.toUpperCase() : 'UNKNOWN';
+
+      metrics.total.textContent = formatMs(profile.totalMs);
+      metrics.kernel.textContent = formatMs(profile.kernelInitMs);
+      metrics.read.textContent = formatMs(profile.sourceReadMs);
+      metrics.entities.textContent = formatMs(profile.entityExtractMs);
+      metrics.parse.textContent = formatMs(profile.parseMs);
+      metrics.buffers.textContent = formatMs(profile.bufferBuildMs);
+      metrics.upload.textContent = formatMs(profile.sceneUploadMs);
+      metrics.fit.textContent = formatMs(profile.fitMs);
+      metrics.bytes.textContent = formatBytes(profile.sourceBytes);
+      metrics.memory.textContent = formatBytes(profile.wasmMemoryBytes);
+      metrics.verts.textContent = formatInt(profile.vertexCount);
+      metrics.tris.textContent = formatInt(profile.triangleCount);
+      metrics.entityTypes.textContent = formatInt(profile.entityTypeCount);
+      profileJson.textContent = JSON.stringify(profile, null, 2);
+
+      statusText.textContent =
+        `Loaded ${profile.extension.toUpperCase()} via ${profile.sourceKind} in ${formatMs(profile.totalMs)}`;
+    }
+
+    async function loadSource(source, label) {
+      selectionText.textContent = 'No entity selected';
+      statusText.textContent = label;
+      setBusy(true);
+      try {
+        await ensureViewerReady();
+        await viewer.load(source);
+      } catch (error) {
+        statusText.textContent = `Load failed: ${error.message}`;
+        console.error(error);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    viewer.addEventListener('progress', (event) => {
+      statusText.textContent = `Loading ${event.detail.phase}...`;
+    });
+
+    viewer.addEventListener('profile', (event) => {
+      renderProfile(event.detail);
+    });
+
+    viewer.addEventListener('select', (event) => {
+      const suffix = event.detail.entityType ? ` (${event.detail.entityType})` : '';
+      selectionText.textContent = `Selected entity ${event.detail.entityId}${suffix}`;
+    });
+
+    document.getElementById('sample-obj-btn').addEventListener('click', () => {
+      loadSource('/tools/viewer-fixtures/demo-pyramid.obj', 'Loading OBJ sample...');
+    });
+
+    document.getElementById('sample-ifc-btn').addEventListener('click', () => {
+      loadSource('/tools/viewer-fixtures/demo-box.ifc', 'Loading IFC sample...');
+    });
+
+    document.getElementById('sample-reload-btn').addEventListener('click', () => {
+      loadSource('/tools/viewer-fixtures/reload-wedge.obj', 'Reloading wedge sample...');
+    });
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      loadSource(file, `Loading ${file.name}...`);
+    });
+
+    loadSource('/tools/viewer-fixtures/demo-pyramid.obj', 'Booting viewer and loading default OBJ sample...');
+  </script>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .tool-title {
+    @apply text-3xl sm:text-5xl font-display font-bold text-white mb-4 text-center;
+  }
+
+  .tool-subtitle {
+    @apply text-center text-slate-300 mb-8 text-lg max-w-3xl mx-auto;
+  }
+
+  .raps-tip {
+    @apply bg-blue-950/30 border border-blue-800/30 rounded-xl p-6 mb-8;
+  }
+
+  .raps-tip h3 {
+    @apply text-lg font-semibold text-blue-300 mb-3 mt-0;
+  }
+
+  .raps-tip p {
+    @apply text-slate-300 mb-3 last:mb-0;
+  }
+
+  .raps-tip code {
+    @apply bg-blue-900/50 text-blue-200 px-2 py-1 rounded text-sm font-mono;
+  }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .stage-card,
+  .profile-card {
+    @apply bg-slate-900/50 border border-slate-800 rounded-2xl p-6;
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .toolbar-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn,
+  .upload-btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer;
+  }
+
+  .tool-btn.primary {
+    @apply bg-rapeseed-500 text-slate-900 hover:bg-rapeseed-400;
+  }
+
+  .tool-btn.secondary {
+    @apply bg-cyan-600 text-white hover:bg-cyan-500;
+  }
+
+  .tool-btn.ghost,
+  .upload-btn {
+    @apply bg-slate-800 text-slate-200 border border-slate-700 hover:border-slate-500 hover:text-white;
+  }
+
+  .tool-btn:disabled,
+  .upload-btn:has(input:disabled) {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .upload-btn input {
+    display: none;
+  }
+
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .status-label {
+    @apply text-xs uppercase tracking-wide text-slate-500 mb-1;
+  }
+
+  .status-value {
+    @apply text-sm font-medium text-white;
+  }
+
+  .status-value.muted {
+    @apply text-slate-400;
+  }
+
+  .viewer-shell {
+    @apply rounded-2xl border border-slate-800 overflow-hidden bg-slate-950;
+    min-height: 620px;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.05);
+  }
+
+  .viewer-shell raps-viewer {
+    display: block;
+    width: 100%;
+    height: 620px;
+  }
+
+  .profile-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .profile-header h2 {
+    @apply text-xl font-semibold text-white mb-1 mt-0;
+  }
+
+  .profile-header p {
+    @apply text-sm text-slate-400 m-0;
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .metric-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-300;
+  }
+
+  .metric-badge.subtle {
+    @apply border-slate-700 bg-slate-800 text-slate-300;
+  }
+
+  .metric-badge.warm {
+    @apply border-blue-500/30 bg-blue-500/10 text-blue-300;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .metric-card {
+    @apply rounded-xl border border-slate-800 bg-slate-950/60 p-4;
+  }
+
+  .metric-card.emphasis {
+    @apply border-rapeseed-500/30 bg-rapeseed-500/10;
+  }
+
+  .metric-label {
+    @apply block text-xs uppercase tracking-wide text-slate-500 mb-2;
+  }
+
+  .metric-value {
+    @apply block text-lg font-semibold text-white;
+  }
+
+  .notes-card {
+    @apply rounded-xl border border-slate-800 bg-slate-950/60 p-4 mb-4;
+  }
+
+  .notes-card h3 {
+    @apply text-base font-semibold text-white mt-0 mb-3;
+  }
+
+  .notes-card ul {
+    @apply text-sm text-slate-300 pl-5 m-0 space-y-2;
+  }
+
+  .raw-profile {
+    @apply rounded-xl border border-slate-800 bg-slate-950/60 p-4;
+  }
+
+  .raw-profile summary {
+    @apply cursor-pointer text-sm font-semibold text-slate-200;
+  }
+
+  .raw-profile pre {
+    @apply mt-4 rounded-lg bg-slate-950 p-4 text-xs text-slate-300 overflow-x-auto;
+    max-height: 360px;
+  }
+
+  @media (max-width: 1100px) {
+    .page-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .status-bar {
+      grid-template-columns: 1fr;
+    }
+
+    .metric-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .viewer-shell,
+    .viewer-shell raps-viewer {
+      min-height: 480px;
+      height: 480px;
+    }
+  }
+</style>

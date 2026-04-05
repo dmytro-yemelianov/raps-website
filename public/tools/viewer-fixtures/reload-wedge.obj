@@ -1,0 +1,7 @@
+# Two-face wedge used to verify reload replacement
+v 0 0 0
+v 2 0 0
+v 0 2 0
+v 0 0 2
+f 1 2 3
+f 1 2 4
