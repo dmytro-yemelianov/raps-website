@@ -4,12 +4,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="WASM Viewer Performance Lab"
-  description="Load OBJ, STL, and IFC models in the browser and inspect live parse, upload, fit, and memory timings from the RAPS WASM viewer."
+  description="Load OBJ, STL, and IFC models in the browser, generate procedural pipe, building, and forest scenes, and inspect live parse, upload, fit, and memory timings from the RAPS WASM viewer."
 >
   <div class="tool-container">
     <h1 class="tool-title">🧊 WASM Viewer Performance Lab</h1>
     <p class="tool-subtitle">
-      Profile the RAPS browser viewer with live timings for cold start, parsing, GPU upload, scene fit, and memory use.
+      Profile the RAPS browser viewer with live timings for cold start, parsing, GPU upload, scene fit, and memory use across both shipped fixtures and procedural scenes.
     </p>
 
     <div class="raps-tip">
@@ -29,6 +29,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <button id="sample-ifc-btn" class="tool-btn secondary">Load IFC sample</button>
             <button id="sample-reload-btn" class="tool-btn ghost">Reload wedge</button>
             <button id="sample-heavy-btn" class="tool-btn warning">Load heavy OBJ</button>
+            <button id="generate-pipes-btn" class="tool-btn secondary">Generate pipes</button>
+            <button id="generate-building-btn" class="tool-btn primary">Generate building</button>
+            <button id="generate-forest-btn" class="tool-btn ghost">Generate forest</button>
+            <button id="generate-campus-btn" class="tool-btn warning">Generate campus</button>
             <button id="generate-giant-btn" class="tool-btn danger">Generate giant OBJ</button>
           </div>
           <label class="upload-btn" for="file-input">
@@ -47,6 +51,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <span class="fixture-label">Generated giant preset</span>
             <strong>524,288 triangles</strong>
             <span>Builds a synthetic OBJ in the browser for stress checks without committing a giant blob to git.</span>
+          </div>
+          <div class="fixture-card">
+            <span class="fixture-label">Semantic generators</span>
+            <strong>Pipes, buildings, and forests</strong>
+            <span>Creates structured scenes with fittings, slabs, walls, doors, windows, trunks, branches, and leaf masses directly in the browser.</span>
+          </div>
+          <div class="fixture-card">
+            <span class="fixture-label">Mixed campus preset</span>
+            <strong>Combined site scene</strong>
+            <span>Loads terrain, multiple buildings, a pipe rack, roads, and planted zones as one generated model for broader viewer checks.</span>
           </div>
         </div>
 
@@ -142,6 +156,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <li><strong>Buffer build</strong> applies to mesh formats like OBJ and STL; IFC goes through the IFC scene path instead.</li>
             <li><strong>Reload wedge</strong> is useful for checking that a second load replaces the old scene instead of stacking meshes.</li>
             <li><strong>Heavy URL fixture</strong> is the reproducible network-backed stress case for <code>tests.rapscli.xyz</code>.</li>
+            <li><strong>Semantic generators</strong> let you test viewer behavior against scenes that look more like actual BIM and site content instead of raw stress geometry.</li>
             <li><strong>Generated giant preset</strong> is the in-memory stress case when you want more geometry without checking in another huge asset.</li>
           </ul>
         </div>
@@ -164,6 +179,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <script type="module" is:inline>
     import '/vendor/raps-viewer.js';
+    import {
+      buildPipeRackModel,
+      buildBuildingModel,
+      buildForestModel,
+      buildCampusModel,
+    } from '/tools/viewer-generators.js';
 
     const viewer = document.getElementById('viewer');
     const fileInput = document.getElementById('file-input');
@@ -195,6 +216,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       document.getElementById('sample-ifc-btn'),
       document.getElementById('sample-reload-btn'),
       document.getElementById('sample-heavy-btn'),
+      document.getElementById('generate-pipes-btn'),
+      document.getElementById('generate-building-btn'),
+      document.getElementById('generate-forest-btn'),
+      document.getElementById('generate-campus-btn'),
       document.getElementById('generate-giant-btn'),
     ];
 
@@ -344,6 +369,25 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       }
     }
 
+    async function generateAndLoadModel(factory, label) {
+      selectionText.textContent = 'No entity selected';
+      statusText.textContent = `Generating ${label}...`;
+      setBusy(true);
+      try {
+        await ensureViewerReady();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const model = factory();
+        const file = new File([model.obj], `${model.name}.obj`, { type: 'text/plain' });
+        await viewer.load(file);
+        statusText.textContent = `Loaded generated ${label}: ${model.metadata.summary}`;
+      } catch (error) {
+        statusText.textContent = `Generated load failed: ${error.message}`;
+        console.error(error);
+      } finally {
+        setBusy(false);
+      }
+    }
+
     viewer.addEventListener('progress', (event) => {
       statusText.textContent = `Loading ${event.detail.phase}...`;
     });
@@ -371,6 +415,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     document.getElementById('sample-heavy-btn').addEventListener('click', () => {
       loadSource('/tools/viewer-fixtures/heavy-terrain-320.obj', 'Loading heavy OBJ fixture...');
+    });
+
+    document.getElementById('generate-pipes-btn').addEventListener('click', () => {
+      generateAndLoadModel(buildPipeRackModel, 'pipe rack scene');
+    });
+
+    document.getElementById('generate-building-btn').addEventListener('click', () => {
+      generateAndLoadModel(buildBuildingModel, 'building scene');
+    });
+
+    document.getElementById('generate-forest-btn').addEventListener('click', () => {
+      generateAndLoadModel(buildForestModel, 'forest scene');
+    });
+
+    document.getElementById('generate-campus-btn').addEventListener('click', () => {
+      generateAndLoadModel(buildCampusModel, 'mixed campus scene');
     });
 
     document.getElementById('generate-giant-btn').addEventListener('click', () => {
