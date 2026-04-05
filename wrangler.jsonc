@@ -4,7 +4,7 @@
   "routes": [
     { "pattern": "rapscli.xyz", "custom_domain": true },
     { "pattern": "www.rapscli.xyz", "custom_domain": true },
-    { "pattern": "tests.rapscli.xyz", "custom_domain": true }
+    { "pattern": "tests.rapscli.xyz/*", "zone_name": "rapscli.xyz" }
   ],
   "assets": {
     "directory": "./dist"
