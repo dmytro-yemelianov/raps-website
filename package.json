@@ -10,6 +10,7 @@
     "preview": "astro preview",
     "check": "astro build",
     "check:types": "astro check",
+    "generate:viewer-fixtures": "node scripts/generate-heavy-viewer-fixtures.mjs",
     "test": "astro build",
     "astro": "astro"
   },

@@ -1,0 +1,9 @@
+{
+  "name": "heavy-terrain-320",
+  "grid": 320,
+  "layers": 2,
+  "span": 260,
+  "amplitude": 22,
+  "vertexCount": 206082,
+  "triangleCount": 409600
+}

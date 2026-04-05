@@ -84,15 +84,6 @@ const ogLocaleAlternate = lang === 'uk' ? 'en_US' : 'uk_UA';
     <meta name="googlebot" content={robots} />
     <meta name="keywords" content="Autodesk Platform Services, APS, CLI, Rust, CAD, BIM, DevOps, CI/CD, Model Derivative, OAuth, automation" />
 
-    <script is:inline>
-      if (
-        window.location.hostname === 'tests.rapscli.xyz' &&
-        (window.location.pathname === '/' || window.location.pathname === '/index.html')
-      ) {
-        window.location.replace('/tests/');
-      }
-    </script>
-    
     <!-- Performance optimizations -->
     <link rel="dns-prefetch" href="//github.com">
     <link rel="dns-prefetch" href="//api.github.com">
@@ -173,12 +164,19 @@ const ogLocaleAlternate = lang === 'uk' ? 'en_US' : 'uk_UA';
 
     <!-- Privacy-First Analytics - deferred for performance -->
     <script defer>
+      const isDevHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isTestsHost = window.location.hostname === 'tests.rapscli.xyz';
+
       // Simple privacy-first analytics
       window.analytics = {
         track: function(event, properties = {}) {
           // Only track in production
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          if (isDevHost) {
             console.log('Analytics (dev):', event, properties);
+            return;
+          }
+
+          if (isTestsHost) {
             return;
           }
           
@@ -212,10 +210,12 @@ const ogLocaleAlternate = lang === 'uk' ? 'en_US' : 'uk_UA';
       };
 
       // Track page views
-      window.analytics.track('page_view', {
-        title: document.title,
-        url: window.location.href
-      });
+      if (!isTestsHost) {
+        window.analytics.track('page_view', {
+          title: document.title,
+          url: window.location.href
+        });
+      }
       
       // Track outbound links
       document.addEventListener('click', function(e) {

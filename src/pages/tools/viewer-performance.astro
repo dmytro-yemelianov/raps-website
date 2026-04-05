@@ -28,11 +28,26 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <button id="sample-obj-btn" class="tool-btn primary">Load OBJ sample</button>
             <button id="sample-ifc-btn" class="tool-btn secondary">Load IFC sample</button>
             <button id="sample-reload-btn" class="tool-btn ghost">Reload wedge</button>
+            <button id="sample-heavy-btn" class="tool-btn warning">Load heavy OBJ</button>
+            <button id="generate-giant-btn" class="tool-btn danger">Generate giant OBJ</button>
           </div>
           <label class="upload-btn" for="file-input">
             <span>Upload model</span>
             <input type="file" id="file-input" accept=".obj,.stl,.ifc" />
           </label>
+        </div>
+
+        <div class="fixture-strip">
+          <div class="fixture-card">
+            <span class="fixture-label">Heavy URL fixture</span>
+            <strong>409,600 triangles</strong>
+            <span>Loads <code>heavy-terrain-320.obj</code> from the test host to exercise network, parse, and upload together.</span>
+          </div>
+          <div class="fixture-card">
+            <span class="fixture-label">Generated giant preset</span>
+            <strong>524,288 triangles</strong>
+            <span>Builds a synthetic OBJ in the browser for stress checks without committing a giant blob to git.</span>
+          </div>
         </div>
 
         <div class="status-bar">
@@ -126,6 +141,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <li><strong>Warm path</strong> isolates model handling after the kernel is already resident.</li>
             <li><strong>Buffer build</strong> applies to mesh formats like OBJ and STL; IFC goes through the IFC scene path instead.</li>
             <li><strong>Reload wedge</strong> is useful for checking that a second load replaces the old scene instead of stacking meshes.</li>
+            <li><strong>Heavy URL fixture</strong> is the reproducible network-backed stress case for <code>tests.rapscli.xyz</code>.</li>
+            <li><strong>Generated giant preset</strong> is the in-memory stress case when you want more geometry without checking in another huge asset.</li>
           </ul>
         </div>
 
@@ -177,6 +194,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       document.getElementById('sample-obj-btn'),
       document.getElementById('sample-ifc-btn'),
       document.getElementById('sample-reload-btn'),
+      document.getElementById('sample-heavy-btn'),
+      document.getElementById('generate-giant-btn'),
     ];
 
     function nextFrame() {
@@ -189,6 +208,55 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       // The component defers renderer creation to the next animation frame.
       await nextFrame();
       await nextFrame();
+    }
+
+    function buildGeneratedTerrain({ name, grid, layers, span, amplitude }) {
+      const row = grid + 1;
+      const vertexCount = row * row * layers;
+      const triangleCount = grid * grid * 2 * layers;
+      const lines = new Array(3 + vertexCount + triangleCount);
+      let index = 0;
+
+      lines[index++] = `# Generated viewer stress model: ${name}`;
+      lines[index++] = `# grid=${grid} layers=${layers} vertices=${vertexCount} triangles=${triangleCount}`;
+      lines[index++] = `o ${name}`;
+
+      for (let layer = 0; layer < layers; layer += 1) {
+        for (let y = 0; y <= grid; y += 1) {
+          const v = y / grid;
+          const pz = (v - 0.5) * span;
+
+          for (let x = 0; x <= grid; x += 1) {
+            const u = x / grid;
+            const px = (u - 0.5) * span;
+            const ridge = Math.sin(u * Math.PI * 10 + layer * 0.45) * amplitude * 0.42;
+            const swell = Math.cos(v * Math.PI * 7 - layer * 0.35) * amplitude * 0.28;
+            const diagonal = Math.sin((u + v) * Math.PI * 6) * amplitude * 0.18;
+            const crater = Math.cos(Math.hypot(u - 0.5, v - 0.5) * Math.PI * 3.25) * amplitude * 0.16;
+            const terrace = (layer - (layers - 1) / 2) * (amplitude * 0.4);
+            const py = terrace + ridge + swell + diagonal + crater;
+            lines[index++] = `v ${px.toFixed(3)} ${py.toFixed(3)} ${pz.toFixed(3)}`;
+          }
+        }
+      }
+
+      let offset = 1;
+      for (let layer = 0; layer < layers; layer += 1) {
+        for (let y = 0; y < grid; y += 1) {
+          for (let x = 0; x < grid; x += 1) {
+            const a = offset + y * row + x;
+            const b = a + 1;
+            const c = a + row;
+            const d = c + 1;
+            lines[index++] = `f ${a} ${b} ${d}`;
+            lines[index++] = `f ${a} ${d} ${c}`;
+          }
+        }
+
+        offset += row * row;
+      }
+
+      return `${lines.join('\n')}\n`;
     }
 
     function formatMs(value) {
@@ -255,6 +323,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       }
     }
 
+    async function generateAndLoadPreset(preset) {
+      selectionText.textContent = 'No entity selected';
+      statusText.textContent = `Generating ${preset.label}...`;
+      setBusy(true);
+      try {
+        await ensureViewerReady();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const file = new File(
+          [buildGeneratedTerrain(preset)],
+          `${preset.name}.obj`,
+          { type: 'text/plain' },
+        );
+        await viewer.load(file);
+      } catch (error) {
+        statusText.textContent = `Generated load failed: ${error.message}`;
+        console.error(error);
+      } finally {
+        setBusy(false);
+      }
+    }
+
     viewer.addEventListener('progress', (event) => {
       statusText.textContent = `Loading ${event.detail.phase}...`;
     });
@@ -278,6 +367,21 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     document.getElementById('sample-reload-btn').addEventListener('click', () => {
       loadSource('/tools/viewer-fixtures/reload-wedge.obj', 'Reloading wedge sample...');
+    });
+
+    document.getElementById('sample-heavy-btn').addEventListener('click', () => {
+      loadSource('/tools/viewer-fixtures/heavy-terrain-320.obj', 'Loading heavy OBJ fixture...');
+    });
+
+    document.getElementById('generate-giant-btn').addEventListener('click', () => {
+      generateAndLoadPreset({
+        name: 'generated-giant-terrain-512',
+        label: 'giant terrain preset',
+        grid: 512,
+        layers: 1,
+        span: 340,
+        amplitude: 28,
+      });
     });
 
     fileInput.addEventListener('change', () => {
@@ -360,6 +464,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     @apply bg-cyan-600 text-white hover:bg-cyan-500;
   }
 
+  .tool-btn.warning {
+    @apply bg-amber-500 text-slate-950 hover:bg-amber-400;
+  }
+
+  .tool-btn.danger {
+    @apply bg-rose-600 text-white hover:bg-rose-500;
+  }
+
   .tool-btn.ghost,
   .upload-btn {
     @apply bg-slate-800 text-slate-200 border border-slate-700 hover:border-slate-500 hover:text-white;
@@ -372,6 +484,33 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   .upload-btn input {
     display: none;
+  }
+
+  .fixture-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .fixture-card {
+    @apply rounded-xl border border-slate-800 bg-slate-950/60 p-4;
+  }
+
+  .fixture-label {
+    @apply block text-xs uppercase tracking-wide text-slate-500 mb-2;
+  }
+
+  .fixture-card strong {
+    @apply block text-white text-base font-semibold mb-2;
+  }
+
+  .fixture-card span {
+    @apply block text-sm text-slate-300 leading-relaxed;
+  }
+
+  .fixture-card code {
+    @apply rounded bg-slate-900 px-1.5 py-0.5 text-xs text-amber-300;
   }
 
   .status-bar {
@@ -495,6 +634,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   @media (max-width: 720px) {
+    .fixture-strip,
     .status-bar {
       grid-template-columns: 1fr;
     }
