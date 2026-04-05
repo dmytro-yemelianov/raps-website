@@ -1,0 +1,591 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="IoT Sensor Visualization Lab"
+  description="Digital twin demo with synthetic IoT sensor data, heatmap overlays, and time-series playback on the RAPS WASM viewer."
+>
+  <div class="tool-container">
+    <h1 class="tool-title">IoT Sensor Visualization Lab</h1>
+    <p class="tool-subtitle">
+      Load a 3D model, activate synthetic IoT sensors, toggle surface heatmaps, and scrub through a 24-hour simulated workday. No backend, no real sensors — all data generated in the browser.
+    </p>
+
+    <div class="raps-tip">
+      <h3>How it works</h3>
+      <p>
+        The <strong>extension API</strong> lets plugins hook into the viewer lifecycle. The <strong>IoT extension</strong> is the first plugin — it manages sensor sprites, surface heatmaps, and tooltips. The <strong>synthetic connector</strong> generates deterministic time-series data (temperature, CO2, humidity, occupancy) so the demo works without any infrastructure.
+      </p>
+      <p>Swap the connector for a <code>WebSocketConnector</code> or <code>MqttConnector</code> to use real sensor data.</p>
+    </div>
+
+    <div class="page-grid">
+      <section class="stage-card">
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <button id="load-obj-btn" class="tool-btn primary">Load OBJ sample</button>
+            <button id="load-ifc-btn" class="tool-btn secondary">Load IFC sample</button>
+            <button id="load-building-btn" class="tool-btn warning">Load building</button>
+            <label class="upload-btn" for="file-input">
+              <span>Upload model</span>
+              <input type="file" id="file-input" accept=".obj,.stl,.ifc" />
+            </label>
+          </div>
+          <div class="toolbar-group">
+            <button id="iot-btn" class="tool-btn ghost">IoT Sensors</button>
+            <button id="heatmap-btn" class="tool-btn ghost" disabled>Heatmap</button>
+          </div>
+        </div>
+
+        <div class="status-bar">
+          <div>
+            <div class="status-label">Status</div>
+            <div id="status-text" class="status-value">Load a model to get started...</div>
+          </div>
+          <div>
+            <div class="status-label">Sensors</div>
+            <div id="sensor-text" class="status-value muted">No sensors active</div>
+          </div>
+        </div>
+
+        <div class="viewer-shell">
+          <raps-viewer id="viewer" background="#0b1120"></raps-viewer>
+        </div>
+
+        <div class="time-strip">
+          <button id="play-btn" class="tool-btn ghost" disabled>Play</button>
+          <div class="time-slider-wrap">
+            <input type="range" id="timeline" min="0" max="86400000" value="43200000" step="60000" disabled />
+          </div>
+          <span id="time-label" class="time-display">12:00</span>
+          <div class="speed-group">
+            <button id="speed-1x" class="speed-btn active" disabled>1x</button>
+            <button id="speed-10x" class="speed-btn" disabled>10x</button>
+            <button id="speed-60x" class="speed-btn" disabled>60x</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="info-card">
+        <h2>Sensor Dashboard</h2>
+        <p class="muted-text">Activate IoT sensors to see live readings.</p>
+
+        <div id="sensor-grid" class="sensor-grid">
+          <div class="empty-state">Load a model and click "IoT Sensors" to begin.</div>
+        </div>
+
+        <div class="notes-card">
+          <h3>Sensor types</h3>
+          <ul>
+            <li><strong>Temperature</strong> — diurnal sine cycle peaking at 14:00, with zone offsets and noise.</li>
+            <li><strong>CO2</strong> — correlated with occupancy, ramps during work hours, ventilation decay after 18:00.</li>
+            <li><strong>Humidity</strong> — slow drift with periodic HVAC correction cycles.</li>
+            <li><strong>Occupancy</strong> — sigmoid arrival/departure curves around business hours.</li>
+          </ul>
+        </div>
+
+        <div class="notes-card">
+          <h3>Architecture</h3>
+          <ul>
+            <li><strong>Extension API</strong> — <code>loadExtension()</code> / <code>unloadExtension()</code> with <code>onFrame</code> dispatch.</li>
+            <li><strong>Connector interface</strong> — <code>SensorConnector</code> abstracts data sources. Swap <code>SyntheticConnector</code> for real backends.</li>
+            <li><strong>Sprite layer</strong> — single <code>THREE.Points</code> draw call, vertex colors, zero-allocation updates.</li>
+            <li><strong>Heatmap shader</strong> — GLSL inverse-distance weighting, up to 64 sensors via uniforms.</li>
+            <li><strong>Tooltip</strong> — DOM overlay with <code>Float64Array</code> ring buffer sparkline.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script type="importmap" is:inline>
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module" is:inline>
+    import {
+      IoTExtension,
+      SyntheticConnector,
+    } from '/vendor/raps-viewer.js';
+    import {
+      buildBuildingModel,
+    } from '/tools/viewer-generators.js';
+
+    const viewer = document.getElementById('viewer');
+    const fileInput = document.getElementById('file-input');
+    const statusText = document.getElementById('status-text');
+    const sensorText = document.getElementById('sensor-text');
+    const iotBtn = document.getElementById('iot-btn');
+    const heatmapBtn = document.getElementById('heatmap-btn');
+    const playBtn = document.getElementById('play-btn');
+    const timeline = document.getElementById('timeline');
+    const timeLabel = document.getElementById('time-label');
+    const sensorGrid = document.getElementById('sensor-grid');
+    const speedButtons = [
+      document.getElementById('speed-1x'),
+      document.getElementById('speed-10x'),
+      document.getElementById('speed-60x'),
+    ];
+
+    let iotExt = null;
+    let connector = null;
+    let heatmapActive = false;
+    let currentSpeed = 60;
+
+    const defaultSensors = [
+      { id: 'temp-nw', type: 'temperature', position: [-0.4, 0.5, -0.4], unit: '\u00b0C', range: [15, 35] },
+      { id: 'temp-ne', type: 'temperature', position: [0.4, 0.5, -0.4], unit: '\u00b0C', range: [15, 35] },
+      { id: 'temp-sw', type: 'temperature', position: [-0.4, 0.5, 0.4], unit: '\u00b0C', range: [15, 35] },
+      { id: 'temp-se', type: 'temperature', position: [0.4, 0.5, 0.4], unit: '\u00b0C', range: [15, 35] },
+      { id: 'co2-center', type: 'co2', position: [0, 0.5, 0], unit: 'ppm', range: [400, 2000] },
+      { id: 'humidity-1', type: 'humidity', position: [0, 1.5, 0], unit: '%', range: [30, 80] },
+    ];
+
+    function nextFrame() {
+      return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }
+
+    async function ensureViewerReady() {
+      await customElements.whenDefined('raps-viewer');
+      await nextFrame();
+      await nextFrame();
+    }
+
+    function setIoTControls(enabled) {
+      heatmapBtn.disabled = !enabled;
+      playBtn.disabled = !enabled;
+      timeline.disabled = !enabled;
+      speedButtons.forEach((b) => (b.disabled = !enabled));
+    }
+
+    function formatTime(ms) {
+      const hours = Math.floor((ms / 3_600_000) % 24);
+      const mins = Math.floor((ms / 60_000) % 60);
+      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    }
+
+    function renderSensorCards(sensors) {
+      sensorGrid.innerHTML = '';
+      for (const s of sensors) {
+        const card = document.createElement('div');
+        card.className = 'sensor-card';
+        card.id = `sensor-card-${s.id}`;
+        card.innerHTML = `
+          <div class="sensor-id">${s.id}</div>
+          <div class="sensor-type">${s.type}</div>
+          <div class="sensor-value" id="sval-${s.id}">--</div>
+          <div class="sensor-unit">${s.unit}</div>
+        `;
+        sensorGrid.appendChild(card);
+      }
+    }
+
+    function updateSensorCards() {
+      if (!iotExt || !connector) return;
+      for (const s of defaultSensors) {
+        const val = iotExt.getSensorValue(s.id);
+        const el = document.getElementById(`sval-${s.id}`);
+        if (el && val !== null) {
+          el.textContent = val.toFixed(1);
+        }
+      }
+    }
+
+    // --- Model loading ---
+
+    async function loadSource(source, label) {
+      statusText.textContent = label;
+      try {
+        await ensureViewerReady();
+        await viewer.load(source);
+        statusText.textContent = 'Model loaded';
+      } catch (error) {
+        statusText.textContent = `Load failed: ${error.message}`;
+      }
+    }
+
+    document.getElementById('load-obj-btn').addEventListener('click', () => {
+      loadSource('/tools/viewer-fixtures/demo-pyramid.obj', 'Loading OBJ sample...');
+    });
+
+    document.getElementById('load-ifc-btn').addEventListener('click', () => {
+      loadSource('/tools/viewer-fixtures/demo-box.ifc', 'Loading IFC sample...');
+    });
+
+    document.getElementById('load-building-btn').addEventListener('click', async () => {
+      statusText.textContent = 'Generating building...';
+      try {
+        await ensureViewerReady();
+        await new Promise((r) => setTimeout(r, 0));
+        const model = buildBuildingModel();
+        const file = new File([model.obj], `${model.name}.obj`, { type: 'text/plain' });
+        await viewer.load(file);
+        statusText.textContent = `Loaded: ${model.metadata.summary}`;
+      } catch (error) {
+        statusText.textContent = `Load failed: ${error.message}`;
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      loadSource(file, `Loading ${file.name}...`);
+    });
+
+    viewer.addEventListener('progress', (e) => {
+      statusText.textContent = `Loading: ${e.detail.phase}...`;
+    });
+
+    viewer.addEventListener('select', (e) => {
+      const suffix = e.detail.entityType ? ` (${e.detail.entityType})` : '';
+      statusText.textContent = `Selected entity ${e.detail.entityId}${suffix}`;
+    });
+
+    // --- IoT controls ---
+
+    iotBtn.addEventListener('click', async () => {
+      await ensureViewerReady();
+
+      if (iotExt) {
+        // Deactivate
+        connector.pause();
+        viewer.unloadExtension('iot');
+        iotExt = null;
+        connector = null;
+        heatmapActive = false;
+        iotBtn.classList.remove('active');
+        heatmapBtn.classList.remove('active');
+        playBtn.classList.remove('active');
+        playBtn.textContent = 'Play';
+        setIoTControls(false);
+        sensorText.textContent = 'No sensors active';
+        sensorGrid.innerHTML = '<div class="empty-state">Sensors deactivated.</div>';
+        return;
+      }
+
+      // Activate
+      connector = new SyntheticConnector({
+        sensors: defaultSensors,
+        intervalMs: 500,
+        timeScale: currentSpeed,
+      });
+      connector.seek(43200000); // noon
+
+      iotExt = new IoTExtension(connector);
+      viewer.loadExtension(iotExt);
+      connector.play();
+
+      iotBtn.classList.add('active');
+      playBtn.classList.add('active');
+      playBtn.textContent = 'Pause';
+      setIoTControls(true);
+      sensorText.textContent = `${defaultSensors.length} sensors active`;
+
+      renderSensorCards(defaultSensors);
+    });
+
+    heatmapBtn.addEventListener('click', () => {
+      if (!iotExt) return;
+      heatmapActive = !heatmapActive;
+      iotExt.showHeatmap(heatmapActive);
+      heatmapBtn.classList.toggle('active', heatmapActive);
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (!connector) return;
+      if (connector.isPlaying) {
+        connector.pause();
+        playBtn.classList.remove('active');
+        playBtn.textContent = 'Play';
+      } else {
+        connector.play();
+        playBtn.classList.add('active');
+        playBtn.textContent = 'Pause';
+      }
+    });
+
+    timeline.addEventListener('input', () => {
+      if (!connector) return;
+      connector.seek(Number(timeline.value));
+    });
+
+    speedButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const speed = parseInt(btn.textContent, 10);
+        currentSpeed = speed;
+        speedButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (connector && connector.isPlaying) {
+          connector.pause();
+          connector.play(speed);
+        }
+      });
+    });
+
+    // --- Animation loop for UI updates ---
+
+    function tick() {
+      if (connector) {
+        const ms = connector.currentTime;
+        timeLabel.textContent = formatTime(ms);
+        timeline.value = String(ms % 86_400_000);
+        updateSensorCards();
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+
+    // Auto-load default model
+    loadSource('/tools/viewer-fixtures/demo-pyramid.obj', 'Loading default OBJ sample...');
+  </script>
+</BaseLayout>
+
+<style>
+  .tool-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .tool-title {
+    @apply text-3xl sm:text-5xl font-display font-bold text-white mb-4 text-center;
+  }
+
+  .tool-subtitle {
+    @apply text-center text-slate-300 mb-8 text-lg max-w-3xl mx-auto;
+  }
+
+  .raps-tip {
+    @apply bg-blue-950/30 border border-blue-800/30 rounded-xl p-6 mb-8;
+  }
+
+  .raps-tip h3 {
+    @apply text-lg font-semibold text-blue-300 mb-3 mt-0;
+  }
+
+  .raps-tip p {
+    @apply text-slate-300 mb-3 last:mb-0;
+  }
+
+  .raps-tip code {
+    @apply bg-blue-900/50 text-blue-200 px-2 py-1 rounded text-sm font-mono;
+  }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .stage-card,
+  .info-card {
+    @apply bg-slate-900/50 border border-slate-800 rounded-2xl p-6;
+  }
+
+  .info-card h2 {
+    @apply text-xl font-semibold text-white mb-1 mt-0;
+  }
+
+  .muted-text {
+    @apply text-sm text-slate-400 mb-4;
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .toolbar-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn,
+  .upload-btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer;
+  }
+
+  .tool-btn.primary {
+    @apply bg-rapeseed-500 text-slate-900 hover:bg-rapeseed-400;
+  }
+
+  .tool-btn.secondary {
+    @apply bg-cyan-600 text-white hover:bg-cyan-500;
+  }
+
+  .tool-btn.warning {
+    @apply bg-amber-500 text-slate-950 hover:bg-amber-400;
+  }
+
+  .tool-btn.ghost,
+  .upload-btn {
+    @apply bg-slate-800 text-slate-200 border border-slate-700 hover:border-slate-500 hover:text-white;
+  }
+
+  .tool-btn.active {
+    @apply bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500;
+  }
+
+  .tool-btn:disabled,
+  .upload-btn:has(input:disabled) {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .upload-btn input {
+    display: none;
+  }
+
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .status-label {
+    @apply text-xs uppercase tracking-wide text-slate-500 mb-1;
+  }
+
+  .status-value {
+    @apply text-sm font-medium text-white;
+  }
+
+  .status-value.muted {
+    @apply text-slate-400;
+  }
+
+  .viewer-shell {
+    @apply rounded-2xl border border-slate-800 overflow-hidden bg-slate-950;
+    min-height: 520px;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.05);
+  }
+
+  .viewer-shell raps-viewer {
+    display: block;
+    width: 100%;
+    height: 520px;
+  }
+
+  .time-strip {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    @apply bg-slate-950/60 border border-slate-800 rounded-xl p-4;
+  }
+
+  .time-slider-wrap {
+    flex: 1;
+  }
+
+  .time-slider-wrap input[type="range"] {
+    width: 100%;
+    accent-color: #10b981;
+  }
+
+  .time-display {
+    @apply text-lg font-mono font-semibold text-emerald-400;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .speed-group {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .speed-btn {
+    @apply rounded px-3 py-1.5 text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 cursor-pointer transition-colors;
+  }
+
+  .speed-btn.active {
+    @apply bg-emerald-600 text-white border-emerald-500;
+  }
+
+  .speed-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .sensor-card {
+    @apply rounded-xl border border-slate-800 bg-slate-950/60 p-4;
+  }
+
+  .sensor-id {
+    @apply text-xs font-mono text-slate-500 mb-1;
+  }
+
+  .sensor-type {
+    @apply text-xs uppercase tracking-wide text-emerald-400 mb-2;
+  }
+
+  .sensor-value {
+    @apply text-2xl font-semibold text-white;
+  }
+
+  .sensor-unit {
+    @apply text-xs text-slate-500;
+  }
+
+  .empty-state {
+    @apply text-sm text-slate-500 col-span-2 text-center py-8;
+  }
+
+  .notes-card {
+    @apply rounded-xl border border-slate-800 bg-slate-950/60 p-4 mb-4;
+  }
+
+  .notes-card h3 {
+    @apply text-base font-semibold text-white mt-0 mb-3;
+  }
+
+  .notes-card ul {
+    @apply text-sm text-slate-300 pl-5 m-0 space-y-2;
+  }
+
+  .notes-card code {
+    @apply bg-slate-900/80 text-emerald-300 px-1.5 py-0.5 rounded text-xs font-mono;
+  }
+
+  @media (max-width: 1100px) {
+    .page-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .status-bar {
+      grid-template-columns: 1fr;
+    }
+
+    .sensor-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .viewer-shell,
+    .viewer-shell raps-viewer {
+      min-height: 400px;
+      height: 400px;
+    }
+
+    .time-strip {
+      flex-wrap: wrap;
+    }
+  }
+</style>
