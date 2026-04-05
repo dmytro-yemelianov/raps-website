@@ -1,0 +1,190 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Frontend Test Surfaces"
+  description="Manual QA and performance surfaces for the RAPS frontend viewer."
+  robots="noindex, nofollow"
+>
+  <section class="py-16 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="hero-card">
+        <div class="hero-copy">
+          <div class="eyebrow">Internal QA Surface</div>
+          <h1>Frontend Test Surfaces</h1>
+          <p>
+            This section is for manual browser checks, performance validation, and fixture-backed viewer
+            regression work. It is intentionally separate from the main marketing and docs flow.
+          </p>
+          <div class="hero-actions">
+            <a href="/tools/viewer-performance" class="primary-link">Open Viewer Performance Lab</a>
+            <a href="https://github.com/dmytro-yemelianov/raps/tree/main/raps-viewer-js/tests" class="secondary-link">Open Frontend Tests</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <div class="panel-label">Current entrypoint</div>
+          <code>rapscli.xyz/tools/viewer-performance</code>
+          <p>
+            If <code>tests.rapscli.xyz</code> is attached as a custom domain, the root path redirects here first
+            and then into this test section.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <article class="card feature">
+          <div class="card-icon">🧊</div>
+          <h2>Viewer Performance Lab</h2>
+          <p>
+            Loads fixture OBJ and IFC models in the browser and surfaces cold-start and warm-path timings, buffer
+            build cost, GPU upload time, geometry counts, and WASM memory.
+          </p>
+          <ul>
+            <li>Fixture-backed manual smoke surface</li>
+            <li>Uses the same profile event as Playwright perf checks</li>
+            <li>Useful for visual sanity checks before merging viewer changes</li>
+          </ul>
+          <a href="/tools/viewer-performance" class="card-link">Launch Lab →</a>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">🎭</div>
+          <h2>Frontend Checks</h2>
+          <p>
+            The browser viewer now has fixture-based Playwright suites for properties, reload behavior, visuals,
+            and perf budgets.
+          </p>
+          <div class="code-list">
+            <code>npm run test:visual</code>
+            <code>npm run test:perf</code>
+            <code>npx playwright test tests/web-component.spec.mjs</code>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">🖥️</div>
+          <h2>CLI Surface</h2>
+          <p>
+            Local CLI testing still lives in the main repo. Use the browser lab here for front-end behavior and the
+            CLI viewer for end-to-end local file loading.
+          </p>
+          <div class="code-list">
+            <code>raps viewer ./model.ifc</code>
+            <code>cargo test -p raps-cli viewer</code>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-copy,
+  .hero-panel,
+  .card {
+    @apply rounded-2xl border border-slate-800 bg-slate-900/50 p-6;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-300;
+    margin-bottom: 1rem;
+  }
+
+  .hero-copy h1 {
+    @apply text-4xl sm:text-5xl font-display font-bold text-white mb-4;
+  }
+
+  .hero-copy p,
+  .hero-panel p,
+  .card p {
+    @apply text-slate-300 text-base leading-relaxed;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .primary-link,
+  .secondary-link,
+  .card-link {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors;
+  }
+
+  .primary-link {
+    @apply bg-rapeseed-500 text-slate-900 hover:bg-rapeseed-400;
+  }
+
+  .secondary-link,
+  .card-link {
+    @apply border border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-500 hover:text-white;
+  }
+
+  .hero-panel {
+    @apply bg-slate-950/80;
+  }
+
+  .panel-label {
+    @apply text-xs uppercase tracking-wide text-slate-500 mb-3;
+  }
+
+  .hero-panel code,
+  .code-list code {
+    @apply rounded-lg bg-slate-900 px-3 py-2 font-mono text-sm text-rapeseed-300;
+    display: block;
+  }
+
+  .hero-panel code {
+    margin-bottom: 1rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .card.feature {
+    @apply border-cyan-500/30 bg-cyan-500/5;
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .card h2 {
+    @apply text-2xl font-semibold text-white mb-3;
+  }
+
+  .card ul {
+    @apply mb-4 mt-4 list-disc space-y-2 pl-5 text-sm text-slate-300;
+  }
+
+  .code-list {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .card-link {
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 980px) {
+    .hero-card,
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

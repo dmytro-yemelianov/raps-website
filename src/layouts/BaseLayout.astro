@@ -15,6 +15,7 @@ interface Props {
   description?: string;
   image?: string;
   article?: boolean;
+  robots?: string;
 }
 
 const {
@@ -22,6 +23,7 @@ const {
   description = '🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI. A comprehensive command-line interface for APS, written in Rust.',
   image = '/og-image.svg',
   article = false,
+  robots = 'index, follow',
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -78,9 +80,18 @@ const ogLocaleAlternate = lang === 'uk' ? 'en_US' : 'uk_UA';
     <meta property="twitter:creator" content="@dyemelianov" />
     
     <!-- Additional SEO -->
-    <meta name="robots" content="index, follow" />
-    <meta name="googlebot" content="index, follow" />
+    <meta name="robots" content={robots} />
+    <meta name="googlebot" content={robots} />
     <meta name="keywords" content="Autodesk Platform Services, APS, CLI, Rust, CAD, BIM, DevOps, CI/CD, Model Derivative, OAuth, automation" />
+
+    <script is:inline>
+      if (
+        window.location.hostname === 'tests.rapscli.xyz' &&
+        (window.location.pathname === '/' || window.location.pathname === '/index.html')
+      ) {
+        window.location.replace('/tests/');
+      }
+    </script>
     
     <!-- Performance optimizations -->
     <link rel="dns-prefetch" href="//github.com">

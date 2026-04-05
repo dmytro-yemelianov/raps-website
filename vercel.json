@@ -27,6 +27,14 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/",
+      "has": [
+        { "type": "host", "value": "tests.rapscli.xyz" }
+      ],
+      "destination": "/tests",
+      "permanent": false
+    },
     { "source": "/github", "destination": "https://github.com/dmytro-yemelianov/raps", "permanent": false }
   ],
   "trailingSlash": false
